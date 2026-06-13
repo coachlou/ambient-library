@@ -20,13 +20,19 @@ absolute path), then carry out its steps.
 ## Domain skills
 
 Project-specific skills live in `library/<skill-name>/instructions.md`. They are
-plain files — not registered skills — so they cost nothing in context until you
-read one. List `library/` or read the catalog in `SKILLS.md` (plugin root) to
-see what's available.
+plain files — not registered skills — so they cost nothing in context until read.
 
-When a request matches a domain skill's purpose, read that skill's
-`instructions.md` from `library/` and follow it. If the project has a
-`skills-manifest.yaml`, prefer the domain skills it lists.
+**To avoid context bloat, choosing a skill and loading a skill are separate steps:**
+
+1. To find a match, read **only** `library/catalog.yaml` — a cheap list of skill
+   names and one-line descriptions. Never read skill `instructions.md` files to
+   decide relevance.
+2. Pick the single best match. If the project has a `skills-manifest.yaml`,
+   restrict to the skills it lists.
+3. Read **only that one** skill's `instructions.md` and follow it.
+
+Never load more than one domain skill body per request, and never load the whole
+library.
 
 ## Rules
 

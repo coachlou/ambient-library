@@ -1,0 +1,12 @@
+# Domain skill catalog — the ONLY file the router reads to choose a skill.
+# Keep each description to one line. The router matches against these
+# descriptions, then loads exactly ONE skill's instructions.md. It must never
+# read multiple skill bodies to decide relevance.
+#
+# Format:
+#   <skill-name>: <one-line description of when it applies>
+
+skills: {}
+# Example (add real skills here):
+#   deploy-helper: Builds and deploys the project; use for "deploy", "ship", "release".
+#   api-docs: Generates API reference docs from source; use for "document the API".

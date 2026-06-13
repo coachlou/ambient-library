@@ -8,10 +8,15 @@ Claude Code skills, so they add nothing to context until the router reads one.
 
 ```
 library/
+├── catalog.yaml             # cheap index: skill name → one-line description
 └── <skill-name>/
     ├── instructions.md      # required — the skill logic
     └── references/ etc.     # optional sibling files the skill reads
 ```
+
+`catalog.yaml` is the **only** file the router reads to decide which skill a
+request needs. It then loads exactly one skill's `instructions.md`. This is how
+context stays lean — the full library never loads, only the one selected skill.
 
 ## Adding one
 

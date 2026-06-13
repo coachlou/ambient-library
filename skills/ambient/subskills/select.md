@@ -12,8 +12,8 @@ applying project-specific skills consistently.
 
 ### 1. Discover available domain skills
 
-List `${CLAUDE_SKILL_DIR}/library/` or read the catalog at the plugin's
-`SKILLS.md`. The domain skills are the folders under `library/`.
+Read `${CLAUDE_SKILL_DIR}/library/catalog.yaml` — a cheap list of skill names and
+one-line descriptions. Don't open individual skill `instructions.md` files here.
 
 ### 2. Understand the project
 

@@ -32,10 +32,20 @@ It may include sibling files (`references/`, `scripts/`) — they ship with the
 plugin and resolve relative to the skill folder. Keep it focused: one skill, one
 class of work.
 
-### 3. List it in the catalog
+### 3. Register it in the catalog
 
-Add an entry to `SKILLS.md` under "Domain Skills" so users (and the `select`
-subskill) can discover it.
+Add a one-line entry to `skills/ambient/library/catalog.yaml`:
+
+```yaml
+skills:
+  my-skill: One-line description of when this skill applies.
+```
+
+This is the **only** file the router reads to choose a skill, so the description
+must be enough to match a request without opening the skill body. Keeping it to
+one line is what prevents context bloat — the router reads this catalog, picks one
+skill, and loads only that skill's `instructions.md`. Also add a fuller entry to
+`SKILLS.md` for human readers.
 
 ### 4. Bump the plugin version and release
 
