@@ -6,7 +6,7 @@
 curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
 
-Installs the `ambient` skill to `~/.claude/skills/ambient/`. After this, ambient is available in every Claude Code session on this machine — no per-project setup needed.
+Installs the `ambient` skill to `~/.claude/skills/ambient/`. After this, open Claude Code — the skill is available in every session on this machine.
 
 **What gets installed:**
 ```
@@ -27,11 +27,12 @@ Open Claude Code in your project folder and say:
 
 > "Set up ambient-library in this project"
 
-The `ambient/install` subskill runs automatically. It:
+The `ambient/install` subskill runs. It:
 
-1. Runs `git init` if there's no git repo
-2. Adds the skills library as a submodule at `skills/` — **this folder name is fixed**, don't rename it
-3. Hands off to `ambient/select` to configure the manifest
+1. Re-runs the curl to ensure the global skill is current
+2. Runs `git init` if there's no git repo
+3. Adds the skills library as a submodule at `skills/` — **this folder name is fixed**, don't rename it
+4. Hands off to `ambient/select` to configure the manifest
 
 Result: a single `skills-manifest.yaml` in your project root.
 
@@ -48,13 +49,11 @@ No scripts, no hooks, no generated folders. Everything else is handled by the gl
 
 ## Updating the Global Skill
 
-To update `ambient` to the latest version:
+The install subskill re-runs the curl automatically every time you say *"Set up ambient-library"* in any project. To update manually at any time:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
-
-Same command — safe to re-run anytime.
 
 ## Updating Domain Skills (per project)
 

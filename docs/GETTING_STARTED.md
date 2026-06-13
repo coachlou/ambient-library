@@ -1,38 +1,38 @@
 # Getting Started
 
-## Step 1: Install once on your machine
+## First time on a new machine
 
-Open a terminal and run:
+Run this once in your terminal:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
 
-This installs the `ambient` skill into `~/.claude/skills/ambient/`. It's now available in every Claude Code session, in every project, forever. You never run this again.
+This installs the `ambient` skill globally at `~/.claude/skills/ambient/`. After this, open Claude Code in any project and the skill is available.
 
-## Step 2: Set up a project
+## Every new project — from Claude Code
 
-Open Claude Code in any project folder and say:
+Open Claude Code in your project folder and say:
 
 > "Set up ambient-library in this project"
 
 Claude will:
-1. Initialize git if needed
-2. Add the skills library as a submodule
-3. Ask what your project does
-4. Write a minimal `skills-manifest.yaml` with only the skills you need
+1. Re-run the curl to ensure the global skill is current
+2. Initialize git if needed
+3. Add the skills library as a submodule
+4. Ask what your project does
+5. Write a minimal `skills-manifest.yaml` with only the skills you need
 
 ## That's it
 
-Your project now has a `skills-manifest.yaml`. Every time you open Claude Code in that project, the `ambient` skill reads the manifest and activates the right domain skills automatically.
+Your project has a `skills-manifest.yaml`. Every time you open Claude Code in that project, `ambient` reads the manifest and activates the right domain skills automatically.
 
-## Day-to-Day Usage
+## Day-to-day
 
-You don't manage anything. Just work. Use natural language:
+Just work. Use natural language:
 
 - *"Review this code"*
 - *"Update my skills to the latest"*
-- *"Add a new skill to this project"*
 - *"Configure my skills"*
 
 ## Next Steps
