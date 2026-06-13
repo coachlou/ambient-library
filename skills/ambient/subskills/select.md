@@ -28,7 +28,7 @@ Propose only the domain skills clearly relevant, each with a one-line reason:
 
 ```yaml
 domain_skills:
-  - code-review   # you mentioned code quality is a priority
+  - project-brief   # you mentioned you need a project overview
 ```
 
 Ask: "Does this look right, or anything to add or remove?"
