@@ -1,0 +1,11 @@
+{
+  "name": "ambient",
+  "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}

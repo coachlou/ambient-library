@@ -1,0 +1,15 @@
+{
+  "name": "ambient-library",
+  "description": "Coach Lou's ambient skill library for Claude Code: project setup, skill selection, management, and code review through natural language.",
+  "owner": {
+    "name": "Coach Lou",
+    "url": "https://github.com/coachlou"
+  },
+  "plugins": [
+    {
+      "name": "ambient",
+      "source": "./",
+      "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language."
+    }
+  ]
+}
