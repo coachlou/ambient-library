@@ -1,6 +1,2 @@
-skills:
-  - skill-loader          # required — orchestration layer, always keep this
-  - skill-system-manager  # manage updates and refreshes
-  - ambient-install       # install ambient-library into new projects
-  - skill-picker          # configure this manifest via natural language
-  - code-review           # remove if not needed for this project
+domain_skills: []
+# Add domain skills here. Run "configure my skills" in Claude Code to set these up.

@@ -1,83 +1,72 @@
 # ambient-library
 
-Central reusable skill library for Claude Code projects. Skills are reusable tools you add to any project once — code review, custom workflows, documentation, whatever your team needs.
+A global skill system for Claude Code. One install on your machine — skills available everywhere, in every project.
 
-**New here?** → Start with [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
+**New here?** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
-## What's Inside
+## How It Works
+
+One global skill (`ambient`) routes all requests — project setup, skill configuration, code review, updates. Projects only need a single file: `skills-manifest.yaml`.
 
 ```
-ambient-library/
-├── ambient-install/          # Installs the system from within Claude Code
-├── skill-picker/             # Builds skills-manifest.yaml via natural language
-├── skill-loader/             # Always-active orchestration layer
-├── skill-system-manager/     # Manages updates and refreshes
-├── code-review/              # Example skill (customize or duplicate)
-├── templates/                # Copy these into new projects
-│   ├── setup-skills.sh           # Installs skill pointers from the manifest
-│   ├── skills-manifest.yaml      # Controls which skills are active
-│   ├── CLAUDE.md                 # Project context for Claude
-│   ├── .gitignore                # Excludes generated .agents/skills/
-│   └── .claude/
-│       ├── settings.json         # Enables session hooks
-│       └── hooks/
-│           └── session-start.sh  # Auto-refreshes skills each session
-├── docs/                     # User documentation
-│   ├── GETTING_STARTED.md        # First-time setup
-│   ├── INSTALLATION.md           # Detailed installation & troubleshooting
-│   ├── USAGE.md                  # How to use skills
-│   ├── MANAGEMENT.md             # Adding & maintaining skills
-│   └── FAQ.md                    # Common questions
-├── bootstrap.sh              # One-command project setup
-├── SKILLS.md                 # Full catalog of available skills
-├── ARCHITECTURE.md           # How the system works under the hood
-└── README.md
+~/.claude/skills/ambient/    ← installed once on your machine
+├── SKILL.md                 # always-active router
+├── instructions.md          # routing logic
+└── subskills/
+    ├── load.md              # reads manifest, activates domain skills
+    ├── install.md           # sets up ambient-library in a project
+    ├── select.md            # configures skills-manifest.yaml
+    ├── manage.md            # updates and maintenance
+    └── review.md            # code review
+
+your-project/
+└── skills-manifest.yaml     ← the only project file needed
 ```
 
-## Quick Start
+## Setup
 
-**From Claude Code** (no terminal needed):
+**One-time machine setup:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
+
+**Every new project — from Claude Code:**
 
 > "Set up ambient-library in this project"
 
-Claude installs everything and walks you through configuring the right skills for your project.
+That's it.
 
-**From terminal:**
+## What You Can Say
 
-```bash
-cd your-project-root
-git submodule add git@github-coachlou:coachlou/ambient-library.git skills
-bash skills/bootstrap.sh
+| Say this | What happens |
+|----------|-------------|
+| "Set up ambient-library in this project" | Installs submodule, configures manifest |
+| "Configure my skills" | Walks through manifest setup via conversation |
+| "Review this code" | Runs code review with project standards |
+| "Update my skills" | Pulls latest from ambient-library |
+| "Refresh my skills" | Reloads manifest for this session |
+
+## Repository Structure
+
 ```
-
-> `skills` is a fixed folder name — `setup-skills.sh` depends on it. Don't rename it.
-
-**Add a custom skill:**
-
-See [docs/MANAGEMENT.md](docs/MANAGEMENT.md) for the full walkthrough.
+ambient-library/
+├── ambient/              # The global skill (installed via install-global.sh)
+├── templates/            # Minimal project templates
+│   └── skills-manifest.yaml
+├── docs/                 # Documentation
+├── install-global.sh     # One-time machine setup
+├── SKILLS.md             # Domain skills catalog
+├── ARCHITECTURE.md       # How the system works
+└── README.md
+```
 
 ## Documentation
 
-- **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** — First time? Start here (5 min)
-- **[INSTALLATION.md](docs/INSTALLATION.md)** — Step-by-step setup + troubleshooting
-- **[USAGE.md](docs/USAGE.md)** — How to invoke and use skills
-- **[MANAGEMENT.md](docs/MANAGEMENT.md)** — Add new skills, update existing ones
-- **[FAQ.md](docs/FAQ.md)** — Common questions and quick reference
-- **[SKILLS.md](SKILLS.md)** — Full catalog of available skills
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — How the system works under the hood
-
-## Key Features
-
-✨ **Invisible** — No manual path management, git mechanics, or loading overhead  
-🤝 **Shared** — One central library, all projects use the same skills  
-🔄 **Project-aware** — Skills merge with your project's rules automatically  
-📦 **Modular** — Add skills as needed, no bloat  
-⚡ **One-command setup** — `bootstrap.sh` handles everything for new projects  
-
-## Need Help?
-
-- **Getting started** → [GETTING_STARTED.md](docs/GETTING_STARTED.md)
-- **Installation issues** → [INSTALLATION.md#Troubleshooting](docs/INSTALLATION.md#troubleshooting)
-- **Adding a skill** → [MANAGEMENT.md](docs/MANAGEMENT.md)
-- **General questions** → [FAQ.md](docs/FAQ.md)
-- **How it works** → [ARCHITECTURE.md](ARCHITECTURE.md)
+- **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** — Start here
+- **[INSTALLATION.md](docs/INSTALLATION.md)** — Detailed setup
+- **[USAGE.md](docs/USAGE.md)** — Using skills day-to-day
+- **[MANAGEMENT.md](docs/MANAGEMENT.md)** — Adding and managing domain skills
+- **[FAQ.md](docs/FAQ.md)** — Common questions
+- **[SKILLS.md](SKILLS.md)** — Available domain skills
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System design

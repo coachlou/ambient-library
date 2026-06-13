@@ -1,54 +1,35 @@
-# FAQ & Quick Reference
+# FAQ
 
-## General Questions
+## Setup
 
-### What is Ambient Library?
+### How long does this take to set up?
 
-A central skill library for Claude Code. Skills are reusable tools (code review, custom workflows, docs generation, etc.) that you add to projects once and use forever.
+Two minutes.
 
-### How is this different from other tool systems?
+1. Run one terminal command to install globally (~30 seconds)
+2. Say "Set up ambient-library in this project" in Claude Code (~1 minute)
+3. Answer one question about your project
 
-- **Centralized** — One source of truth for all skills
-- **Invisible** — You don't manage paths, git mechanics, or loading logistics
-- **Project-aware** — Skills merge with your project's rules automatically
-- **Scalable** — Add new skills once, available to all projects
+Done.
 
-### Does it work offline?
+### Do I need to install anything on each project?
 
-Skills are stored locally in `.agents/skills/` after setup, so yes — Claude loads them offline. To update skills from ambient-library, you need internet access for `git submodule update`.
+No. The `ambient` skill is global — installed once on your machine, available everywhere. The only per-project file is `skills-manifest.yaml`, which Claude creates for you.
 
----
+### Do I need a GitHub account or SSH keys?
 
-## Installation Questions
+No. The install command uses HTTPS. No account or SSH setup required.
 
-### How long does setup take?
+### Can I use this without the terminal at all?
 
-~2 minutes. Two commands:
+Almost. The one-time machine setup requires a terminal command. After that, everything is done from Claude Code via natural language.
+
+### What if I'm on a new machine?
+
+Run the install command again:
 ```bash
-git submodule add git@github-coachlou:coachlou/ambient-library.git skills
-bash skills/bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
-
-For a detailed walkthrough: [INSTALLATION.md](INSTALLATION.md)
-
-### Can I use ambient-library without git?
-
-No. Git submodules are core to the design — they keep skills in sync across projects without duplicating storage.
-
-### What if I can't access github-coachlou:coachlou/ambient-library.git?
-
-You need:
-- SSH key registered on the `coachlou` GitHub account
-- `~/.ssh/config` configured with the `github-coachlou` alias
-
-See [INSTALLATION.md#SSH](INSTALLATION.md#ssh-key-errors-when-cloning) for details.
-
-### Can I use this with other projects/teams?
-
-Yes. The ambient-library repo is a normal git repo. You can:
-- Fork it and customize for your team
-- Maintain multiple versions
-- Create a private copy for your org
 
 ---
 
@@ -56,143 +37,103 @@ Yes. The ambient-library repo is a normal git repo. You can:
 
 ### How do I know what skills are available?
 
-Check the catalog: [../SKILLS.md](../SKILLS.md)
+Check [../SKILLS.md](../SKILLS.md) for the full catalog.
 
-Or inspect what's installed locally:
+Or ask: *"What skills are available?"*
 
-```bash
-ls -la .agents/skills/
-cat .agents/skills/code-review/SKILL.md  # Read a specific skill's description
-```
+### Do I have to activate skills manually each session?
 
-### Do I need to activate skills manually?
+No. The `ambient` skill reads your `skills-manifest.yaml` automatically at the start of every session. Domain skills load silently.
 
-No. All skills listed in `skills-manifest.yaml` are automatically active. Start a Claude session and use them.
+### Can I use skills without a manifest?
 
-### Can I use a skill in multiple projects?
+Yes. Core skills (install, select, manage, review) are always available even with no manifest. The manifest only controls which domain skills load.
 
-Yes. Just add its name to `skills-manifest.yaml` in each project.
+### What's the difference between core skills and domain skills?
 
-### What if a skill doesn't work?
+**Core skills** are always available globally — install, select, manage, review. They work in any project, any session.
 
-1. Check [INSTALLATION.md#Troubleshooting](INSTALLATION.md#troubleshooting)
-2. Verify it's in the manifest and installed:
-   ```bash
-   ./setup-skills.sh
-   ls -la .agents/skills/
-   ```
-3. Start a fresh Claude session (skills are cached per session)
+**Domain skills** are project-specific — they add extra context or instructions for a particular project's needs. They're listed in `skills-manifest.yaml` and loaded per project.
 
 ---
 
-## Managing Skills
+## The Manifest
 
-### How do I add a custom skill?
+### What goes in skills-manifest.yaml?
 
-Follow [MANAGEMENT.md#Adding a New Skill](MANAGEMENT.md#adding-a-new-skill). TL;DR:
-1. Copy `code-review/` as a template
-2. Edit `SKILL.md` and `instructions.md`
-3. Add to `skills-manifest.yaml`
-4. Run `./setup-skills.sh`
-5. Test, then commit to ambient-library
+Only domain skills specific to your project:
 
-### What's the difference between editing instructions.md and SKILL.md?
-
-- **SKILL.md** — Metadata (name, description, version). Describes what the skill does.
-- **instructions.md** — The actual skill logic. How it works.
-
-Change `instructions.md` to improve the skill. Change `SKILL.md` to rename it, change the description, or bump the version.
-
-### Can I delete a skill?
-
-Yes. Remove its folder from ambient-library, commit, and projects will stop seeing it on the next `git submodule update`.
-
-### How do I know when skills are updated?
-
-Watch the `ambient-library` repo or check the version numbers in `SKILL.md`. When a skill version bumps, you can pull the update:
-
-```bash
-git submodule update --remote
-./setup-skills.sh
+```yaml
+domain_skills:
+  - code-review
+  - my-custom-skill
 ```
+
+Core skills don't go here — they're always available.
+
+### Where does skills-manifest.yaml live?
+
+In your project root. That's the only file ambient-library needs in your project.
+
+### What if it doesn't exist?
+
+Claude Code still works normally. Core skills are available. Domain skills just won't load until you create the manifest (say *"Configure my skills"*).
 
 ---
 
 ## Troubleshooting
 
+### "Set up ambient-library" doesn't trigger anything
+
+The `ambient` skill isn't installed globally yet. Run:
+```bash
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
+Then start a fresh Claude Code session.
+
 ### Skills aren't loading
 
-Check the basics:
-```bash
-ls -la .agents/skills/          # Are pointers there?
-cat skills-manifest.yaml        # Is the skill listed?
-./setup-skills.sh               # Re-run setup
-```
+1. Check that `ambient` is installed: `ls ~/.claude/skills/ambient/`
+2. Check that `skills-manifest.yaml` exists in your project root
+3. Start a fresh Claude Code session (skills load at session start)
 
-Then start a fresh Claude session (skills cache per session).
+### Submodule errors after cloning a project
 
-### `git submodule add` fails
-
-SSH key or GitHub access issue. Test:
-```bash
-ssh -T git@github-coachlou
-```
-
-If that fails, check [INSTALLATION.md#SSH](INSTALLATION.md#ssh-key-errors-when-cloning).
-
-### Cloning a project gives submodule errors
-
-Run:
 ```bash
 git submodule update --init --recursive
-./setup-skills.sh
 ```
 
-### I edited a skill but changes aren't showing up
+### How do I update to the latest skills?
 
-Restart your Claude session. Skills cache per session.
+From Claude Code: *"Update my skills to the latest"*
 
-### The submodule is out of sync with my local changes
-
-Ambient-library is a shared resource. Don't edit skills directly in the submodule. Instead:
-1. Copy the skill folder out of `skills/`
-2. Edit it locally
-3. Test it
-4. Commit it back to ambient-library
-5. Run `./setup-skills.sh` to pick up the change
+Or re-run the global install to update core subskills:
+```bash
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
 
 ---
 
 ## Advanced
 
-### Can I create private skills (not in ambient-library)?
+### Can I add project-specific rules?
 
-Yes, but we don't recommend it. The whole point is centralization. If you need a private skill:
-1. Create a parallel folder at the project level
-2. Manually reference it in your project's CLAUDE.md
-3. Load it in Claude sessions as needed
+Yes. Add a `CLAUDE.md` to your project root. The `ambient` skill merges its contents automatically before executing any operation.
 
-Better: contribute it to ambient-library so the team benefits.
+### Can I create private domain skills?
 
-### Can I version skills independently?
+Yes. Create an `instructions.md` anywhere in your project and manually add the skill's path to your `CLAUDE.md`. It won't be in the ambient-library catalog but will work locally.
 
-Yes. Each skill has its own version number in `SKILL.md`. Ambient-library itself isn't versioned — it moves forward continuously. If you need a locked version:
+Better: contribute it to ambient-library so the whole team benefits.
 
-```bash
-git submodule set-url skills git@github-coachlou:coachlou/ambient-library.git@v1.0.0
-```
+### Can multiple projects use different skill versions?
 
-(Note: you'd need to create git tags in ambient-library for this to work.)
-
-### How do I measure if a skill is being used?
-
-Not built-in. You'd need to add logging to the skill's `instructions.md` to track invocations.
+Yes. Each project's `skills/` submodule can be pinned to a specific commit. Update selectively with `git submodule update --remote skills` per project.
 
 ---
 
-## Still Have Questions?
+## Questions not answered here?
 
-- **Installation help** → [INSTALLATION.md](INSTALLATION.md)
-- **Adding a skill** → [MANAGEMENT.md](MANAGEMENT.md)
-- **Using skills** → [USAGE.md](USAGE.md)
-- **System design** → [ambient-library/README.md](../README.md)
+- **Setup** → [INSTALLATION.md](INSTALLATION.md)
+- **Adding skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **How it works** → [../ARCHITECTURE.md](../ARCHITECTURE.md)

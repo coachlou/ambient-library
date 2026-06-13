@@ -1,117 +1,75 @@
-# Using Ambient Library Skills
+# Using Ambient Library
 
-Once [installed](INSTALLATION.md), skills are available in your Claude sessions. You never need to think about how they load — just use them naturally.
+Once installed, just use natural language. The `ambient` skill is always active and routes requests automatically.
 
-## The Three Built-In Skills
+## Core Commands
 
-### Skill Loader (Always Active)
+### Set up a new project
+> "Set up ambient-library in this project"
 
-The invisible orchestration layer. It:
-- Resolves skill paths automatically
-- Merges project rules from `CLAUDE.md` / `AGENTS.md`
-- Caches skills for your session
-- Makes everything feel transparent
+Adds the skills submodule and walks you through manifest configuration.
 
-**You don't invoke this directly.** It runs automatically.
+### Configure skills
+> "Configure my skills"
+> "Which skills do I need for this project?"
+> "Update my skill manifest"
 
-### Skill System Manager
+Walks through a short conversation about your project and writes a minimal `skills-manifest.yaml`.
 
-Manages the skill system. Use when you need to:
+### Code review
+> "Review this code"
+> "Code review for src/auth.ts"
+> "Check this for security issues"
+> "Review the changes in this file"
 
-**Update to the latest skills:**
-```
-"Update my skills to the latest version"
-"Refresh the skill system"
-```
+Returns: summary, findings by severity (critical/major/minor) with file:line references, and suggested fixes. Applies project standards from `CLAUDE.md` automatically if present.
 
-**Add a new skill to the project:**
-```
-"Add the deploy skill to this project"
-```
+### Update skills
+> "Update my skills to the latest version"
+> "Refresh my skills"
 
-**Refresh skill pointers:**
-```
-"Refresh the skill system"
-```
+Pulls latest from ambient-library and reloads the manifest for the current session.
 
-The manager will:
-1. Ask for quick confirmation
-2. Run the refresh silently
-3. Reply: "Skill system is now up to date and ready."
+### Manage skills
+> "Add code-review to this project"
+> "Remove code-review from this project"
+> "What skills are active?"
 
-### Code Review
+Adds or removes skills from the manifest and confirms the change.
 
-Performs thorough code reviews covering:
+## How Skills Activate
 
-- **Correctness** — logic errors, edge cases, off-by-one bugs
-- **Security** — injection risks, auth gaps, exposed secrets
-- **Performance** — unnecessary allocations, N+1 queries, blocking calls
-- **Readability** — naming, structure, comments
-- **Project standards** — adherence to patterns in `CLAUDE.md`
+At the start of every Claude Code session, `ambient` silently reads `skills-manifest.yaml` and loads the listed domain skills into context. You don't do anything — it just happens.
 
-**Use it:**
-```
-"Review this code"
-"Code review for src/auth.ts"
-"Check this for security issues"
+Domain skills add project-specific instructions. Core skills (install, select, manage, review) are always available regardless of the manifest.
+
+## The Manifest
+
+`skills-manifest.yaml` lives in your project root. It's the only file the system needs:
+
+```yaml
+domain_skills:
+  - code-review
+  # add more domain skills here
 ```
 
-The skill will return:
-- Summary (2–3 sentences)
-- Findings by severity (critical/major/minor) with file:line and fixes
-- Optional praise for well-written sections
+Edit it directly or say *"configure my skills"* to update it conversationally.
 
-## Adding Custom Skills
+## Project-Specific Rules
 
-Want a new skill? See [MANAGEMENT.md](MANAGEMENT.md).
+Add a `CLAUDE.md` to your project root to set standards that apply to all skill operations:
 
-## Workflow Examples
-
-### Example 1: Quick Code Review
-
-```
-You: "Review the changes in api/handlers.ts for security issues"
-Claude: [Review loads Code Review skill, scans your files, returns findings]
+```markdown
+# Project Standards
+- All code must have test coverage for new endpoints
+- Flag any use of deprecated crypto methods
+- We use the Repository pattern throughout
 ```
 
-### Example 2: Update Skills
-
-```
-You: "Update my skills to the latest version"
-Claude: [System Manager confirms, refreshes, syncs]
-You: [New skills are now available]
-```
-
-### Example 3: Custom Workflow with Merged Rules
-
-When you add a skill, Skill Loader automatically merges any rules from your project's `CLAUDE.md`:
-
-```
-# In your project's CLAUDE.md:
-## Code Review Standards
-- Always check for SQL injection
-- Flag any use of weak crypto
-- Require test coverage for new endpoints
-```
-
-When Code Review runs, it includes these standards automatically.
-
-## Skill Discovery
-
-To see available skills, check:
-
-```bash
-ls -la .agents/skills/
-```
-
-Each folder is an active skill. Look at the `SKILL.md` file to understand what each one does:
-
-```bash
-cat .agents/skills/code-review/SKILL.md
-```
+The `ambient` skill merges these rules automatically before executing any subskill.
 
 ## Questions?
 
-- **How do I add a skill?** → [MANAGEMENT.md](MANAGEMENT.md)
-- **Something's broken?** → [INSTALLATION.md#Troubleshooting](INSTALLATION.md#troubleshooting)
-- **How does this work under the hood?** → [ambient-library/README.md](../README.md)
+- **Setup issues** → [INSTALLATION.md](INSTALLATION.md)
+- **Adding custom skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **Available skills** → [../SKILLS.md](../SKILLS.md)

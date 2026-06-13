@@ -1,66 +1,34 @@
 # Skills Catalog
 
-All skills available in Ambient Library. Add any of these to your project's `skills-manifest.yaml`.
+## Core Skills (always available globally)
 
-## Setup Skills
+These are built into the `ambient` skill and available in every session. You don't add them to your manifest.
 
-### ambient-install
-**Installs ambient-library into a project from within Claude Code.**
+| Subskill | What it does | How to invoke |
+|----------|-------------|---------------|
+| **load** | Reads `skills-manifest.yaml` at session start, activates domain skills | Automatic — runs silently every session |
+| **install** | Sets up ambient-library in a project | *"Set up ambient-library in this project"* |
+| **select** | Configures `skills-manifest.yaml` via conversation | *"Configure my skills"* |
+| **manage** | Updates, refreshes, adds/removes skills | *"Update my skills"*, *"Add X to this project"* |
+| **review** | Code review for correctness, security, performance | *"Review this code"* |
 
-The entry point for the entire system. Invoke from a Claude session:
-- *"Set up ambient-library in this project"*
-- *"Install the skill system"*
-- *"Add ambient-library to this project"*
+## Domain Skills (project-level, opt-in)
 
-Runs bootstrap, then hands off to skill-picker to configure the manifest. No terminal required.
+Add these to `skills-manifest.yaml` to activate them for a specific project. Domain skills load additional instructions into context for that project's sessions.
 
-### skill-picker
-**Builds `skills-manifest.yaml` through a natural language conversation.**
-
-Asks what your project does, recommends a minimal skill set, writes the manifest, and runs setup. Keeps context lean by loading only the skills you actually need. Invoked automatically after ambient-install, or anytime:
-- *"Configure my skills"*
-- *"Update my skill manifest"*
-- *"Which skills do I need for this project?"*
-
-## Built-In Skills
-
-### skill-loader
-**Always active. Do not remove from your manifest.**
-
-The invisible orchestration layer. Handles skill resolution, caching, and merging project rules from `CLAUDE.md` / `AGENTS.md`. You never invoke this directly — it runs automatically at the start of every session.
-
-### skill-system-manager
-**Manages updates and maintenance.**
-
-Handles skill refreshes, updates, and changes to the skill system. Invoke it naturally:
-- *"Update my skills to the latest version"*
-- *"Refresh the skill system"*
-- *"Add the X skill to this project"*
-
-### code-review
-**Thorough, constructive code reviews.**
-
-Reviews code for correctness, security, performance, readability, and project standards. Invoke it naturally:
-- *"Review this code"*
-- *"Code review for src/auth.ts"*
-- *"Check this for security issues"*
-
-Output: summary, findings by severity (critical/major/minor) with file:line references, suggested fixes.
+*No additional domain skills yet. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md) to add one.*
 
 ---
 
-## Adding Skills
+## Adding a Domain Skill
 
-To contribute a new skill to this library, see [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
+Domain skills are project-specific tools that extend the core system — documentation generators, deployment workflows, custom review standards, etc.
 
-To activate a skill in your project, add its folder name to `skills-manifest.yaml`:
+To add one: see [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
+
+To activate one in your project, add it to `skills-manifest.yaml`:
 
 ```yaml
-skills:
-  - skill-loader
-  - skill-system-manager
-  - code-review
-  - your-skill-name   # ← add here
+domain_skills:
+  - your-skill-name
 ```
-
-Then run `./setup-skills.sh`.
