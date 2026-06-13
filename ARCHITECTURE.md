@@ -58,8 +58,7 @@ user request
 `${CLAUDE_SKILL_DIR}` is the absolute path to the skill's own directory inside
 the installed plugin. The router uses it to read subskills and domain skills
 regardless of the working directory. Because the whole plugin is installed
-intact, every sibling file a skill needs (`references/`, `scripts/`) is present —
-the old "copy only SKILL.md" pointer problem cannot happen here.
+intact, every sibling file a skill needs (`references/`, `scripts/`) is always present.
 
 ## Design Decisions
 
