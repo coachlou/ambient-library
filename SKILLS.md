@@ -20,6 +20,8 @@ They are plain files — **not** registered skills — so they add nothing to co
 until the router reads one. Optionally scope which a project uses via
 `skills-manifest.yaml`.
 
+| Skill | What it does | How to invoke |
+|-------|-------------|---------------|
 | **project-brief** | Creates a one-page project overview anyone can read and share | *"Write a project brief"*, *"Summarize this project"* |
 
 ---
