@@ -67,7 +67,7 @@ The domain skills to scope to this project:
 
 ```yaml
 domain_skills:
-  - code-review
+  - project-brief
 ```
 
 Core capabilities aren't listed — they're always available.

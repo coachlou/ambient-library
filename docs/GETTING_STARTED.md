@@ -28,7 +28,7 @@ Just talk:
 
 - *"Review this code"*
 - *"Configure my skills"*
-- *"Add code-review to this project"*
+- *"Add project-brief to this project"*
 - *"Update my skills"* → runs `/plugin update ambient`
 
 ## Updating
