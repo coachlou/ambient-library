@@ -84,6 +84,20 @@ cost.
 It's optional now. It scopes which domain skills the router considers for a
 project — useful for focus and for applying project-specific skills consistently.
 
+## Running a domain skill in its own context
+
+Domain skills run in-context by default. When a user wants one isolated — "in the
+background", "separately" — the router spawns a **general-purpose subagent** via
+the Agent tool and hands it the resolved absolute path to the skill's
+`instructions.md`. The subagent reads and follows that same file, so there is one
+definition and two execution contexts.
+
+This is how the `writing-team` pipeline offers an isolated run **without shipping
+a registered agent**. A plugin agent would add a second standing description to
+every session; routing to a general-purpose subagent on demand costs nothing
+until used. The one-description invariant above still holds — `ambient` remains
+the only description in context.
+
 ## Extending
 
 **Add a domain skill:** create `skills/ambient/library/<name>/instructions.md`
