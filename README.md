@@ -1,79 +1,63 @@
 # ambient-library
 
-A global skill system for Claude Code. One install on your machine — skills available everywhere, in every project.
+A Claude Code plugin. Project setup, skill selection, management, and code review
+— all through natural language. Install once; available in every project.
 
 **New here?** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
-## How It Works
+## Install
 
-One canonical clone of the library lives on your machine at `$AMBIENT_HOME`
-(default `~/ambient-library`). A thin pointer in `~/.claude/skills/` tells Claude
-where to find it. Nothing is copied per project — every skill, with all its
-sibling files, stays in the one clone. Projects need a single file:
-`skills-manifest.yaml`.
+From within Claude Code:
 
 ```
-$AMBIENT_HOME/                 ← one clone, the source of truth
-└── ambient/
-    ├── SKILL.md               # canonical frontmatter
-    ├── instructions.md        # router
-    └── subskills/             # load, install, select, manage, review
-
-~/.claude/skills/ambient/SKILL.md   ← thin pointer into the clone
-~/.zshrc                            ← exports AMBIENT_HOME
-~/.claude/CLAUDE.md                 ← records AMBIENT_HOME
-
-your-project/
-└── skills-manifest.yaml       ← the only project file needed
+/plugin marketplace add coachlou/ambient-library
+/plugin install ambient@ambient-library
 ```
 
-## Setup
+That's the whole install. Updates are `/plugin update ambient`.
 
-**One-time machine setup:**
+## Use
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
-```
-
-**Every new project — from Claude Code:**
-
-> "Set up ambient-library in this project"
-
-That's it.
-
-## What You Can Say
+Just talk:
 
 | Say this | What happens |
 |----------|-------------|
-| "Set up ambient-library in this project" | Ensures the library is current, writes & configures the manifest |
-| "Configure my skills" | Walks through manifest setup via conversation |
-| "Review this code" | Runs code review with project standards |
-| "Update my skills" | Pulls latest from ambient-library |
-| "Refresh my skills" | Reloads manifest for this session |
+| "Set up ambient-library in this project" | Scopes the project's skills |
+| "Configure my skills" | Picks the right skills via a quick chat |
+| "Review this code" | Code review with project standards |
+| "Add a skill to this project" | Updates the project's skill list |
+| "Update my skills" | Reminds you to run `/plugin update ambient` |
 
-## Repository Structure
+## How It Works
+
+One registered skill (`ambient`) — so only one skill description sits in context.
+Everything else (the router's subskills, and every domain skill) is a plain file
+inside the plugin, read on demand via `${CLAUDE_SKILL_DIR}`. Nothing else loads
+into context until it's actually needed.
 
 ```
-ambient-library/
-├── ambient/              # The global skill: router + subskills
-├── templates/            # Minimal project template (skills-manifest.yaml)
-├── docs/                 # Documentation
-├── install-global.sh     # Machine setup: clone, pointer, AMBIENT_HOME
-├── SKILLS.md             # Skills catalog (core + domain)
-├── ARCHITECTURE.md       # How the system works
-└── README.md
+ambient-library/                  (the plugin)
+├── .claude-plugin/
+│   ├── plugin.json               # plugin manifest
+│   └── marketplace.json          # so it installs as a marketplace
+└── skills/
+    └── ambient/
+        ├── SKILL.md              # the ONE registered skill (1 description)
+        ├── instructions.md       # router (loads when ambient triggers)
+        ├── subskills/            # install, select, manage, load, review
+        └── library/              # domain skills — plain data, read on demand
+            └── <skill>/instructions.md
 ```
 
-Domain skills, when added, live as top-level folders here (each with its own
-`instructions.md` and any sibling files) and resolve from `$AMBIENT_HOME` in
-every project.
+A project's only artifact is an optional `skills-manifest.yaml` scoping which
+domain skills it uses.
 
 ## Documentation
 
-- **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** — Start here
-- **[INSTALLATION.md](docs/INSTALLATION.md)** — Detailed setup
-- **[USAGE.md](docs/USAGE.md)** — Using skills day-to-day
-- **[MANAGEMENT.md](docs/MANAGEMENT.md)** — Adding and managing domain skills
+- **[GETTING_STARTED.md](docs/GETTING_STARTED.md)** — Install and first use
+- **[INSTALLATION.md](docs/INSTALLATION.md)** — Install details + troubleshooting
+- **[USAGE.md](docs/USAGE.md)** — Day-to-day commands
+- **[MANAGEMENT.md](docs/MANAGEMENT.md)** — Authoring domain skills
 - **[FAQ.md](docs/FAQ.md)** — Common questions
-- **[SKILLS.md](SKILLS.md)** — Available domain skills
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — System design
+- **[SKILLS.md](SKILLS.md)** — Skills catalog
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — How it works

@@ -1,22 +1,26 @@
 # Skills Catalog
 
-## Core Skills (always available globally)
+## Core Capabilities (built into the `ambient` skill)
 
-These are built into the `ambient` skill and available in every session. You don't add them to your manifest.
+The `ambient` skill routes to these subskills. They're plain files read on
+demand — always available, no manifest entry needed.
 
 | Subskill | What it does | How to invoke |
 |----------|-------------|---------------|
-| **load** | Reads `skills-manifest.yaml` at session start, activates domain skills | Automatic — runs silently every session |
 | **install** | Sets up ambient-library in a project | *"Set up ambient-library in this project"* |
-| **select** | Configures `skills-manifest.yaml` via conversation | *"Configure my skills"* |
-| **manage** | Updates, refreshes, adds/removes skills | *"Update my skills"*, *"Add X to this project"* |
+| **select** | Scopes the project's domain skills via conversation | *"Configure my skills"* |
+| **manage** | Adds/removes skills, points to `/plugin update` | *"Update my skills"*, *"Add X to this project"* |
 | **review** | Code review for correctness, security, performance | *"Review this code"* |
+| **load** | Reads a domain skill on demand when a request matches | Automatic — invoked by the router |
 
-## Domain Skills (project-level, opt-in)
+## Domain Skills (in `library/`, read on demand)
 
-Add these to `skills-manifest.yaml` to activate them for a specific project. Domain skills load additional instructions into context for that project's sessions.
+Domain skills live in the plugin at `skills/ambient/library/<name>/instructions.md`.
+They are plain files — **not** registered skills — so they add nothing to context
+until the router reads one. Optionally scope which a project uses via
+`skills-manifest.yaml`.
 
-*No additional domain skills yet. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md) to add one.*
+*No domain skills yet. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md) to add one.*
 
 ---
 

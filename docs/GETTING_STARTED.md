@@ -1,47 +1,47 @@
 # Getting Started
 
-## First time on a new machine
+## Install (once)
 
-Run this once in your terminal:
+From within Claude Code, run:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
+/plugin marketplace add coachlou/ambient-library
+/plugin install ambient@ambient-library
 ```
 
-This clones the library to `~/ambient-library`, installs the `ambient` skill,
-and records the library path so both your shell and Claude can find it. After
-this, open Claude Code in any project and the skill is available.
+The first command registers the marketplace; the second installs the `ambient`
+plugin. After this, the skill is available in every project on this machine.
 
-## Every new project — from Claude Code
+## First use
 
-Say:
+Open Claude Code in any project and say:
 
 > "Set up ambient-library in this project"
 
-Claude will:
-1. Make sure the library is current on your machine
-2. Ask what your project does
-3. Write a minimal `skills-manifest.yaml` with only the skills you need
-
-## That's it
-
-The only file added to your project is `skills-manifest.yaml`. Every session,
-the `ambient` skill reads it and activates the right skills from the library —
-which lives in one place on your machine, not copied into each project.
+Claude asks what your project does and writes an optional `skills-manifest.yaml`
+scoping which domain skills the project uses. (Core capabilities work with or
+without it.)
 
 ## Day-to-day
 
-Just work. Natural language:
+Just talk:
 
 - *"Review this code"*
-- *"Update my skills"*
 - *"Configure my skills"*
 - *"Add code-review to this project"*
+- *"Update my skills"* → runs `/plugin update ambient`
+
+## Updating
+
+```
+/plugin update ambient
+```
+
+Pulls the latest skills and library.
 
 ## Next Steps
 
-- **Full install details** → [INSTALLATION.md](INSTALLATION.md)
+- **Install details** → [INSTALLATION.md](INSTALLATION.md)
 - **Using skills** → [USAGE.md](USAGE.md)
-- **Adding custom skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **Authoring skills** → [MANAGEMENT.md](MANAGEMENT.md)
 - **How it works** → [../ARCHITECTURE.md](../ARCHITECTURE.md)
-- **Available skills** → [../SKILLS.md](../SKILLS.md)

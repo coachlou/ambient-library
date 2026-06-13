@@ -4,32 +4,32 @@
 
 ### How long does this take to set up?
 
-Two minutes.
+About a minute, all from within Claude Code:
 
-1. Run one terminal command to install globally (~30 seconds)
-2. Say "Set up ambient-library in this project" in Claude Code (~1 minute)
-3. Answer one question about your project
+```
+/plugin marketplace add coachlou/ambient-library
+/plugin install ambient@ambient-library
+```
 
-Done.
+Then say *"set up ambient-library in this project"* in any project.
 
-### Do I need to install anything on each project?
+### Do I need to install anything per project?
 
-No. The `ambient` skill is global — installed once on your machine, available everywhere. The only per-project file is `skills-manifest.yaml`, which Claude creates for you.
+No. The plugin installs once and is available everywhere. A project's only
+(optional) file is `skills-manifest.yaml`, which scopes its domain skills.
 
 ### Do I need a GitHub account or SSH keys?
 
-No. The install command uses HTTPS. No account or SSH setup required.
+No. Claude Code fetches the plugin for you over HTTPS.
 
-### Can I use this without the terminal at all?
+### Can I do this without the terminal?
 
-Almost. The one-time machine setup requires a terminal command. After that, everything is done from Claude Code via natural language.
+Yes — entirely. `/plugin marketplace add` and `/plugin install` run inside
+Claude Code.
 
-### What if I'm on a new machine?
+### What about a new machine?
 
-Run the install command again:
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
-```
+Run the same two `/plugin` commands. Plugins are per-machine.
 
 ---
 
@@ -37,23 +37,25 @@ curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/insta
 
 ### How do I know what skills are available?
 
-Check [../SKILLS.md](../SKILLS.md) for the full catalog.
+Check [../SKILLS.md](../SKILLS.md), or ask *"what skills are available?"*
 
-Or ask: *"What skills are available?"*
+### Do I activate skills each session?
 
-### Do I have to activate skills manually each session?
-
-No. The `ambient` skill reads your `skills-manifest.yaml` automatically at the start of every session. Domain skills load silently.
+No. The `ambient` skill is always available. Domain skills load automatically
+when a request matches one — nothing to invoke manually.
 
 ### Can I use skills without a manifest?
 
-Yes. Core skills (install, select, manage, review) are always available even with no manifest. The manifest only controls which domain skills load.
+Yes. Core capabilities (install, select, manage, review) always work. A
+`skills-manifest.yaml` only scopes which domain skills the router considers.
 
 ### What's the difference between core skills and domain skills?
 
-**Core skills** are always available globally — install, select, manage, review. They work in any project, any session.
+**Core** — install, select, manage, review — are built into the `ambient` skill
+and always available.
 
-**Domain skills** are project-specific — they add extra context or instructions for a particular project's needs. They're listed in `skills-manifest.yaml` and loaded per project.
+**Domain skills** are project-specific capabilities in the plugin's `library/`.
+They're read on demand and optionally scoped per project via `skills-manifest.yaml`.
 
 ---
 
@@ -61,58 +63,51 @@ Yes. Core skills (install, select, manage, review) are always available even wit
 
 ### What goes in skills-manifest.yaml?
 
-Only domain skills specific to your project:
+The domain skills to scope to this project:
 
 ```yaml
 domain_skills:
   - code-review
-  - my-custom-skill
 ```
 
-Core skills don't go here — they're always available.
+Core capabilities aren't listed — they're always available.
 
-### Where does skills-manifest.yaml live?
+### Where does it live?
 
-In your project root. That's the only file ambient-library needs in your project.
+Project root. It's the only ambient-library file in your project, and it's
+optional.
 
 ### What if it doesn't exist?
 
-Claude Code still works normally. Core skills are available. Domain skills just won't load until you create the manifest (say *"Configure my skills"*).
+Everything still works. The router can use any domain skill in `library/`; the
+manifest just narrows the set.
 
 ---
 
 ## Troubleshooting
 
-### "Set up ambient-library" doesn't trigger anything
+### "Set up ambient-library" doesn't do anything
 
-The `ambient` skill isn't installed globally yet. Run:
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+The plugin may not be installed. Run:
 ```
-Then start a fresh Claude Code session.
+/plugin marketplace add coachlou/ambient-library
+/plugin install ambient@ambient-library
+```
+Then start a fresh session.
 
-### Skills aren't loading
+### The `/plugin` command doesn't exist
 
-1. Check that `ambient` is installed: `ls ~/.claude/skills/ambient/`
-2. Check that `skills-manifest.yaml` exists in your project root
-3. Start a fresh Claude Code session (skills load at session start)
+Update Claude Code to the latest version.
 
-### Skills missing after cloning a project on a new machine
+### How do I update?
 
-The project only carries `skills-manifest.yaml`. The skills themselves live in
-the canonical library, so make sure it's installed on the machine:
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
+/plugin update ambient
 ```
 
-### How do I update to the latest skills?
+### A skill edit isn't showing
 
-From Claude Code: *"Update my skills to the latest"*
-
-Or re-run the global install to update core subskills:
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
-```
+`/plugin update ambient`, then `/reload-plugins` or a fresh session.
 
 ---
 
@@ -120,26 +115,23 @@ curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/insta
 
 ### Can I add project-specific rules?
 
-Yes. Add a `CLAUDE.md` to your project root. The `ambient` skill merges its contents automatically before executing any operation.
+Yes. Add a `CLAUDE.md` to your project root. The router merges it before acting.
 
 ### Can I create private domain skills?
 
-Yes. Create an `instructions.md` anywhere in your project and manually add the skill's path to your `CLAUDE.md`. It won't be in the ambient-library catalog but will work locally.
+Yes. Put an `instructions.md` in your project and reference it from `CLAUDE.md`.
+It won't be in the plugin catalog but works locally. Better: contribute it to the
+plugin's `library/` so the whole team gets it.
 
-Better: contribute it to ambient-library so the whole team benefits.
+### Can projects use different skill versions?
 
-### Can multiple projects use different skill versions?
-
-No — by design. All projects on a machine share the one canonical clone at
-`$AMBIENT_HOME`, so they always run the same version. Updating (`git pull`)
-updates everything at once. This is the trade for zero per-project setup. If you
-genuinely need divergent versions, install a second clone at a different
-`AMBIENT_HOME` and point specific projects at it via their `CLAUDE.md`.
+Plugins are versioned per machine, so all projects on a machine share the
+installed plugin version. Update everything at once with `/plugin update ambient`.
 
 ---
 
-## Questions not answered here?
+## More
 
 - **Setup** → [INSTALLATION.md](INSTALLATION.md)
-- **Adding skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **Authoring skills** → [MANAGEMENT.md](MANAGEMENT.md)
 - **How it works** → [../ARCHITECTURE.md](../ARCHITECTURE.md)

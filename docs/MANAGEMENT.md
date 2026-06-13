@@ -2,97 +2,73 @@
 
 ## Adding a Domain Skill
 
-Domain skills extend the system for specific project needs — documentation generators, deployment workflows, custom linting rules, API-specific helpers, etc.
+Domain skills are project-specific capabilities the router reads on demand. They
+live in the plugin under `skills/ambient/library/` and cost nothing in context
+until used.
 
-### 1. Create the skill folder in the canonical library
+### 1. Create the skill folder
+
+In your clone of this repo:
 
 ```bash
-cd "$AMBIENT_HOME"
-mkdir my-skill
+mkdir -p skills/ambient/library/my-skill
 ```
-
-`my-skill/` can include any sibling files the skill needs — `references/`,
-`scripts/`, `templates/`. They all live in the one clone, so they're always
-present when the skill runs.
 
 ### 2. Write instructions.md
 
-This is the skill logic — what Claude does when this skill is active:
+`skills/ambient/library/my-skill/instructions.md` holds the skill logic:
 
 ```markdown
 # My Skill
 
-Brief description of what this skill does.
-
-## When to activate
-
-Describe what user requests this skill should respond to.
+What this skill does, and when it applies.
 
 ## Instructions
 
 Step-by-step instructions for Claude...
 ```
 
-Keep it focused. One skill, one class of work.
+It may include sibling files (`references/`, `scripts/`) — they ship with the
+plugin and resolve relative to the skill folder. Keep it focused: one skill, one
+class of work.
 
-### 3. Commit to ambient-library
+### 3. List it in the catalog
+
+Add an entry to `SKILLS.md` under "Domain Skills" so users (and the `select`
+subskill) can discover it.
+
+### 4. Bump the plugin version and release
+
+Edit `.claude-plugin/plugin.json`, bump `version`, then commit and push:
 
 ```bash
-git add my-skill/
-git commit -m "Add my-skill: brief description"
+git add skills/ambient/library/my-skill SKILLS.md .claude-plugin/plugin.json
+git commit -m "Add my-skill domain skill"
 git push
 ```
 
-### 4. Activate in a project
+Users receive it on their next `/plugin update ambient`.
 
-Add the skill name to the project's `skills-manifest.yaml`:
+### 5. Activate in a project
 
-```yaml
-domain_skills:
-  - my-skill
-```
-
-Or from Claude Code: *"Add my-skill to this project"*
-
-### 5. Pull the change to your machine
-
-```bash
-git -C "$AMBIENT_HOME" pull
-```
-
-Or from Claude Code: *"Update my skills"*. This updates the one canonical clone,
-so every project on the machine sees the new skill immediately.
+Add it to the project's `skills-manifest.yaml`, or from Claude Code:
+*"Add my-skill to this project"*.
 
 ---
 
 ## Updating a Domain Skill
 
-Edit `instructions.md`, commit, push to ambient-library:
-
-```bash
-cd "$AMBIENT_HOME"
-# edit my-skill/instructions.md
-git add my-skill/instructions.md
-git commit -m "Update my-skill: describe change"
-git push
-```
-
-Projects pick up the change with: *"Update my skills"*
+Edit `skills/ambient/library/my-skill/instructions.md`, bump the plugin version,
+commit, push. Users pull it with `/plugin update ambient`.
 
 ---
 
 ## Removing a Domain Skill
 
-### From a project
-
-Remove it from `skills-manifest.yaml`. Start a fresh session for the change to take effect.
-
-### From ambient-library
-
 ```bash
-cd "$AMBIENT_HOME"
-git rm -r my-skill/
-git commit -m "Remove my-skill: reason"
+git rm -r skills/ambient/library/my-skill
+# remove its SKILLS.md entry, bump plugin.json version
+git commit -m "Remove my-skill"
 git push
 ```
 
@@ -100,23 +76,39 @@ git push
 
 ## Updating Core Subskills
 
-Core subskills (`load`, `install`, `select`, `manage`, `review`) live in `ambient/subskills/`. To update one:
+The router and its subskills live in `skills/ambient/` and
+`skills/ambient/subskills/`. Edit, bump the plugin version, commit, push. Users
+get changes via `/plugin update ambient` (then `/reload-plugins` or a fresh
+session).
 
-1. Edit the file in ambient-library
-2. Commit and push
-3. Each user re-runs the global install to update their machine:
-   ```bash
-   curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
-   ```
+---
+
+## Local Development
+
+Test changes without publishing using `--plugin-dir`:
+
+```bash
+claude --plugin-dir /path/to/ambient-library
+```
+
+Run `/reload-plugins` to pick up edits without restarting. Validate before
+publishing:
+
+```bash
+claude plugin validate /path/to/ambient-library
+```
 
 ---
 
 ## Best Practices
 
-**One skill, one class of work.** If a skill is growing too broad, split it.
+**One skill, one class of work.** Split anything that grows too broad.
 
-**Instructions over cleverness.** Write clear, direct instructions. Claude follows explicit steps better than implied ones.
+**Describe when it applies.** Start `instructions.md` with the trigger conditions
+and purpose so the router knows when to read it.
 
-**Document the trigger.** Start `instructions.md` with a clear description of when the skill should activate and what user requests it handles.
+**Test before releasing.** Use `--plugin-dir` to exercise the skill in a real
+session before bumping the version.
 
-**Test before committing.** Activate the skill in a real project session and verify it behaves as expected before pushing to ambient-library.
+**Bump the version.** Users only get updates when `plugin.json`'s `version`
+changes (or, if unset, on every commit when installed from git).

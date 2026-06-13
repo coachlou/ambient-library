@@ -7,14 +7,13 @@ Once installed, just use natural language. The `ambient` skill is always active 
 ### Set up a new project
 > "Set up ambient-library in this project"
 
-Ensures the library is current on your machine and walks you through manifest configuration.
+Scopes the project's domain skills and writes an optional `skills-manifest.yaml`.
 
 ### Configure skills
 > "Configure my skills"
 > "Which skills do I need for this project?"
-> "Update my skill manifest"
 
-Walks through a short conversation about your project and writes a minimal `skills-manifest.yaml`.
+Walks through a short conversation about your project and writes `skills-manifest.yaml`.
 
 ### Code review
 > "Review this code"
@@ -25,27 +24,28 @@ Walks through a short conversation about your project and writes a minimal `skil
 Returns: summary, findings by severity (critical/major/minor) with file:line references, and suggested fixes. Applies project standards from `CLAUDE.md` automatically if present.
 
 ### Update skills
-> "Update my skills to the latest version"
-> "Refresh my skills"
+> "Update my skills"
 
-Pulls latest from ambient-library and reloads the manifest for the current session.
+Points you to `/plugin update ambient`, which pulls the latest plugin version.
 
 ### Manage skills
 > "Add code-review to this project"
 > "Remove code-review from this project"
-> "What skills are active?"
+> "What skills are available?"
 
-Adds or removes skills from the manifest and confirms the change.
+Adds or removes domain skills from the project's manifest and confirms.
 
 ## How Skills Activate
 
-At the start of every Claude Code session, `ambient` silently reads `skills-manifest.yaml` and loads the listed domain skills into context. You don't do anything — it just happens.
-
-Domain skills add project-specific instructions. Core skills (install, select, manage, review) are always available regardless of the manifest.
+The `ambient` skill is always available (one description in context). When a
+request matches a domain skill, the router reads that skill's instructions on
+demand — nothing else loads until it's needed. Core capabilities (install,
+select, manage, review) are always available regardless of the manifest.
 
 ## The Manifest
 
-`skills-manifest.yaml` lives in your project root. It's the only file the system needs:
+`skills-manifest.yaml` lives in your project root. It's optional and scopes which
+domain skills the router considers:
 
 ```yaml
 domain_skills:
@@ -66,7 +66,7 @@ Add a `CLAUDE.md` to your project root to set standards that apply to all skill 
 - We use the Repository pattern throughout
 ```
 
-The `ambient` skill merges these rules automatically before executing any subskill.
+The `ambient` skill merges these rules automatically before executing.
 
 ## Questions?
 
