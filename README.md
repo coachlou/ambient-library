@@ -1,11 +1,11 @@
-# ai-skills
+# ambient-library
 
 Central reusable skill library for Claude Code projects.
 
 ## Structure
 
 ```
-ai-skills/
+ambient-library/
 ├── skill-loader/        # Always-active orchestration layer
 ├── skill-system-manager/ # Handles updates and maintenance
 ├── code-review/         # Example skill — duplicate for new skills
@@ -15,7 +15,7 @@ ai-skills/
 ## Adding to a project
 
 ```bash
-git submodule add https://github.com/YOURUSERNAME/ai-skills.git skills
+git submodule add https://github.com/YOURUSERNAME/ambient-library.git skills
 ./setup-skills.sh
 ```
 
