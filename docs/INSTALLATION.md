@@ -16,8 +16,8 @@ dotfile edits.
 
 ## Verify
 
-Run `/help` and look for the `ambient` skill, or just say *"set up
-ambient-library in this project"* and confirm it responds.
+Say *"set up ambient-library in this project"* — if Claude walks you through
+project setup, it's working.
 
 ## Project setup (optional)
 
@@ -26,7 +26,7 @@ optional `skills-manifest.yaml` that scopes which domain skills the project uses
 
 ```yaml
 domain_skills:
-  - code-review
+  - project-brief
 ```
 
 Core capabilities (install, select, manage, review) work with or without this

@@ -29,8 +29,8 @@ Returns: summary, findings by severity (critical/major/minor) with file:line ref
 Points you to `/plugin update ambient`, which pulls the latest plugin version.
 
 ### Manage skills
-> "Add code-review to this project"
-> "Remove code-review from this project"
+> "Add project-brief to this project"
+> "Remove project-brief from this project"
 > "What skills are available?"
 
 Adds or removes domain skills from the project's manifest and confirms.
@@ -49,7 +49,7 @@ domain skills the router considers:
 
 ```yaml
 domain_skills:
-  - code-review
+  - project-brief
   # add more domain skills here
 ```
 
