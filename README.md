@@ -11,6 +11,11 @@ ambient-library/
 ├── skill-loader/        # Always-active orchestration layer
 ├── skill-system-manager/ # Manages updates and refreshes
 ├── code-review/         # Example skill (customize or duplicate)
+├── templates/           # Copy these into new projects
+│   ├── setup-skills.sh      # Installs skill pointers from the manifest
+│   ├── skills-manifest.yaml # Controls which skills are active
+│   ├── CLAUDE.md            # Project context for Claude
+│   └── .gitignore           # Excludes generated .agents/skills/
 ├── docs/                # User documentation
 │   ├── GETTING_STARTED.md   # First-time setup
 │   ├── INSTALLATION.md      # Detailed installation & troubleshooting
@@ -27,7 +32,11 @@ ambient-library/
 ```bash
 cd your-project-root
 git submodule add git@github-coachlou:coachlou/ambient-library.git skills
-cp /path/to/skills-manifest.yaml .
+cp skills/templates/setup-skills.sh .
+cp skills/templates/skills-manifest.yaml .
+cp skills/templates/CLAUDE.md .
+cp skills/templates/.gitignore .
+chmod +x setup-skills.sh
 ./setup-skills.sh
 ```
 

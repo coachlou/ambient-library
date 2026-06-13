@@ -9,7 +9,11 @@ You have a project? Here's how to add ambient-library to it:
 ```bash
 cd your-project-root
 git submodule add git@github-coachlou:coachlou/ambient-library.git skills
-cp /path/to/skills-manifest.yaml .  # (provided separately or use example below)
+cp skills/templates/setup-skills.sh .
+cp skills/templates/skills-manifest.yaml .
+cp skills/templates/CLAUDE.md .
+cp skills/templates/.gitignore .
+chmod +x setup-skills.sh
 ./setup-skills.sh
 ```
 

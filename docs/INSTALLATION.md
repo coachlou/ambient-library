@@ -18,34 +18,24 @@ git submodule add git@github-coachlou:coachlou/ambient-library.git skills
 
 This clones the skill library into a `skills/` folder. Git tracks it as a submodule, so it's always available but takes minimal space.
 
-### 2. Create the Manifest
+### 2. Copy the Project Templates
 
-Create `skills-manifest.yaml` in your project root:
-
-```yaml
-skills:
-  - skill-loader
-  - skill-system-manager
-  - code-review
-  # Add more skills as needed
-```
-
-This tells the system which skills to activate for your project. You can add/remove skills anytime by editing this file.
-
-### 3. Copy the Setup Script
-
-Copy `setup-skills.sh` from ambient-library:
+Ambient Library ships ready-to-use template files in `skills/templates/`. Copy them to your project root:
 
 ```bash
-cp skills/setup-skills.sh .
+cp skills/templates/setup-skills.sh .
+cp skills/templates/skills-manifest.yaml .
+cp skills/templates/CLAUDE.md .
+cp skills/templates/.gitignore .
 chmod +x setup-skills.sh
 ```
 
-Or if you already have it in your repo, ensure it's executable:
+- **`setup-skills.sh`** — installs skill pointers from the manifest
+- **`skills-manifest.yaml`** — controls which skills are active for this project
+- **`CLAUDE.md`** — tells Claude about the skill system (edit to add project-specific rules)
+- **`.gitignore`** — excludes the generated `.agents/skills/` folder from git
 
-```bash
-chmod +x setup-skills.sh
-```
+Edit `skills-manifest.yaml` to add or remove skills for your project. You can add/remove skills anytime.
 
 ### 4. Run Setup
 
