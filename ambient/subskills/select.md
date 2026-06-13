@@ -1,49 +1,50 @@
 # select
 
-Configures `skills-manifest.yaml` through a short natural language conversation. Goal: activate only the domain skills this project actually needs.
+Configures `skills-manifest.yaml` through a short conversation. Goal: activate
+only the domain skills this project actually needs.
 
 ## Why this matters
 
-Domain skills add instructions to context. Unnecessary ones waste tokens. The manifest should be minimal and intentional. Core skills (install, select, manage, load, review) are always available globally — they don't need to be in the manifest.
+Domain skills add instructions to context. Unnecessary ones waste tokens. Core
+skills (install, select, manage, load, review) are always available globally —
+they never go in the manifest.
 
 ## Steps
 
 ### 1. Discover available domain skills
 
-Read `skills/SKILLS.md` if the submodule is present. If not, work from general knowledge of available skills.
+Read `$AMBIENT_HOME/SKILLS.md` for the catalog. (Resolve `AMBIENT_HOME` per
+load.md.) The domain skills are the ones listed under "Domain Skills."
 
 ### 2. Understand the project
 
-If the project already has files, run a quick `ls` to get context. Then ask the user one question:
+If the project has files, run a quick `ls` for context. Then ask one question:
 
-> "What does this project do, and what kinds of tasks will you mostly ask me to help with?"
+> "What does this project do, and what kinds of tasks will you mostly ask me to
+> help with?"
 
 ### 3. Recommend a minimal manifest
 
-Based on their answer, propose only the domain skills that are clearly relevant. Show each one with a one-line reason:
+Propose only the domain skills clearly relevant to their answer, each with a
+one-line reason:
 
 ```yaml
 domain_skills:
-  - code-review   # you mentioned code quality as a priority
+  - code-review   # you mentioned code quality is a priority
 ```
 
 Ask: "Does this look right, or anything to add or remove?"
 
 ### 4. Write the manifest
 
-Once confirmed, write `skills-manifest.yaml`:
+On confirmation, write `skills-manifest.yaml` to the project root. Then activate
+immediately by executing load.md for the current session.
 
-```yaml
-domain_skills:
-  - skill-name
-  # ...
-```
-
-Confirm: "Your skill manifest is set. These skills will load automatically in every session for this project."
+Confirm: "Your skills are set and active. They'll load automatically every
+session in this project."
 
 ## Rules
 
 - Default to the smallest useful set. When in doubt, leave it out.
-- Never add a skill just because it exists.
-- If the user asks for a skill not in the library, tell them and offer to create it (see MANAGEMENT.md).
-- If the manifest already exists, show current contents and ask what they'd like to change.
+- If the user wants a skill not in the catalog, offer to create it (MANAGEMENT.md).
+- If a manifest already exists, show it and ask what to change.

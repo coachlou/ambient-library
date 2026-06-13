@@ -1,47 +1,55 @@
 # manage
 
-Handles updates, refreshes, and maintenance of the ambient-library skill system.
+Updates, refreshes, and maintains the ambient-library system.
+
+## Resolving AMBIENT_HOME
+
+Resolve `AMBIENT_HOME` per load.md (env var → CLAUDE.md → `~/ambient-library`).
 
 ## Operations
 
-### Update skills to latest
+### Update the library to latest
 
-Pull the latest skills from ambient-library:
+Pull the latest into the canonical clone — this updates every project on the
+machine at once, since they all resolve from it:
 
 ```bash
-git submodule update --remote skills
+git -C "$AMBIENT_HOME" pull --ff-only
 ```
 
-Confirm: "Skills updated to latest version."
+Then regenerate the global pointer in case the skill itself changed:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
+```
+
+Confirm: "Skills updated to the latest version."
 
 ### Refresh skills
 
-Re-read the manifest and reload domain skill instructions for the current session. No git commands needed — just re-execute load.md.
-
-Confirm: "Skills refreshed."
+Re-execute load.md to reload domain skills for the current session. No git
+needed. Confirm: "Skills refreshed."
 
 ### Add a skill to this project
 
-1. Check that the skill exists in `skills/`.
-2. Add it to `skills-manifest.yaml` under `domain_skills`.
-3. Re-execute load.md to activate it immediately.
+1. Verify the skill exists: `$AMBIENT_HOME/<skill-name>/instructions.md`.
+2. Add its name to `domain_skills` in `skills-manifest.yaml`.
+3. Re-execute load.md to activate it now.
 
-Confirm: "Added [skill-name]. It's now active for this project."
+Confirm: "Added [skill-name] — it's active for this project."
 
 ### Remove a skill from this project
 
-1. Remove it from `skills-manifest.yaml`.
-2. Tell the user to start a fresh session for the change to take effect (skills are cached per session).
+Remove it from `skills-manifest.yaml`. Tell the user to start a fresh session
+for the change to fully take effect (skills cache per session).
 
-### Check skill system status
+### Status
 
-Show:
-- Current manifest contents
-- Whether `skills/` submodule is present and up to date
-- Which domain skills are active this session
+Show: current manifest contents, `AMBIENT_HOME` path and whether the clone is
+up to date (`git -C "$AMBIENT_HOME" status -sb`), and which domain skills are
+active this session.
 
 ## Rules
 
-- Always confirm briefly before running git commands.
-- Never show raw git output.
-- After any operation, state the outcome in plain language.
+- Confirm briefly before running git commands.
+- Never show raw git output. Report outcomes in plain language.
