@@ -23,5 +23,5 @@ while IFS= read -r skill || [ -n "$skill" ]; do
   else
     echo "  ✗ Warning: Skill $skill not found"
   fi
-done < <(grep -E '^\s*-\s+' "$MANIFEST" | sed 's/^[[:space:]]*-[[:space:]]*//' || true)
+done < <(grep -E '^\s*-\s+' "$MANIFEST" | sed 's/^[[:space:]]*-[[:space:]]*//' | sed 's/[[:space:]]*#.*//' | sed '/^$/d' || true)
 echo "✅ Skill system is ready."
