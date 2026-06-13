@@ -97,10 +97,12 @@ Then start a fresh Claude Code session.
 2. Check that `skills-manifest.yaml` exists in your project root
 3. Start a fresh Claude Code session (skills load at session start)
 
-### Submodule errors after cloning a project
+### Skills missing after cloning a project on a new machine
 
+The project only carries `skills-manifest.yaml`. The skills themselves live in
+the canonical library, so make sure it's installed on the machine:
 ```bash
-git submodule update --init --recursive
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
 
 ### How do I update to the latest skills?
@@ -128,7 +130,11 @@ Better: contribute it to ambient-library so the whole team benefits.
 
 ### Can multiple projects use different skill versions?
 
-Yes. Each project's `skills/` submodule can be pinned to a specific commit. Update selectively with `git submodule update --remote skills` per project.
+No — by design. All projects on a machine share the one canonical clone at
+`$AMBIENT_HOME`, so they always run the same version. Updating (`git pull`)
+updates everything at once. This is the trade for zero per-project setup. If you
+genuinely need divergent versions, install a second clone at a different
+`AMBIENT_HOME` and point specific projects at it via their `CLAUDE.md`.
 
 ---
 

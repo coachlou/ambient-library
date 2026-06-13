@@ -4,12 +4,16 @@
 
 Domain skills extend the system for specific project needs — documentation generators, deployment workflows, custom linting rules, API-specific helpers, etc.
 
-### 1. Create the skill folder in ambient-library
+### 1. Create the skill folder in the canonical library
 
 ```bash
-cd /path/to/ambient-library
+cd "$AMBIENT_HOME"
 mkdir my-skill
 ```
+
+`my-skill/` can include any sibling files the skill needs — `references/`,
+`scripts/`, `templates/`. They all live in the one clone, so they're always
+present when the skill runs.
 
 ### 2. Write instructions.md
 
@@ -50,13 +54,14 @@ domain_skills:
 
 Or from Claude Code: *"Add my-skill to this project"*
 
-### 5. Update the skills submodule in the project
+### 5. Pull the change to your machine
 
 ```bash
-git submodule update --remote skills
+git -C "$AMBIENT_HOME" pull
 ```
 
-Or from Claude Code: *"Update my skills"*
+Or from Claude Code: *"Update my skills"*. This updates the one canonical clone,
+so every project on the machine sees the new skill immediately.
 
 ---
 
@@ -65,7 +70,7 @@ Or from Claude Code: *"Update my skills"*
 Edit `instructions.md`, commit, push to ambient-library:
 
 ```bash
-cd /path/to/ambient-library
+cd "$AMBIENT_HOME"
 # edit my-skill/instructions.md
 git add my-skill/instructions.md
 git commit -m "Update my-skill: describe change"
@@ -85,7 +90,7 @@ Remove it from `skills-manifest.yaml`. Start a fresh session for the change to t
 ### From ambient-library
 
 ```bash
-cd /path/to/ambient-library
+cd "$AMBIENT_HOME"
 git rm -r my-skill/
 git commit -m "Remove my-skill: reason"
 git push

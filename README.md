@@ -6,21 +6,25 @@ A global skill system for Claude Code. One install on your machine — skills av
 
 ## How It Works
 
-One global skill (`ambient`) routes all requests — project setup, skill configuration, code review, updates. Projects only need a single file: `skills-manifest.yaml`.
+One canonical clone of the library lives on your machine at `$AMBIENT_HOME`
+(default `~/ambient-library`). A thin pointer in `~/.claude/skills/` tells Claude
+where to find it. Nothing is copied per project — every skill, with all its
+sibling files, stays in the one clone. Projects need a single file:
+`skills-manifest.yaml`.
 
 ```
-~/.claude/skills/ambient/    ← installed once on your machine
-├── SKILL.md                 # always-active router
-├── instructions.md          # routing logic
-└── subskills/
-    ├── load.md              # reads manifest, activates domain skills
-    ├── install.md           # sets up ambient-library in a project
-    ├── select.md            # configures skills-manifest.yaml
-    ├── manage.md            # updates and maintenance
-    └── review.md            # code review
+$AMBIENT_HOME/                 ← one clone, the source of truth
+└── ambient/
+    ├── SKILL.md               # canonical frontmatter
+    ├── instructions.md        # router
+    └── subskills/             # load, install, select, manage, review
+
+~/.claude/skills/ambient/SKILL.md   ← thin pointer into the clone
+~/.zshrc                            ← exports AMBIENT_HOME
+~/.claude/CLAUDE.md                 ← records AMBIENT_HOME
 
 your-project/
-└── skills-manifest.yaml     ← the only project file needed
+└── skills-manifest.yaml       ← the only project file needed
 ```
 
 ## Setup
@@ -41,7 +45,7 @@ That's it.
 
 | Say this | What happens |
 |----------|-------------|
-| "Set up ambient-library in this project" | Installs submodule, configures manifest |
+| "Set up ambient-library in this project" | Ensures the library is current, writes & configures the manifest |
 | "Configure my skills" | Walks through manifest setup via conversation |
 | "Review this code" | Runs code review with project standards |
 | "Update my skills" | Pulls latest from ambient-library |
@@ -51,15 +55,18 @@ That's it.
 
 ```
 ambient-library/
-├── ambient/              # The global skill (installed via install-global.sh)
-├── templates/            # Minimal project templates
-│   └── skills-manifest.yaml
+├── ambient/              # The global skill: router + subskills
+├── templates/            # Minimal project template (skills-manifest.yaml)
 ├── docs/                 # Documentation
-├── install-global.sh     # One-time machine setup
-├── SKILLS.md             # Domain skills catalog
+├── install-global.sh     # Machine setup: clone, pointer, AMBIENT_HOME
+├── SKILLS.md             # Skills catalog (core + domain)
 ├── ARCHITECTURE.md       # How the system works
 └── README.md
 ```
+
+Domain skills, when added, live as top-level folders here (each with its own
+`instructions.md` and any sibling files) and resolve from `$AMBIENT_HOME` in
+every project.
 
 ## Documentation
 

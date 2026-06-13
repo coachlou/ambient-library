@@ -6,20 +6,21 @@
 curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
 
-Installs the `ambient` skill to `~/.claude/skills/ambient/`. After this, open Claude Code — the skill is available in every session on this machine.
+This:
+1. Clones the library once to `$AMBIENT_HOME` (default `~/ambient-library`)
+2. Writes a thin pointer at `~/.claude/skills/ambient/SKILL.md`
+3. Exports `AMBIENT_HOME` in `~/.zshrc`
+4. Records `AMBIENT_HOME` in `~/.claude/CLAUDE.md`
 
-**What gets installed:**
+After this, the `ambient` skill is available in every Claude Code session on the
+machine. Re-run anytime to update — every write is an idempotent managed block,
+so it never duplicates or clobbers your existing dotfile content.
+
+**Custom location:**
+```bash
+AMBIENT_HOME=/path/to/lib bash install-global.sh
 ```
-~/.claude/skills/ambient/
-├── SKILL.md
-├── instructions.md
-└── subskills/
-    ├── load.md
-    ├── install.md
-    ├── select.md
-    ├── manage.md
-    └── review.md
-```
+Use a path without spaces (keeps the YAML frontmatter simple).
 
 ## Project Setup (per project, from Claude Code)
 
@@ -27,83 +28,60 @@ Open Claude Code in your project folder and say:
 
 > "Set up ambient-library in this project"
 
-The `ambient/install` subskill runs. It:
+The `install` subskill runs. It:
 
-1. Re-runs the curl to ensure the global skill is current
-2. Runs `git init` if there's no git repo
-3. Adds the skills library as a submodule at `skills/` — **this folder name is fixed**, don't rename it
-4. Hands off to `ambient/select` to configure the manifest
+1. Re-runs the machine setup (keeps the library current; bootstraps a new machine)
+2. Writes a minimal `skills-manifest.yaml`
+3. Hands off to `select` to configure which skills the project needs
 
-Result: a single `skills-manifest.yaml` in your project root.
-
-## What the Project Needs
-
-Just one file:
+That's the whole project footprint:
 
 ```
 your-project/
-└── skills-manifest.yaml
+└── skills-manifest.yaml     ← the only file
 ```
 
-No scripts, no hooks, no generated folders. Everything else is handled by the global `ambient` skill.
+No submodule, no scripts, no hooks, no generated folders. Domain skills resolve
+from the canonical clone at `$AMBIENT_HOME`.
 
-## Updating the Global Skill
+## Updating
 
-The install subskill re-runs the curl automatically every time you say *"Set up ambient-library"* in any project. To update manually at any time:
+**Everything (library + all skills):**
+> "Update my skills"
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
-```
+This runs `git -C $AMBIENT_HOME pull`, updating every project on the machine at
+once. Or re-run the curl command above.
 
-## Updating Domain Skills (per project)
+## How AMBIENT_HOME is resolved
 
-From Claude Code:
-
-> "Update my skills to the latest"
-
-Or manually:
-
-```bash
-git submodule update --remote skills
-```
-
-## Cloning a Project
-
-If you're cloning a repo that already has ambient-library set up:
-
-```bash
-git clone <project-url>
-cd <project>
-git submodule update --init --recursive
-```
-
-Then open Claude Code — the `ambient` skill reads the manifest automatically.
+Anything that needs the library location resolves it in this order:
+1. `$AMBIENT_HOME` environment variable (from `~/.zshrc`)
+2. The path recorded in `~/.claude/CLAUDE.md`
+3. Default `~/ambient-library`
 
 ## Troubleshooting
 
 ### `ambient` skill isn't triggering
-
-Verify it's installed:
+Verify the pointer exists:
 ```bash
-ls ~/.claude/skills/ambient/
+ls ~/.claude/skills/ambient/SKILL.md
 ```
+If missing, re-run the curl install. Then start a fresh Claude Code session.
 
-If missing, re-run the install command above.
+### "Set up ambient-library" does nothing
+The skill may not be loaded yet. Start a fresh Claude Code session and retry.
 
-### "Set up ambient-library" does nothing useful
+### Skills aren't loading in a project
+1. Confirm `skills-manifest.yaml` exists in the project root.
+2. Confirm the library is present: `ls $AMBIENT_HOME` (or `ls ~/ambient-library`).
+3. Start a fresh session — skills load at session start.
 
-The `ambient` skill may not be loaded yet. Start a fresh Claude Code session and try again.
+### AMBIENT_HOME isn't set in new terminals
+Open a new terminal (so `~/.zshrc` re-sources) or run `source ~/.zshrc`.
 
-### Submodule errors after cloning
-
+### Library location is wrong
+Re-run with the correct path:
 ```bash
-git submodule update --init --recursive
+AMBIENT_HOME=/correct/path bash install-global.sh
 ```
-
-### Skills manifest not found
-
-Check the project root for `skills-manifest.yaml`. If missing, say *"Configure my skills"* — the select subskill will create it.
-
-### SSH key errors
-
-The install command uses HTTPS — no SSH key needed. If you see SSH errors, check that you're using the HTTPS URL, not an SSH alias.
+This updates the pointer and both managed blocks.

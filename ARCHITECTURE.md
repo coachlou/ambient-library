@@ -1,82 +1,120 @@
 # Architecture
 
-## Overview
+## The core idea
+
+One canonical clone of ambient-library lives on the machine at `$AMBIENT_HOME`.
+Everything else points into it. Nothing is duplicated, nothing is copied per
+project, and any skill's sibling files (references, scripts, templates) are
+always present because the whole library is there intact.
 
 ```
-~/.claude/skills/ambient/     ← global skill, installed once per machine
-└── subskills/                  always active in every Claude Code session
-    ├── load.md                 reads project manifest at session start
-    ├── install.md              sets up new projects
-    ├── select.md               configures the manifest
-    ├── manage.md               updates and maintenance
-    └── review.md               code review
+$AMBIENT_HOME/                       one full git clone — source of truth
+├── ambient/
+│   ├── SKILL.md                      canonical frontmatter
+│   ├── instructions.md               router
+│   └── subskills/                    load, install, select, manage, review
+├── <domain-skill>/                   each with instructions.md + any siblings
+└── SKILLS.md, docs/, ...
 
-your-project/
-├── skills-manifest.yaml      ← the only required project file
-└── skills/                   ← git submodule (ambient-library)
-    └── <domain-skill>/       ← loaded by ambient/load per manifest
-        └── instructions.md
+~/.claude/skills/ambient/SKILL.md     thin pointer → absolute instructions_path
+~/.zshrc                              export AMBIENT_HOME=...   (for shells)
+~/.claude/CLAUDE.md                   records AMBIENT_HOME      (for Claude)
+
+your-project/skills-manifest.yaml     the ONLY per-project file
 ```
+
+## Resolving AMBIENT_HOME
+
+Three layers, each for a different consumer:
+
+| Source | Read by | Precedence |
+|--------|---------|-----------|
+| `$AMBIENT_HOME` env var (set in `~/.zshrc`) | shell scripts, every terminal | 1st |
+| `~/.claude/CLAUDE.md` managed block | Claude, in-context every session | 2nd |
+| default `~/ambient-library` | fallback | 3rd |
+
+The env var serves shell scripts (`git pull`, etc.). The CLAUDE.md record means
+Claude knows the path in-context, so it can resolve skill files itself even if
+the Claude Code loader doesn't auto-follow `instructions_path`.
+
+## Why the pointer works
+
+`~/.claude/skills/ambient/SKILL.md` is a thin pointer Claude Code discovers and
+triggers on. Its frontmatter carries an **absolute** `instructions_path` into
+the canonical clone, and its body restates that path. When triggered, the full
+instructions load from `$AMBIENT_HOME/ambient/instructions.md` — and every
+relative reference inside (`subskills/`, etc.) resolves, because the entire
+library is sitting there. This is why separating frontmatter (the pointer) from
+instructions (in the clone) is correct: only the pointer is duplicated into the
+skills directory; everything with dependencies stays in the one clone.
 
 ## Data Flow
 
-**Machine setup (once):**
+**Machine setup (`install-global.sh`, once — or re-run to update):**
 ```
-install-global.sh
-  → clones ambient/ from GitHub
-  → copies to ~/.claude/skills/ambient/
-  → ambient skill available in all future sessions
+resolve AMBIENT_HOME (env var → default)
+  → git clone/pull library to $AMBIENT_HOME
+  → write pointer ~/.claude/skills/ambient/SKILL.md (absolute instructions_path)
+  → write managed block: export AMBIENT_HOME in ~/.zshrc
+  → write managed block: record AMBIENT_HOME in ~/.claude/CLAUDE.md
 ```
 
 **Session start (every session):**
 ```
-Claude Code starts
-  → ambient SKILL.md loaded (always active, global)
-  → ambient/load.md runs silently
-      → checks for skills-manifest.yaml
-      → reads domain_skills list
-      → loads skills/<name>/instructions.md for each
-      → merges CLAUDE.md if present
-  → all skills ready, session begins
+ambient pointer triggers (always active)
+  → loads $AMBIENT_HOME/ambient/instructions.md
+  → runs subskills/load.md silently
+      → reads project skills-manifest.yaml
+      → for each domain skill: read $AMBIENT_HOME/<skill>/instructions.md
+      → merge project CLAUDE.md
 ```
 
-**Project setup:**
+**Project setup ("Set up ambient-library in this project"):**
 ```
-User: "Set up ambient-library in this project"
-  → ambient routes to install.md
-      → git init (if needed)
-      → git submodule add ambient-library → skills/
-      → hands off to select.md
-          → asks about the project
-          → writes minimal skills-manifest.yaml
-          → done
+ambient routes to subskills/install.md
+  → runs install-global.sh (ensures machine is current; bootstraps new machines)
+  → writes minimal skills-manifest.yaml
+  → hands off to subskills/select.md (configures the manifest)
+```
+
+**Updating:**
+```
+"Update my skills"  →  git -C $AMBIENT_HOME pull
+                       (updates every project on the machine at once)
 ```
 
 ## Design Decisions
 
-**Why a single global skill instead of per-project skills?**
+**Why one canonical clone instead of copying skills per project?**
+Copying only `SKILL.md` (the old "pointer" model) breaks any skill with sibling
+files — references, scripts, templates point at nothing. A single full clone
+keeps every dependency intact and gives one place to update.
 
-Core capabilities (install, review, manage) don't depend on project context. Making them global means:
-- No per-project setup overhead
-- Always available, even in new projects
-- One place to update when the system changes
+**Why no project git submodule?**
+The canonical clone already holds every skill. Projects resolve domain skills
+from `$AMBIENT_HOME`, so they need nothing but `skills-manifest.yaml`. Dropping
+the submodule removes per-project setup, generated folders, and update friction.
+Trade-off: projects no longer pin a skill version independently — all projects
+on a machine share the one clone. The system's model is "pull to update," which
+makes that the right trade.
 
-**Why keep `skills-manifest.yaml` per project?**
+**Why record the path in both `.zshrc` and `CLAUDE.md`?**
+Different readers. Shell scripts need an env var; Claude needs the path in its
+context. Recording both means neither has to guess.
 
-Domain skills ARE project-specific — they carry context, standards, and instructions that differ per project. The manifest is the minimal, explicit declaration of what extra context this project needs.
-
-**Why a git submodule for domain skills?**
-
-Domain skills live in ambient-library and get pulled into projects via submodule. This keeps them centralized (one source of truth) while allowing projects to pin to a specific version.
-
-**Why no setup scripts or hooks?**
-
-With a global skill handling session-start loading, shell scripts are unnecessary. The skill reads the manifest directly — no intermediate generated files, no scripts to copy or maintain.
+**Why managed blocks?**
+Re-running `install-global.sh` must be safe. Fenced blocks (`# >>> ... <<<`) let
+the script replace its own section in place without touching the user's other
+content.
 
 ## Extending the System
 
-**Add a domain skill:** Create a folder in ambient-library with `instructions.md`. Add its name to a project's `skills-manifest.yaml`. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
+**Add a domain skill:** create `$AMBIENT_HOME/<skill>/instructions.md` (plus any
+sibling files), push to the repo, and `git pull`. Activate it in a project by
+adding its name to `skills-manifest.yaml`. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
 
-**Extend core subskills:** Edit files in `ambient/subskills/`. Re-run `install-global.sh` to update your machine. Other users update by re-running the same install command.
+**Change where the library lives:** set `AMBIENT_HOME` before running
+`install-global.sh` (e.g. `AMBIENT_HOME=/Volumes/Extreme\ Pro/lib bash install-global.sh`).
+Use a path without spaces to keep YAML frontmatter simple.
 
-**Project-specific overrides:** Add `CLAUDE.md` to the project root. `ambient/load.md` merges its contents automatically.
+**Project-specific rules:** add `CLAUDE.md` to the project root; `load.md` merges it.

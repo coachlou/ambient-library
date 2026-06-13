@@ -7,7 +7,7 @@ Once installed, just use natural language. The `ambient` skill is always active 
 ### Set up a new project
 > "Set up ambient-library in this project"
 
-Adds the skills submodule and walks you through manifest configuration.
+Ensures the library is current on your machine and walks you through manifest configuration.
 
 ### Configure skills
 > "Configure my skills"

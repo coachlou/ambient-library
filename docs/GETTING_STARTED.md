@@ -8,36 +8,40 @@ Run this once in your terminal:
 curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/install-global.sh | bash
 ```
 
-This installs the `ambient` skill globally at `~/.claude/skills/ambient/`. After this, open Claude Code in any project and the skill is available.
+This clones the library to `~/ambient-library`, installs the `ambient` skill,
+and records the library path so both your shell and Claude can find it. After
+this, open Claude Code in any project and the skill is available.
 
 ## Every new project — from Claude Code
 
-Open Claude Code in your project folder and say:
+Say:
 
 > "Set up ambient-library in this project"
 
 Claude will:
-1. Re-run the curl to ensure the global skill is current
-2. Initialize git if needed
-3. Add the skills library as a submodule
-4. Ask what your project does
-5. Write a minimal `skills-manifest.yaml` with only the skills you need
+1. Make sure the library is current on your machine
+2. Ask what your project does
+3. Write a minimal `skills-manifest.yaml` with only the skills you need
 
 ## That's it
 
-Your project has a `skills-manifest.yaml`. Every time you open Claude Code in that project, `ambient` reads the manifest and activates the right domain skills automatically.
+The only file added to your project is `skills-manifest.yaml`. Every session,
+the `ambient` skill reads it and activates the right skills from the library —
+which lives in one place on your machine, not copied into each project.
 
 ## Day-to-day
 
-Just work. Use natural language:
+Just work. Natural language:
 
 - *"Review this code"*
-- *"Update my skills to the latest"*
+- *"Update my skills"*
 - *"Configure my skills"*
+- *"Add code-review to this project"*
 
 ## Next Steps
 
 - **Full install details** → [INSTALLATION.md](INSTALLATION.md)
 - **Using skills** → [USAGE.md](USAGE.md)
 - **Adding custom skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **How it works** → [../ARCHITECTURE.md](../ARCHITECTURE.md)
 - **Available skills** → [../SKILLS.md](../SKILLS.md)
