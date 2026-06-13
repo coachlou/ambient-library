@@ -6,7 +6,17 @@
 - Claude Code or Claude running in your IDE
 - SSH access to `git@github-coachlou:coachlou/ambient-library.git`
 
-## Option A: One-Command Setup (Recommended)
+## Option A: From Claude Code (Recommended)
+
+Open Claude Code in your project folder and say:
+
+> "Set up ambient-library in this project"
+
+Claude runs the full installation via the `ambient-install` skill and immediately configures your manifest via `skill-picker`. No terminal required.
+
+---
+
+## Option B: From Terminal
 
 First, navigate to your project root (all commands must run from here):
 
@@ -23,11 +33,14 @@ bash skills/bootstrap.sh
 
 > **Note:** `skills` at the end of the submodule command is the local folder name it clones into. Don't change it — `setup-skills.sh` expects the submodule to be at `skills/`. If you rename it, the script will break.
 
-`bootstrap.sh` handles everything: copying templates, making scripts executable, installing skill pointers, and printing next steps.
+`bootstrap.sh` handles everything: copying templates, making scripts executable, and installing skill pointers.
+
+After bootstrap, configure your manifest from Claude Code:
+> "Configure my skills"
 
 ---
 
-## Option B: Manual Step-by-Step
+## Option C: Manual Step-by-Step
 
 Use this if you want to control exactly which template files get copied, or if `bootstrap.sh` doesn't fit your workflow.
 

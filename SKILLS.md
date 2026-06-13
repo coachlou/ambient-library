@@ -2,6 +2,26 @@
 
 All skills available in Ambient Library. Add any of these to your project's `skills-manifest.yaml`.
 
+## Setup Skills
+
+### ambient-install
+**Installs ambient-library into a project from within Claude Code.**
+
+The entry point for the entire system. Invoke from a Claude session:
+- *"Set up ambient-library in this project"*
+- *"Install the skill system"*
+- *"Add ambient-library to this project"*
+
+Runs bootstrap, then hands off to skill-picker to configure the manifest. No terminal required.
+
+### skill-picker
+**Builds `skills-manifest.yaml` through a natural language conversation.**
+
+Asks what your project does, recommends a minimal skill set, writes the manifest, and runs setup. Keeps context lean by loading only the skills you actually need. Invoked automatically after ambient-install, or anytime:
+- *"Configure my skills"*
+- *"Update my skill manifest"*
+- *"Which skills do I need for this project?"*
+
 ## Built-In Skills
 
 ### skill-loader

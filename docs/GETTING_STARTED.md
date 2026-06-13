@@ -1,10 +1,18 @@
 # Getting Started with Ambient Library
 
-Ambient Library is a central skills system for Claude Code. Skills are reusable tools you can add to any project — code review, documentation, custom workflows, whatever you need.
+Ambient Library is a central skills system for Claude Code. Skills are reusable tools that load automatically in your Claude sessions — code review, custom workflows, documentation, whatever your project needs. Only the skills you choose get loaded, keeping context lean.
 
-## Quick Setup (5 minutes)
+## Setup from Claude Code (Recommended)
 
-You have a project? Two commands:
+No terminal needed. Open Claude Code in your project folder and say:
+
+> "Set up ambient-library in this project"
+
+Claude runs the full installation and immediately asks what your project does to configure the right skills for you.
+
+## Setup from Terminal
+
+If you prefer the terminal:
 
 ```bash
 cd your-project-root
@@ -14,38 +22,33 @@ bash skills/bootstrap.sh
 
 > **Note:** `skills` is the local folder name — don't change it. `setup-skills.sh` expects the submodule at exactly `skills/`.
 
-Done. All skills are now available in your Claude sessions.
-
-## What bootstrap.sh Does
-
-1. Copies all project template files to your root (`setup-skills.sh`, `skills-manifest.yaml`, `CLAUDE.md`, `.gitignore`, `.claude/` hooks)
-2. Makes scripts executable
-3. Runs `setup-skills.sh` to install skill pointers into `.agents/skills/`
-4. Prints next steps
+After bootstrap, configure your manifest from Claude Code:
+> "Configure my skills"
 
 ## What You Get
 
-Three skills come built-in:
+Four skills come built-in:
 
-- **Skill Loader** — Always-active orchestration. Handles everything transparently.
-- **Skill System Manager** — Manages updates and skill refreshes on request.
-- **Code Review** — Thorough code reviews (correctness, security, performance, style).
+| Skill | Purpose |
+|-------|---------|
+| `skill-loader` | Always-active orchestration layer (required) |
+| `skill-system-manager` | Handles updates and refreshes on request |
+| `ambient-install` | Installs the system into new projects |
+| `skill-picker` | Builds your manifest through natural language |
 
-You can add more skills to `ambient-library/` anytime and they'll be available to all projects.
+Plus any additional skills you add. See [../SKILLS.md](../SKILLS.md) for the full catalog.
+
+## Configuring Your Manifest
+
+`skills-manifest.yaml` controls which skills load in your sessions. The smaller it is, the leaner your context. After install, skill-picker walks you through choosing only what you need.
+
+To reconfigure anytime:
+> "Update my skill manifest"
 
 ## Next Steps
 
-- **Want to use a skill?** → [USAGE.md](USAGE.md)
-- **Adding a custom skill?** → [MANAGEMENT.md](MANAGEMENT.md)
-- **Full installation details?** → [INSTALLATION.md](INSTALLATION.md)
-- **Something broken?** → [INSTALLATION.md#troubleshooting](INSTALLATION.md#troubleshooting)
-- **See all available skills** → [../SKILLS.md](../SKILLS.md)
-
-## The Invisible Part
-
-This system is designed to be **zero-friction**. You never think about:
-- Where skills are stored (submodules, pointers, git mechanics)
-- How they load (caching, path resolution)
-- Technical plumbing
-
-It just works. If you hit something weird, check [INSTALLATION.md#troubleshooting](INSTALLATION.md#troubleshooting).
+- **Full installation details** → [INSTALLATION.md](INSTALLATION.md)
+- **Using skills** → [USAGE.md](USAGE.md)
+- **Adding custom skills** → [MANAGEMENT.md](MANAGEMENT.md)
+- **All available skills** → [../SKILLS.md](../SKILLS.md)
+- **Something broken** → [INSTALLATION.md#troubleshooting](INSTALLATION.md#troubleshooting)

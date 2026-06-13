@@ -8,6 +8,8 @@ Central reusable skill library for Claude Code projects. Skills are reusable too
 
 ```
 ambient-library/
+├── ambient-install/          # Installs the system from within Claude Code
+├── skill-picker/             # Builds skills-manifest.yaml via natural language
 ├── skill-loader/             # Always-active orchestration layer
 ├── skill-system-manager/     # Manages updates and refreshes
 ├── code-review/              # Example skill (customize or duplicate)
@@ -34,7 +36,13 @@ ambient-library/
 
 ## Quick Start
 
-**One command — sets up everything:**
+**From Claude Code** (no terminal needed):
+
+> "Set up ambient-library in this project"
+
+Claude installs everything and walks you through configuring the right skills for your project.
+
+**From terminal:**
 
 ```bash
 cd your-project-root
@@ -42,13 +50,7 @@ git submodule add git@github-coachlou:coachlou/ambient-library.git skills
 bash skills/bootstrap.sh
 ```
 
-That's it. Skills are active in your next Claude session.
-
-**What bootstrap.sh does:**
-- Copies all template files into your project root
-- Makes scripts executable
-- Runs `setup-skills.sh` to install skill pointers
-- Prints next steps
+> `skills` is a fixed folder name — `setup-skills.sh` depends on it. Don't rename it.
 
 **Add a custom skill:**
 
