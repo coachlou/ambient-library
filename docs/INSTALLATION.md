@@ -8,11 +8,20 @@
 
 ## Option A: One-Command Setup (Recommended)
 
+First, navigate to your project root (all commands must run from here):
+
 ```bash
 cd your-project-root
+```
+
+Then add the library and run bootstrap:
+
+```bash
 git submodule add git@github-coachlou:coachlou/ambient-library.git skills
 bash skills/bootstrap.sh
 ```
+
+> **Note:** `skills` at the end of the submodule command is the local folder name it clones into. Don't change it — `setup-skills.sh` expects the submodule to be at `skills/`. If you rename it, the script will break.
 
 `bootstrap.sh` handles everything: copying templates, making scripts executable, installing skill pointers, and printing next steps.
 
@@ -24,9 +33,13 @@ Use this if you want to control exactly which template files get copied, or if `
 
 ### 1. Add Ambient Library as a Submodule
 
+Make sure you're in your project root first, then run:
+
 ```bash
 git submodule add git@github-coachlou:coachlou/ambient-library.git skills
 ```
+
+> **Note:** `skills` is the local folder name the library clones into. Don't rename it — `setup-skills.sh` hardcodes this path. Changing it will break the setup script.
 
 ### 2. Copy the Project Templates
 

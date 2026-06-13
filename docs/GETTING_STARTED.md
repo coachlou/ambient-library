@@ -12,6 +12,8 @@ git submodule add git@github-coachlou:coachlou/ambient-library.git skills
 bash skills/bootstrap.sh
 ```
 
+> **Note:** `skills` is the local folder name — don't change it. `setup-skills.sh` expects the submodule at exactly `skills/`.
+
 Done. All skills are now available in your Claude sessions.
 
 ## What bootstrap.sh Does
