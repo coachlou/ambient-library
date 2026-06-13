@@ -23,10 +23,13 @@ Skills are stored locally in `.agents/skills/` after setup, so yes — Claude lo
 
 ### How long does setup take?
 
-~5 minutes if you know your way around git. If it's your first time:
-1. Read [GETTING_STARTED.md](GETTING_STARTED.md) (2 min)
-2. Follow [INSTALLATION.md](INSTALLATION.md) (5 min)
-3. Done
+~2 minutes. Two commands:
+```bash
+git submodule add git@github-coachlou:coachlou/ambient-library.git skills
+bash skills/bootstrap.sh
+```
+
+For a detailed walkthrough: [INSTALLATION.md](INSTALLATION.md)
 
 ### Can I use ambient-library without git?
 
@@ -53,12 +56,14 @@ Yes. The ambient-library repo is a normal git repo. You can:
 
 ### How do I know what skills are available?
 
+Check the catalog: [../SKILLS.md](../SKILLS.md)
+
+Or inspect what's installed locally:
+
 ```bash
 ls -la .agents/skills/
-cat .agents/skills/SKILL.md  # Read the skill description
+cat .agents/skills/code-review/SKILL.md  # Read a specific skill's description
 ```
-
-Or check the [Skills List](SKILLS.md) (if you create one).
 
 ### Do I need to activate skills manually?
 
