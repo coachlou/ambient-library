@@ -8,3 +8,6 @@
 
 skills:
   project-brief: Creates a one-page project overview; use for "write a brief", "summarize this project", "project overview", "what is this project".
+  researcher: Gathers sources into a structured research dossier; use for "research this topic", "find sources on X", "compile background". NOT for writing or editing the piece.
+  writer: Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for "draft this", "write a first draft from these notes", "turn this brief into a post".
+  editor: Surgically edits an EXISTING draft; use for "edit this draft", "polish this", "tighten this article". Requires a draft to already exist.
