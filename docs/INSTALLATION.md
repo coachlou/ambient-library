@@ -53,8 +53,9 @@ Pulls the latest version of the plugin — skills, subskills, and the whole
 Update Claude Code to the latest version, then retry.
 
 ### The skill doesn't trigger
-Confirm it's installed: run `/help` and look for `ambient`. If missing, re-run
-the install commands above and start a fresh session.
+Say *"set up ambient-library in this project"* — if Claude doesn't respond to
+that, the plugin isn't active. Re-run the install commands and start a fresh
+session.
 
 ### Marketplace add fails
 Check the repo is reachable: `coachlou/ambient-library` must be a public GitHub

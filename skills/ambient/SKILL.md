@@ -1,5 +1,5 @@
 ---
-description: Use for all ambient-library operations. Triggers on setting up ambient-library in a project ("set up ambient-library", "install skills", "initialize the skill system"), configuring project skills ("configure my skills", "which skills do I need"), updating or managing skills ("update skills", "refresh skills", "add/remove a skill"), and code review ("review this code", "code review", "check for security issues").
+description: Use for all ambient-library operations. Triggers on setting up ambient-library in a project ("set up ambient-library", "install skills", "initialize the skill system"), configuring project skills ("configure my skills", "which skills do I need"), updating or managing skills ("update skills", "refresh skills", "add/remove a skill"), code review ("review this code", "code review", "check for security issues"), and any project-specific task a domain skill covers ("write a project brief", "summarize this project", "create a project overview").
 ---
 
 # ambient
