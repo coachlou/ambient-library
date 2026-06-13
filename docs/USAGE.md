@@ -35,6 +35,24 @@ Points you to `/plugin update ambient`, which pulls the latest plugin version.
 
 Adds or removes domain skills from the project's manifest and confirms.
 
+### Writing pipeline
+
+Single stages — each runs on its own:
+> "Research the history of espresso"  → researcher (sourced dossier)
+> "Draft a post from these notes"     → writer (drafting only)
+> "Edit this draft and tighten it"    → editor (surgical edits to an existing draft)
+
+The full pipeline — research → draft → edit, end to end:
+> "Write me an 800-word piece on espresso for a coffee-shop audience"
+
+Run the pipeline in its own context (keeps research and draft churn out of this
+conversation):
+> "Write that piece, but run it in the background"
+> "Do the whole pipeline separately"
+
+The router spawns a subagent for the isolated run; the in-context run is the
+default.
+
 ## How Skills Activate
 
 The `ambient` skill is always available (one description in context). When a

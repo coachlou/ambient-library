@@ -23,6 +23,18 @@ until the router reads one. Optionally scope which a project uses via
 | Skill | What it does | How to invoke |
 |-------|-------------|---------------|
 | **project-brief** | Creates a one-page project overview anyone can read and share | *"Write a project brief"*, *"Summarize this project"* |
+| **researcher** | Gathers sources into a structured research dossier | *"Research this topic"*, *"Find sources on X"* |
+| **writer** | Drafts a piece from a brief and optional dossier (drafting only) | *"Draft this"*, *"Turn this brief into a post"* |
+| **editor** | Surgically edits an existing draft for clarity, voice, structure | *"Edit this draft"*, *"Tighten this article"* |
+| **writing-team** | Full research → draft → edit pipeline to a publish-ready piece | *"Write me an article on X end to end"* |
+
+### In-context vs. spawned execution
+
+Domain skills run in the current conversation by default. The **writing-team**
+pipeline can also run in its own context — say *"...in the background"* or *"run
+it separately"* and the router spawns a general-purpose subagent that follows the
+same `library/writing-team/instructions.md`. No registered agent is shipped, so
+the always-on context cost stays at the single `ambient` description.
 
 ---
 
