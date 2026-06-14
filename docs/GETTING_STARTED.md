@@ -10,7 +10,8 @@ From within Claude Code, run:
 ```
 
 The first command registers the marketplace; the second installs the `ambient`
-plugin. After this, the skill is available in every project on this machine.
+plugin at **user scope** — available in every project on this machine. To install
+for a specific project or team instead, see [INSTALLATION.md](INSTALLATION.md).
 
 ## First use
 
