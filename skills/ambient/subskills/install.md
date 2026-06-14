@@ -4,6 +4,27 @@ Sets up ambient-library for the current project. The skill system itself is
 already installed (it's a plugin) — this just records which skills the project
 wants and confirms everything is ready.
 
+## Scope — if the user is asking about WHERE to install
+
+If the user says anything about "globally", "for the team", "project-wide",
+"locally", or "which scope", give them the right command before doing anything
+else:
+
+| What they want | Command to give them |
+|----------------|----------------------|
+| Available to me in all projects (default) | `claude plugin install ambient@ambient-library` |
+| Shared with the team via the repo | `claude plugin install ambient@ambient-library --scope project` |
+| This project only, not committed to git | `claude plugin install ambient@ambient-library --scope local` |
+
+**Gotchas to mention:**
+- `--scope project` writes to `.claude/settings.json` — commit that file so teammates get it.
+- Project-scope plugins only load when Claude Code is launched from the directory containing `.claude/settings.json`. Launch from the repo root.
+- You can install at multiple scopes simultaneously (e.g., user + project). The skill runs as long as it's enabled at any scope.
+- After installing at a new scope, run `/reload-plugins` or start a fresh session.
+
+Once you've given them the command, stop — don't proceed to the manifest steps
+below unless they confirm the plugin is running in the target session.
+
 ## Steps
 
 ### 1. Confirm the plugin is active
