@@ -17,6 +17,22 @@ Claude Code fetches the plugin and stores it under `~/.claude/plugins/`. The
 skill is then available in every session — no per-project setup, no scripts, no
 dotfile edits.
 
+## À-la-carte skill installs
+
+Every domain skill in the library is also published as its own single-skill
+plugin in the same marketplace:
+
+```
+/plugin install grill@ambient-library
+/plugin install audit-mcp@ambient-library
+```
+
+Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
+a standalone install registers that skill's description in standing context
+(reliable direct triggering, small per-skill cost), while the `ambient` plugin
+keeps all 38 at zero standing cost behind the router. Installing both is
+harmless — the standalone skill simply wins direct triggers.
+
 ## Installation scopes
 
 The default install (`/plugin install ambient@ambient-library`) installs at **user scope** — available to you in every project on this machine. Two other scopes are available:

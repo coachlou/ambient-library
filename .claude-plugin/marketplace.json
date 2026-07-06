@@ -9,7 +9,197 @@
     {
       "name": "ambient",
       "source": "./",
-      "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language."
+      "description": "Ambient skill library \u2014 project setup, skill selection, management, and code review, all through natural language."
+    },
+    {
+      "name": "aimm-commands",
+      "source": "./skills/ambient/library/aimm-commands",
+      "description": "Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for \"/aimm:<name>\", \"run the skeptic\", or any request naming an AIMM command."
+    },
+    {
+      "name": "aimm-newsletter",
+      "source": "./skills/ambient/library/aimm-newsletter",
+      "description": "Sends a newsletter email to all members of a named Google Contacts group; use for \"send this to [group]\", \"send the newsletter\", \"email the group\". Previews recipients and content before sending."
+    },
+    {
+      "name": "aimm-writing-team",
+      "source": "./skills/ambient/library/aimm-writing-team",
+      "description": "Autonomous multi-role team (Researcher, Strategist, Writer, Editor, Publisher) for thought-leadership articles; use for explicit role commands like \"Use Strategist mode\" or a full AIMM article run."
+    },
+    {
+      "name": "audit-fix",
+      "source": "./skills/ambient/library/audit-fix",
+      "description": "Adversarial six-lens audit (errors, omissions, oversights, blind spots, conflicts, duplications) of a plan or change, then root-cause fixes; use for \"audit this\", \"pressure test\", \"poke holes\", \"what did we miss\"."
+    },
+    {
+      "name": "audit-mcp",
+      "source": "./skills/ambient/library/audit-mcp",
+      "description": "Security-audits a third-party MCP server repo before installation; use for \"audit this MCP\", \"is this MCP safe\", \"check this repo before I install it\"."
+    },
+    {
+      "name": "brand-writing-team",
+      "source": "./skills/ambient/library/brand-writing-team",
+      "description": "Multi-role team for brand-building long-form content with structured intake, end to end; use for \"help me write a post about X\", \"turn this idea into a piece\" when the goal is personal/company brand."
+    },
+    {
+      "name": "cognitive-operations",
+      "source": "./skills/ambient/library/cognitive-operations",
+      "description": "Applies the Lenses/Operations/Recipes structured-thinking system to complex problems and decisions; use for \"think through\", \"what am I missing\", \"run a pre-mortem\", \"use mental models\"."
+    },
+    {
+      "name": "context-mgr",
+      "source": "./skills/ambient/library/context-mgr",
+      "description": "Installs the multi-agent .context/ continuity system into a project; use for \"install context-mgr\", \"set up multi-agent context here\", \"scaffold .context/\", \"add the shared brain to this project\"."
+    },
+    {
+      "name": "conversation-consolidation-system",
+      "source": "./skills/ambient/library/conversation-consolidation-system",
+      "description": "Builds a four-stage pipeline turning scattered Claude chat history into a searchable Obsidian external brain; use for \"I can't find what I discussed with Claude\", \"second brain for my AI work\"."
+    },
+    {
+      "name": "conversation-ip-extractor",
+      "source": "./skills/ambient/library/conversation-ip-extractor",
+      "description": "Extracts named frameworks, methodologies, and publishable IP from a long conversation or session transcript; use for \"what did I figure out here\", \"find the framework in this\"."
+    },
+    {
+      "name": "deep-comprehension-assessment",
+      "source": "./skills/ambient/library/deep-comprehension-assessment",
+      "description": "Builds rigorous text-comprehension assessments with detailed feedback; use for \"test my understanding of this text\", \"comprehension quiz\"."
+    },
+    {
+      "name": "deep-field",
+      "source": "./skills/ambient/library/deep-field",
+      "description": "Integrated insight system combining Eigenthinking, latent-space cartography, and wisdom-of-crowds validation; use for \"run deep field\", frontier-quality insight beyond default reasoning."
+    },
+    {
+      "name": "editor",
+      "source": "./skills/ambient/library/editor",
+      "description": "Surgically edits an EXISTING draft; use for \"edit this draft\", \"polish this\", \"tighten this article\". Requires a draft to already exist."
+    },
+    {
+      "name": "eigenthinking",
+      "source": "./skills/ambient/library/eigenthinking",
+      "description": "Nine-step framework turning tacit expertise into branded, publishable IP (UP to IP); use for \"turn how I think into a framework\", \"package my methodology\", \"make my process teachable\"."
+    },
+    {
+      "name": "enrich-prompt",
+      "source": "./skills/ambient/library/enrich-prompt",
+      "description": "Rewrites and augments a prompt to surface implicit constraints and blind spots, then answers the enriched version; use for \"make this prompt better\", \"I keep getting shallow answers\"."
+    },
+    {
+      "name": "extract-codify-patterns",
+      "source": "./skills/ambient/library/extract-codify-patterns",
+      "description": "Packages a working session into a shareable look-over-my-shoulder artifact bundle; use for \"package this session\", \"codify this session\", \"turn this conversation into a teaching resource\"."
+    },
+    {
+      "name": "fresh-eyes",
+      "source": "./skills/ambient/library/fresh-eyes",
+      "description": "Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for \"fresh eyes\", \"does the onboarding work\", \"test the docs\"."
+    },
+    {
+      "name": "geo-authority-architect",
+      "source": "./skills/ambient/library/geo-authority-architect",
+      "description": "Builds a GEO/AI-citation authority strategy and Canon/Frameworks/Diagnostics content architecture; use for \"GEO strategy\", \"get cited by AI\", \"GEARS\"."
+    },
+    {
+      "name": "grill",
+      "source": "./skills/ambient/library/grill",
+      "description": "Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for \"grill me\", \"interview me\", \"ask me questions one at a time\"."
+    },
+    {
+      "name": "ireport",
+      "source": "./skills/ambient/library/ireport",
+      "description": "Generates styled, interactive HTML research reports from a topic or notes; use for \"interactive report\", \"HTML report on X\", \"deep research document\"."
+    },
+    {
+      "name": "irreplaceable-edge",
+      "source": "./skills/ambient/library/irreplaceable-edge",
+      "description": "Guided live discovery of a professional's irreplaceable competitive edge against AI-first competition; use for \"find my edge\", \"what's my moat\", \"how do I compete with AI\"."
+    },
+    {
+      "name": "knowledge-base-architect",
+      "source": "./skills/ambient/library/knowledge-base-architect",
+      "description": "Guides design and deployment of a personal AI knowledge base from accumulated expertise assets; use for \"talk to my own knowledge\", \"build a private ChatGPT on my material\"."
+    },
+    {
+      "name": "latent-cartographer",
+      "source": "./skills/ambient/library/latent-cartographer",
+      "description": "Multi-phase latent-space traversal that maps the probability landscape before answering; use for \"/lsc\", \"run the cartographer\", \"don't give me the median answer\"."
+    },
+    {
+      "name": "leaderize-storytelling-framework",
+      "source": "./skills/ambient/library/leaderize-storytelling-framework",
+      "description": "Selects and applies storytelling frameworks for Leaderize's mid-level-leader audience across content stages and live sessions; use for Leaderize content or session design."
+    },
+    {
+      "name": "meeting-nuggets",
+      "source": "./skills/ambient/library/meeting-nuggets",
+      "description": "Turns meeting transcripts into newsletter-style topic recaps with research add-ons and optional Notion publishing; use for \"recap this meeting\", \"session report\", or any pasted VTT/call transcript."
+    },
+    {
+      "name": "multi-model-debate-live",
+      "source": "./skills/ambient/library/multi-model-debate-live",
+      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" \u2014 the live workflow, not the prompt protocol."
+    },
+    {
+      "name": "paradigm-collision-engine",
+      "source": "./skills/ambient/library/paradigm-collision-engine",
+      "description": "Generates non-obvious insight by colliding 400+ disciplinary paradigms via parallel sub-agents and an elimination tournament; use for \"fresh angle on X\", \"non-obvious take\", \"multiple lenses\"."
+    },
+    {
+      "name": "polyglot-language-coach",
+      "source": "./skills/ambient/library/polyglot-language-coach",
+      "description": "Gently coaches when the user writes in a non-English language mid-conversation \u2014 corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
+    },
+    {
+      "name": "project-brief",
+      "source": "./skills/ambient/library/project-brief",
+      "description": "Creates a one-page project overview; use for \"write a brief\", \"summarize this project\", \"project overview\", \"what is this project\"."
+    },
+    {
+      "name": "researcher",
+      "source": "./skills/ambient/library/researcher",
+      "description": "Gathers sources into a structured research dossier; use for \"research this topic\", \"find sources on X\", \"compile background\". NOT for writing or editing the piece."
+    },
+    {
+      "name": "session",
+      "source": "./skills/ambient/library/session",
+      "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
+    },
+    {
+      "name": "transcript-to-content-pipeline",
+      "source": "./skills/ambient/library/transcript-to-content-pipeline",
+      "description": "Turns a raw transcript or session notes into a full content package (article, LinkedIn variants, summary, audio script); use for \"turn this into content\", \"write something from this transcript\"."
+    },
+    {
+      "name": "trello-pipeline",
+      "source": "./skills/ambient/library/trello-pipeline",
+      "description": "Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for \"run the Trello pipeline\", \"idea to PRD on my board\", \"set up the TrelloAgents board\"."
+    },
+    {
+      "name": "voice-crm-pipeline",
+      "source": "./skills/ambient/library/voice-crm-pipeline",
+      "description": "Builds a hands-free voice-to-database capture chain (Siri to Shortcut to GPT to Sheets); use for \"I never update my CRM\", \"talk to my database\", \"voice-to-sheet workflow\"."
+    },
+    {
+      "name": "voice-profile-trainer",
+      "source": "./skills/ambient/library/voice-profile-trainer",
+      "description": "Derives a reusable voice profile from authentic writing samples so AI output sounds like the user; use for \"doesn't sound like me\", \"write in my voice\", \"set up my voice profile\"."
+    },
+    {
+      "name": "wrap",
+      "source": "./skills/ambient/library/wrap",
+      "description": "Full session close-out ritual \u2014 commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
+    },
+    {
+      "name": "writer",
+      "source": "./skills/ambient/library/writer",
+      "description": "Drafts a piece from a brief (and optional dossier) \u2014 drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
+    },
+    {
+      "name": "writing-team",
+      "source": "./skills/ambient/library/writing-team",
+      "description": "Full research -> draft -> edit pipeline to a publish-ready piece; use for \"write me an article on X end to end\", \"take this from idea to finished post\". Use this when the user wants the whole pipeline, not a single stage."
     }
   ]
 }
