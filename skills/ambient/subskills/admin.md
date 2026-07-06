@@ -33,7 +33,10 @@ it. Never overwrite on a create/save request.
    and the skill content. Best source is a real task trace or artifact, not a
    vague prompt.
 2. Write `skills/ambient/library/<name>/instructions.md`. Sibling files
-   (`references/`, `scripts/`) only as needed.
+   (`references/`, `scripts/`) only as needed. Inside `instructions.md`,
+   reference siblings as `${CLAUDE_SKILL_DIR}/library/<name>/<file>` — never
+   repo-relative or absolute paths — so the skill works from both the
+   installed plugin and a pointer-adapter clone.
 3. Add the one-line entry to `skills/ambient/library/catalog.yaml`.
 4. Add a human-readable entry to `SKILLS.md`.
 5. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.

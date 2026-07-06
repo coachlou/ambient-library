@@ -1,7 +1,7 @@
 {
   "name": "ambient",
   "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "author": {
     "name": "Coach Lou"
   },

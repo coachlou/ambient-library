@@ -14,6 +14,11 @@ library/
     └── references/ etc.     # optional sibling files the skill reads
 ```
 
+Sibling files resolve at runtime as `${CLAUDE_SKILL_DIR}/library/<skill-name>/<file>`
+— reference them that way inside `instructions.md`, never with repo-relative or
+absolute paths, so the skill works from both the installed plugin and a
+pointer-adapter clone.
+
 `catalog.yaml` is the **only** file the router reads to decide which skill a
 request needs. It then loads exactly one skill's `instructions.md`. This is how
 context stays lean — the full library never loads, only the one selected skill.
