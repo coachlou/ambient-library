@@ -97,6 +97,40 @@ If the skill belongs to any bundle in `bundles/`, remove its symlink there too.
 
 ---
 
+## Namespaces
+
+Related skills are grouped into logical namespaces in the catalog's
+`namespaces:` map (currently: `writing`, `thinking`, `sessions`, `audit`).
+Namespaces are **logical only** — skill folders stay flat under `library/`.
+They give the router family-level disambiguation and let a project's
+`skills-manifest.yaml` scope in a whole family:
+
+```yaml
+namespaces:
+  - writing
+```
+
+**Design decision (recorded 2026-07-06): logical now, structural later.**
+Two implementation depths were considered:
+
+- *Logical* (current): a grouping map in catalog.yaml. Cheap, no moves,
+  no routing changes.
+- *Structural*: `library/<namespace>/` as a mid-level agentic folder with its
+  own `instructions.md` and `catalog.yaml`, skills nested inside. This is the
+  recursive agentic-folder framework applied one level down.
+
+**Promotion criterion — when to convert a namespace to structural form:**
+the moment a family needs *shared behavior* — e.g. "all writing skills load
+Lou's voice profile" or "all AIMM commands cite their source session." That
+shared rule needs a home, and the home is the namespace folder's own
+`instructions.md`. Until a family needs shared behavior, structural nesting
+is organization without function — don't do it. Converting costs: folder
+moves, marketplace source-path regeneration, two-hop routing in the router,
+and new trigger evals for the namespace-level catalog entries.
+
+Membership changes are one-line edits to the `namespaces:` map. A skill may
+belong to at most one namespace; skills outside every namespace are fine.
+
 ## Bundles
 
 A bundle is a meta-plugin: one marketplace install that registers a set of
@@ -122,8 +156,8 @@ includes writing-team).
 
 ## Updating Core Subskills
 
-The canonical router (`instructions.md`) and `subskills/` live at the repo root and
-`subskills/`. Edit, bump affected wrapper versions, commit, push.
+The canonical router (`instructions.md`) and `subskills/` live at the repo
+root. Edit, bump affected wrapper versions, commit, push.
 Users get changes through their runtime's plugin update flow.
 
 ---

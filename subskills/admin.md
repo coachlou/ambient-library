@@ -37,7 +37,9 @@ it. Never overwrite on a create/save request.
    reference siblings as `${CLAUDE_PLUGIN_ROOT}/library/<name>/<file>` — never
    repo-relative or absolute paths — so the skill works from both the
    installed plugin and a pointer-adapter clone.
-3. Add the one-line entry to `library/catalog.yaml`.
+3. Add the one-line entry to `library/catalog.yaml`. If the skill belongs
+   to a family in the catalog's `namespaces:` map, add it there too (one
+   namespace max; none is fine).
 4. Add a human-readable entry to `SKILLS.md`.
 5. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
 

@@ -27,9 +27,15 @@ If the project has files, run a quick `ls` for context. Then ask one question:
 Propose only the domain skills clearly relevant, each with a one-line reason:
 
 ```yaml
+namespaces:
+  - writing         # this is a content project
 domain_skills:
   - project-brief   # you mentioned you need a project overview
 ```
+
+A `namespaces` entry scopes in a whole family from the catalog's
+`namespaces:` map — prefer it over listing every member when the project
+clearly needs the family.
 
 Ask: "Does this look right, or anything to add or remove?"
 

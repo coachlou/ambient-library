@@ -88,10 +88,14 @@ manifest.
 domain skills the router considers:
 
 ```yaml
+namespaces:
+  - writing        # scope in a whole skill family
 domain_skills:
-  - project-brief
-  # add more domain skills here
+  - project-brief  # or individual skills
 ```
+
+Families (`writing`, `thinking`, `sessions`, `audit`) are defined in the
+library catalog's `namespaces:` map.
 
 Edit it directly or say *"configure my skills"* to update it conversationally.
 

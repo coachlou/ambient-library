@@ -5,6 +5,19 @@
 #
 # Format:
 #   <skill-name>: <one-line description of when it applies>
+#
+# Namespaces group related skills. They are logical only — folders stay flat.
+# The router uses them to disambiguate within a family, and a project's
+# skills-manifest.yaml may scope by namespace instead of listing skills.
+# A namespace earns a folder of its own (with its own instructions.md and
+# catalog) only when its members need SHARED BEHAVIOR — see
+# docs/MANAGEMENT.md "Namespaces".
+
+namespaces:
+  writing: [writer, editor, researcher, writing-team, brand-writing-team, aimm-writing-team, voice-profile-trainer]
+  thinking: [cognitive-operations, eigenthinking, latent-cartographer, paradigm-collision-engine, deep-field, enrich-prompt]
+  sessions: [session, wrap, extract-codify-patterns, conversation-ip-extractor, meeting-nuggets]
+  audit: [audit-fix, audit-mcp, fresh-eyes, grill]
 
 skills:
   project-brief: Creates a one-page project overview; use for "write a brief", "summarize this project", "project overview", "what is this project".

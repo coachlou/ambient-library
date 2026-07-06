@@ -114,6 +114,13 @@ Registered skill paths are runtime-specific. Domain skills are project-specific
 and potentially numerous, so they live in the canonical `library/` as
 `instructions.md` files — read on demand, zero standing cost.
 
+**Why are namespaces logical, not folders?**
+The catalog's `namespaces:` map groups skill families for routing
+disambiguation and manifest scoping without moving files. A namespace becomes
+a real nested agentic folder only when its members need shared behavior —
+the promotion criterion and costs are recorded in
+[docs/MANAGEMENT.md](docs/MANAGEMENT.md) under "Namespaces".
+
 **Why keep `skills-manifest.yaml` at all?**
 It's optional now. It scopes which domain skills the router considers for a
 project — useful for focus and for applying project-specific skills consistently.
