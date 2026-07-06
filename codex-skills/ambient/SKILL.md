@@ -12,28 +12,28 @@ capabilities. This Codex skill is only a thin runtime wrapper. The canonical
 router, subskills, and domain skills live outside this wrapper at:
 
 ```text
-../../skills/ambient/
+../../
 ```
 
 Resolve that path relative to this `SKILL.md` file. Then read and follow the
 canonical router:
 
 ```text
-../../skills/ambient/instructions.md
+../../instructions.md
 ```
 
 ## Codex Adapter Rules
 
-- Treat `../../skills/ambient/` as the canonical library root.
-- When the canonical instructions mention `${CLAUDE_SKILL_DIR}`, translate it to
+- Treat `../../` as the canonical library root.
+- When the canonical instructions mention `${CLAUDE_PLUGIN_ROOT}`, translate it to
   the canonical library root above.
 - When the canonical instructions say to use the `Read` tool, use normal Codex
   file-reading tools.
 - Route to exactly one canonical subskill per request.
 - For domain skill selection, read only
-  `../../skills/ambient/library/catalog.yaml` first.
+  `../../library/catalog.yaml` first.
 - Load at most one domain skill body:
-  `../../skills/ambient/library/<skill-name>/instructions.md`.
+  `../../library/<skill-name>/instructions.md`.
 - Never load the whole library to decide relevance.
 - Merge project instructions from `AGENTS.md`, `CLAUDE.md`, or equivalent local
   project guidance before acting.

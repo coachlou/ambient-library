@@ -2,10 +2,13 @@
 
 ## The core idea
 
-ambient-library is a canonical library with thin runtime wrappers. The canonical
-capabilities live under `skills/ambient/`; each LLM/runtime gets its own plugin
-adapter that exposes one registered `ambient` skill and then delegates back to
-the canonical library.
+ambient-library is an **ambiently intelligent agentic folder**: the repository
+root carries the folder's own behavior — `instructions.md` (the router) and
+`subskills/` — and `library/` holds a recursive set of smaller agentic folders,
+each a self-contained capability (instructions plus optional identity, scripts,
+references) that is also individually installable as a plugin. Thin runtime
+wrappers expose one registered `ambient` skill per harness and delegate back to
+the canonical root.
 
 The Claude Code wrapper is in `.claude-plugin/` and `skills/ambient/SKILL.md`.
 The Codex wrapper is in `.codex-plugin/` and `codex-skills/ambient/SKILL.md`.
@@ -18,26 +21,34 @@ else — the router's subskills and every domain skill — is a plain canonical 
 read on demand. So the only thing in context by default is one skill description.
 
 ```
-plugin root
+repo root (the agentic folder)
+├── instructions.md                 ← the folder's behavior: canonical router
+├── identity.md                     ← the folder's identity/soul
+├── subskills/*.md                  ← core behaviors, read on demand
+├── library/                        ← recursive agentic folders (domain skills)
+│   ├── catalog.yaml                ← cheap routing index
+│   └── <skill>/
+│       ├── instructions.md         ← the sub-folder's behavior
+│       ├── SKILL.md                ← standalone-plugin shim
+│       └── .claude-plugin/plugin.json
+├── bundles/                        ← meta-plugins: symlinked skill sets
 ├── .claude-plugin/
 │   ├── plugin.json
-│   └── marketplace.json
-├── .codex-plugin/
-│   └── plugin.json
-├── templates/
-│   └── AGENTS-pointer.md           ← pointer adapter for non-plugin harnesses
-├── codex-skills/
-│   └── ambient/
-│       └── SKILL.md                ← Codex adapter
-└── skills/
-    └── ambient/
-        ├── SKILL.md                 ← Claude Code adapter
-        ├── instructions.md          ← canonical router
-        ├── subskills/*.md           ← canonical subskills, read on demand
-        └── library/<skill>/instructions.md   ← domain skills, read on demand
+│   └── marketplace.json            ← ambient + every skill + bundles
+├── .codex-plugin/plugin.json
+├── skills/ambient/SKILL.md         ← Claude Code adapter (thin shim)
+├── codex-skills/ambient/SKILL.md   ← Codex adapter (thin shim)
+└── templates/AGENTS-pointer.md     ← pointer adapter for non-plugin harnesses
 
-your-project/skills-manifest.yaml    ← optional; scopes domain skills
+your-project/skills-manifest.yaml   ← optional; scopes domain skills
 ```
+
+The same shape recurs at every level: a folder is agentic when it carries its
+own `instructions.md` (behavior) and whatever identity, rules, or context files
+that behavior loads. The repo is one; each library skill is a smaller one; a
+skill's own subfolders can be smaller ones still. Runtime memory does **not**
+live in these folders — installed copies are overwritten on update, so memory
+belongs to the project (e.g. `.context/`) or a per-user data dir.
 
 ## Context cost
 
@@ -59,7 +70,7 @@ This is why everything can be bundled in one plugin without context bloat.
 ```
 user request
   → runtime ambient skill description matches → ambient triggers
-  → runtime adapter locates skills/ambient/instructions.md
+  → runtime adapter locates instructions.md
   → canonical router routes to one subskill (install / select / manage / review / load / admin)
   → subskill executes; if a domain skill applies, load.md reads
     library/<skill>/instructions.md and follows it
@@ -68,17 +79,17 @@ user request
 
 ## Runtime path adapters
 
-Claude Code provides `${CLAUDE_SKILL_DIR}`, so its adapter uses that path to find
+Claude Code provides `${CLAUDE_PLUGIN_ROOT}`, so its adapter uses that path to find
 the canonical router and sibling files.
 
-Codex does not use `${CLAUDE_SKILL_DIR}`. Its adapter lives at
-`codex-skills/ambient/SKILL.md` and translates the canonical library root to
-`../../skills/ambient/` relative to that file. When canonical instructions mention
-`${CLAUDE_SKILL_DIR}`, the Codex adapter treats it as the canonical library root.
+Codex does not use `${CLAUDE_PLUGIN_ROOT}`. Its adapter lives at
+`codex-skills/ambient/SKILL.md` and translates the canonical root to
+`../../` (the repo root) relative to that file. When canonical instructions
+mention `${CLAUDE_PLUGIN_ROOT}`, the Codex adapter treats it as that root.
 
 The pointer adapter has no manifest at all. It pins the library's absolute
 path directly in the project's `AGENTS.md` and instructs the agent to treat
-`${CLAUDE_SKILL_DIR}` as that path. Triggering is by instruction rather than
+`${CLAUDE_PLUGIN_ROOT}` as that path. Triggering is by instruction rather than
 harness-enforced skill matching, so it is less reliable on indirect requests —
 the tradeoff for working on any harness that reads a project instruction file.
 
@@ -123,8 +134,8 @@ the only description in context.
 
 ## Extending
 
-**Add a domain skill:** create `skills/ambient/library/<name>/instructions.md`
-(plus any sibling files), update `skills/ambient/library/catalog.yaml`, commit,
+**Add a domain skill:** create `library/<name>/instructions.md`
+(plus any sibling files), update `library/catalog.yaml`, commit,
 and bump each runtime plugin version as needed. Users get it through their
 runtime's plugin update flow. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
 

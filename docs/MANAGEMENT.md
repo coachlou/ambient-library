@@ -10,7 +10,7 @@ the installed plugin.
 ## Adding a Domain Skill
 
 Domain skills are project-specific capabilities the router reads on demand. They
-live in the canonical library under `skills/ambient/library/` and cost nothing
+live in the canonical library under `library/` and cost nothing
 in context until used. Runtime wrappers for Claude Code and Codex both delegate
 to this same library.
 
@@ -19,12 +19,12 @@ to this same library.
 In your clone of this repo:
 
 ```bash
-mkdir -p skills/ambient/library/my-skill
+mkdir -p library/my-skill
 ```
 
 ### 2. Write instructions.md
 
-`skills/ambient/library/my-skill/instructions.md` holds the skill logic:
+`library/my-skill/instructions.md` holds the skill logic:
 
 ```markdown
 # My Skill
@@ -42,7 +42,7 @@ class of work.
 
 ### 3. Register it in the catalog
 
-Add a one-line entry to `skills/ambient/library/catalog.yaml`:
+Add a one-line entry to `library/catalog.yaml`:
 
 ```yaml
 skills:
@@ -63,7 +63,7 @@ Edit each affected runtime manifest, bump `version`, then commit and push:
 - `.codex-plugin/plugin.json`
 
 ```bash
-git add skills/ambient/library/my-skill SKILLS.md .claude-plugin/plugin.json .codex-plugin/plugin.json
+git add library/my-skill SKILLS.md .claude-plugin/plugin.json .codex-plugin/plugin.json
 git commit -m "Add my-skill domain skill"
 git push
 ```
@@ -79,7 +79,7 @@ Add it to the project's `skills-manifest.yaml`, or from your agent:
 
 ## Updating a Domain Skill
 
-Edit `skills/ambient/library/my-skill/instructions.md`, bump affected wrapper
+Edit `library/my-skill/instructions.md`, bump affected wrapper
 versions, commit, push. Users pull it with their runtime's plugin update flow.
 
 ---
@@ -87,18 +87,43 @@ versions, commit, push. Users pull it with their runtime's plugin update flow.
 ## Removing a Domain Skill
 
 ```bash
-git rm -r skills/ambient/library/my-skill
+git rm -r library/my-skill
 # remove its SKILLS.md entry, bump wrapper plugin versions
 git commit -m "Remove my-skill"
 git push
 ```
 
+If the skill belongs to any bundle in `bundles/`, remove its symlink there too.
+
+---
+
+## Bundles
+
+A bundle is a meta-plugin: one marketplace install that registers a set of
+library skills. It contains no skill content — only symlinks, which Claude Code
+dereferences (copies content) at install time because they resolve within the
+same marketplace.
+
+```bash
+mkdir -p bundles/my-bundle/.claude-plugin bundles/my-bundle/skills
+cd bundles/my-bundle/skills
+ln -s ../../../library/skill-a skill-a
+ln -s ../../../library/skill-b skill-b
+```
+
+Add `bundles/my-bundle/.claude-plugin/plugin.json` (name, description, version)
+and a marketplace entry with `"source": "./bundles/my-bundle"`. Every bundled
+skill registers its description on install — bundles trade standing context for
+reliable direct triggering, the same tradeoff as à-la-carte installs, in sets.
+Pair each bundle with its orchestrator skill where one exists (writing-suite
+includes writing-team).
+
 ---
 
 ## Updating Core Subskills
 
-The canonical router and subskills live in `skills/ambient/` and
-`skills/ambient/subskills/`. Edit, bump affected wrapper versions, commit, push.
+The canonical router (`instructions.md`) and `subskills/` live at the repo root and
+`subskills/`. Edit, bump affected wrapper versions, commit, push.
 Users get changes through their runtime's plugin update flow.
 
 ---

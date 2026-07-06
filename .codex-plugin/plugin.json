@@ -1,6 +1,6 @@
 {
   "name": "ambient-library",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Canonical agent, skill, and capability library for Codex, exposed through one lazy-loading ambient router skill.",
   "author": {
     "name": "Coach Lou",

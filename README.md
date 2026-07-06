@@ -25,7 +25,7 @@ this plugin root, or add it to a Codex marketplace when publishing.
 Other harnesses (Gemini CLI, etc.):
 
 No plugin needed. Clone this repo to a fixed location, then in your project
-tell the agent: *"Read `<clone>/skills/ambient/instructions.md` and set up
+tell the agent: *"Read `<clone>/instructions.md` and set up
 ambient-library in this project."* The install flow writes a pointer block
 into the project's `AGENTS.md` so future requests route automatically. See
 [docs/INSTALLATION.md](docs/INSTALLATION.md#other-harnesses-pointer-adapter).

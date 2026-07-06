@@ -1,0 +1,38 @@
+# load
+
+Reads and applies a domain skill on demand. Invoked by the router when a request
+matches a skill in `library/`, or when the user names one explicitly.
+
+## Explicit one-off invocation
+
+If the user names a specific skill or agent from the library ("use the
+<name> skill", "run <name> from the ambient library", "one-off: <name>"),
+skip the selection steps entirely:
+
+- Read `${CLAUDE_PLUGIN_ROOT}/library/<name>/instructions.md` directly and
+  carry it out (steps 4–5 below still apply).
+- Ignore `skills-manifest.yaml` scoping — an explicit request overrides it.
+- Do **not** add the skill to the manifest or change any project file. The
+  invocation lives only in this conversation. If the user wants it permanently,
+  they'll say so (that's `manage.md`'s job).
+- If no skill matches the name, list the closest names from the catalog and stop.
+
+## Steps
+
+1. Read **only** `${CLAUDE_PLUGIN_ROOT}/library/catalog.yaml` to see the available
+   skills and their one-line descriptions. This is the cheap selection step — do
+   not open any skill's `instructions.md` yet.
+2. Choose the single best match. If the project has a `skills-manifest.yaml`,
+   restrict to the skills it lists under `domain_skills`. If nothing matches,
+   stop and let the router handle the request normally.
+3. Read **only that one** skill's instructions:
+   `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`.
+4. The skill may reference its own sibling files (e.g.
+   `library/<skill-name>/references/...`). Read those only as the skill directs.
+5. Merge rules from the project's `CLAUDE.md` if present, then carry out the skill.
+
+## Rules
+
+- Selection reads the catalog only. Execution reads exactly one skill body.
+- Never load more than one domain skill per request. Never load the whole library.
+- Never mention `library/`, the catalog, manifests, or paths unless the user asks.

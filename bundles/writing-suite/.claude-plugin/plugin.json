@@ -1,0 +1,11 @@
+{
+  "name": "writing-suite",
+  "description": "The complete writing toolkit in one install: researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator that drives them end to end.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}

@@ -15,7 +15,7 @@ demand — always available, no manifest entry needed.
 
 ## Domain Skills (in `library/`, read on demand)
 
-Domain skills live in the plugin at `skills/ambient/library/<name>/instructions.md`.
+Domain skills live in the plugin at `library/<name>/instructions.md`.
 They are plain files — **not** registered skills — so they add nothing to context
 until the router reads one. Optionally scope which a project uses via
 `skills-manifest.yaml`.

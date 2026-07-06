@@ -31,6 +31,11 @@ Installing `aimm-commands` additionally registers all 54 AIMM prompts as real
 slash commands (`/aimm-commands:skeptic`, `/aimm-commands:canon-lock`, ...) —
 user-triggered, so they add no standing context.
 
+Bundles install a themed set in one command — e.g.
+`/plugin install writing-suite@ambient-library` registers the whole writing
+toolkit (researcher, writer, editor, project-brief, voice-profile-trainer,
+writing-team).
+
 Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
 a standalone install registers that skill's description in standing context
 (reliable direct triggering, small per-skill cost), while the `ambient` plugin
@@ -70,7 +75,7 @@ codex-skills/ambient/SKILL.md
 
 Install this repository as a Codex plugin through your Codex plugin workflow.
 The Codex plugin registers one `ambient` skill and delegates to the canonical
-library under `skills/ambient/`.
+router and `library/` at the repository root.
 
 ## Other harnesses (pointer adapter)
 
@@ -85,7 +90,7 @@ requests to the canonical library.
    ```
 
 2. In your project, tell the agent:
-   *"Read ~/ambient-library/skills/ambient/instructions.md and set up
+   *"Read ~/ambient-library/instructions.md and set up
    ambient-library in this project."*
 
 The install flow copies [templates/AGENTS-pointer.md](../templates/AGENTS-pointer.md)

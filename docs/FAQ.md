@@ -19,7 +19,7 @@ Codex wrapper is `.codex-plugin/plugin.json`.
 ### Does this work on harnesses without plugins (Gemini CLI, etc.)?
 
 Yes, via the pointer adapter: clone the repo once per machine, then point the
-agent at `skills/ambient/instructions.md` and ask it to set up the project. It
+agent at `instructions.md` and ask it to set up the project. It
 writes a short routing block into your project's `AGENTS.md`; after that,
 matching requests route automatically. Triggering is instruction-based rather
 than harness-enforced, so indirect requests miss more often than with the
