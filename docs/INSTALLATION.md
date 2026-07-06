@@ -1,6 +1,9 @@
 # Installation
 
-## Install (from within Claude Code)
+ambient-library ships runtime-specific plugin wrappers around one canonical
+library. Install the wrapper for the runtime you use.
+
+## Claude Code
 
 ```
 /plugin marketplace add coachlou/ambient-library
@@ -36,10 +39,54 @@ After installing at a new scope, run `/reload-plugins` or start a fresh session.
 To check which scopes the plugin is installed at: `claude plugin list`.
 To remove from a scope: `claude plugin uninstall ambient --scope <scope>`.
 
+## Codex
+
+The Codex wrapper is defined by:
+
+```text
+.codex-plugin/plugin.json
+codex-skills/ambient/SKILL.md
+```
+
+Install this repository as a Codex plugin through your Codex plugin workflow.
+The Codex plugin registers one `ambient` skill and delegates to the canonical
+library under `skills/ambient/`.
+
+## Other harnesses (pointer adapter)
+
+For agents without a plugin system (Gemini CLI and others), use the pointer
+adapter: a short block in the project's instruction file that routes matching
+requests to the canonical library.
+
+1. Clone this repo to a fixed location (one clone per machine):
+
+   ```bash
+   git clone https://github.com/coachlou/ambient-library ~/ambient-library
+   ```
+
+2. In your project, tell the agent:
+   *"Read ~/ambient-library/skills/ambient/instructions.md and set up
+   ambient-library in this project."*
+
+The install flow copies [templates/AGENTS-pointer.md](../templates/AGENTS-pointer.md)
+into the project's `AGENTS.md` with the library path pinned. From then on,
+matching requests route automatically — same progressive disclosure as the
+plugin: the pointer is the only standing context; the router, subskills, and
+domain skills load on demand.
+
+Update with `git pull` in the clone; every project pointing at it picks up the
+new version immediately.
+
+**Tradeoff to know:** a pointer is an instruction the model must remember to
+follow, not a harness-enforced trigger. Expect it to miss indirect requests
+more often than the registered skill does, especially in long sessions. If a
+request that should route doesn't, name it: *"use the ambient library for
+this."*
+
 ## Verify
 
-Say *"set up ambient-library in this project"* — if Claude walks you through
-project setup, it's working.
+Say *"set up ambient-library in this project"* — if your agent walks you through
+project setup, the wrapper is working.
 
 ## Project setup (optional)
 
@@ -56,12 +103,14 @@ file. The manifest only scopes domain skills.
 
 ## Updating
 
+Claude Code:
+
 ```
 /plugin update ambient
 ```
 
-Pulls the latest version of the plugin — skills, subskills, and the whole
-`library/`.
+Codex updates follow the Codex plugin update flow for the installed plugin.
+Either way, the update pulls the latest wrapper plus the canonical `library/`.
 
 ## Uninstalling
 

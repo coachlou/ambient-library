@@ -2,25 +2,38 @@
 
 ## The core idea
 
-ambient-library is a Claude Code **plugin**. Installing the plugin distributes
-everything — Claude Code clones it to `~/.claude/plugins/` and keeps it updated.
-No manual clone, no environment variables, no dotfile edits, no submodule.
+ambient-library is a canonical library with thin runtime wrappers. The canonical
+capabilities live under `skills/ambient/`; each LLM/runtime gets its own plugin
+adapter that exposes one registered `ambient` skill and then delegates back to
+the canonical library.
 
-The plugin contains exactly **one registered skill** (`ambient`). Everything else
-— the router's subskills and every domain skill — is a plain file inside the
-plugin, read on demand. So the only thing in context by default is one skill
-description.
+The Claude Code wrapper is in `.claude-plugin/` and `skills/ambient/SKILL.md`.
+The Codex wrapper is in `.codex-plugin/` and `codex-skills/ambient/SKILL.md`.
+For harnesses without a plugin system, `templates/AGENTS-pointer.md` is a
+pointer adapter: a block pasted into the project's `AGENTS.md` that routes
+matching requests to the same canonical router by absolute path.
+
+Each wrapper contains exactly **one registered skill** (`ambient`). Everything
+else — the router's subskills and every domain skill — is a plain canonical file
+read on demand. So the only thing in context by default is one skill description.
 
 ```
-plugin root (~/.claude/plugins/.../ambient/)
+plugin root
 ├── .claude-plugin/
 │   ├── plugin.json
 │   └── marketplace.json
+├── .codex-plugin/
+│   └── plugin.json
+├── templates/
+│   └── AGENTS-pointer.md           ← pointer adapter for non-plugin harnesses
+├── codex-skills/
+│   └── ambient/
+│       └── SKILL.md                ← Codex adapter
 └── skills/
-    └── ambient/                     ${CLAUDE_SKILL_DIR}
-        ├── SKILL.md                 ← the ONLY registered skill
-        ├── instructions.md          ← router (loads when ambient triggers)
-        ├── subskills/*.md           ← read on demand
+    └── ambient/
+        ├── SKILL.md                 ← Claude Code adapter
+        ├── instructions.md          ← canonical router
+        ├── subskills/*.md           ← canonical subskills, read on demand
         └── library/<skill>/instructions.md   ← domain skills, read on demand
 
 your-project/skills-manifest.yaml    ← optional; scopes domain skills
@@ -32,8 +45,8 @@ This is the property that drove the design:
 
 | Item | In context? |
 |------|-------------|
-| `ambient` skill description | Always (one line — the trigger) |
-| `ambient` body / router | Only when ambient triggers |
+| Runtime `ambient` skill description | Always (one line — the trigger) |
+| Runtime adapter / canonical router | Only when ambient triggers |
 | Any subskill | Only when the router reads it |
 | Any domain skill in `library/` | Only when the router reads it |
 
@@ -45,40 +58,50 @@ This is why everything can be bundled in one plugin without context bloat.
 
 ```
 user request
-  → ambient skill description matches → ambient triggers
-  → SKILL.md tells Claude to read ${CLAUDE_SKILL_DIR}/instructions.md
-  → router routes to one subskill (install / select / manage / review / load)
+  → runtime ambient skill description matches → ambient triggers
+  → runtime adapter locates skills/ambient/instructions.md
+  → canonical router routes to one subskill (install / select / manage / review / load / admin)
   → subskill executes; if a domain skill applies, load.md reads
     library/<skill>/instructions.md and follows it
-  → project CLAUDE.md rules merged throughout
+  → project rules are merged throughout
 ```
 
-## Why ${CLAUDE_SKILL_DIR}
+## Runtime path adapters
 
-`${CLAUDE_SKILL_DIR}` is the absolute path to the skill's own directory inside
-the installed plugin. The router uses it to read subskills and domain skills
-regardless of the working directory. Because the whole plugin is installed
-intact, every sibling file a skill needs (`references/`, `scripts/`) is always present.
+Claude Code provides `${CLAUDE_SKILL_DIR}`, so its adapter uses that path to find
+the canonical router and sibling files.
+
+Codex does not use `${CLAUDE_SKILL_DIR}`. Its adapter lives at
+`codex-skills/ambient/SKILL.md` and translates the canonical library root to
+`../../skills/ambient/` relative to that file. When canonical instructions mention
+`${CLAUDE_SKILL_DIR}`, the Codex adapter treats it as the canonical library root.
+
+The pointer adapter has no manifest at all. It pins the library's absolute
+path directly in the project's `AGENTS.md` and instructs the agent to treat
+`${CLAUDE_SKILL_DIR}` as that path. Triggering is by instruction rather than
+harness-enforced skill matching, so it is less reliable on indirect requests —
+the tradeoff for working on any harness that reads a project instruction file.
+
+This keeps the runtime-specific path logic in the wrapper, not in the canonical
+capability files.
 
 ## Design Decisions
 
-**Why a plugin instead of a clone + global skill?**
-The plugin system already does distribution, versioning, and updates natively,
-and `${CLAUDE_SKILL_DIR}` already solves sibling-file resolution. A plugin
-replaces `install-global.sh`, `AMBIENT_HOME`, the `~/.zshrc` export, the
-`~/.claude/CLAUDE.md` record, and the per-project submodule — all of it.
+**Why runtime wrappers instead of runtime-specific libraries?**
+The library should be canonical. Claude Code, Codex, and future runtimes may have
+different plugin manifests or path variables, but they should load the same
+router, subskills, and domain skill instructions.
 
 **Why one router skill instead of five separate skills?**
-Five registered skills would put five descriptions in context. One `ambient`
-skill with subskills as plain files keeps the always-on cost to a single
-description while still covering install, select, manage, review, and domain
-loading.
+Five registered skills would put five descriptions in context per runtime. One
+`ambient` skill with subskills as plain files keeps the always-on cost to a
+single description while still covering install, select, manage, review, and
+domain loading.
 
 **Why are domain skills plain files, not skills/ entries?**
-Anything under `skills/<name>/SKILL.md` registers and adds a description to
-context. Domain skills are project-specific and potentially numerous, so they
-live in `library/` as `instructions.md` files — read on demand, zero standing
-cost.
+Registered skill paths are runtime-specific. Domain skills are project-specific
+and potentially numerous, so they live in the canonical `library/` as
+`instructions.md` files — read on demand, zero standing cost.
 
 **Why keep `skills-manifest.yaml` at all?**
 It's optional now. It scopes which domain skills the router considers for a
@@ -101,7 +124,9 @@ the only description in context.
 ## Extending
 
 **Add a domain skill:** create `skills/ambient/library/<name>/instructions.md`
-(plus any sibling files), commit, bump `plugin.json` version. Users get it via
-`/plugin update ambient`. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
+(plus any sibling files), update `skills/ambient/library/catalog.yaml`, commit,
+and bump each runtime plugin version as needed. Users get it through their
+runtime's plugin update flow. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
 
-**Project rules:** add `CLAUDE.md` to the project root; the router merges it.
+**Project rules:** add runtime-appropriate project guidance such as `AGENTS.md`
+or `CLAUDE.md` to the project root; the adapter/router merges it.

@@ -13,6 +13,12 @@ subskill's instructions. All paths below are relative to `${CLAUDE_SKILL_DIR}`
 | Update / refresh / add / remove skills | `subskills/manage.md` |
 | Review code / check for bugs or security issues | `subskills/review.md` |
 | A task a domain skill in `library/` covers | `subskills/load.md` |
+| Explicitly named skill, one-off ("use the <name> skill") | `subskills/load.md` |
+| Maintain the library itself — create/edit/delete a library skill, edit the catalog | `subskills/admin.md` |
+
+Disambiguation: "add <skill> **to this project**" is manage (edits the
+project's manifest); "add a skill **to the library**" is admin (edits the
+canonical library in a source clone).
 
 Read the chosen file with the Read tool (resolve `${CLAUDE_SKILL_DIR}` to its
 absolute path), then carry out its steps.

@@ -1,20 +1,38 @@
 # ambient-library
 
-A Claude Code plugin. Project setup, skill selection, management, and code review
-— all through natural language. Install once; available in every project.
+A runtime-agnostic library of agents, skills, and reusable capabilities. It ships
+thin plugin wrappers for Claude Code and Codex, while the canonical library stays
+in one place. Project setup, skill selection, management, and code review all
+work through natural language.
 
 **New here?** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
 ## Install
 
-From within Claude Code:
+Claude Code:
 
 ```
 /plugin marketplace add coachlou/ambient-library
 /plugin install ambient@ambient-library
 ```
 
-That's the whole install. Updates are `/plugin update ambient`.
+Codex:
+
+The Codex wrapper lives in `.codex-plugin/plugin.json` and exposes one Codex
+skill from `codex-skills/`. Install it through your Codex plugin workflow from
+this plugin root, or add it to a Codex marketplace when publishing.
+
+Other harnesses (Gemini CLI, etc.):
+
+No plugin needed. Clone this repo to a fixed location, then in your project
+tell the agent: *"Read `<clone>/skills/ambient/instructions.md` and set up
+ambient-library in this project."* The install flow writes a pointer block
+into the project's `AGENTS.md` so future requests route automatically. See
+[docs/INSTALLATION.md](docs/INSTALLATION.md#other-harnesses-pointer-adapter).
+
+Claude updates are `/plugin update ambient`. Codex updates follow the Codex
+plugin update flow for the installed plugin. Pointer-adapter installs update
+with `git pull` in the clone.
 
 ## Use
 
@@ -30,21 +48,25 @@ Just talk:
 
 ## How It Works
 
-One registered skill (`ambient`) — so only one skill description sits in context.
-Everything else (the router's subskills, and every domain skill) is a plain file
-inside the plugin, read on demand via `${CLAUDE_SKILL_DIR}`. Nothing else loads
-into context until it's actually needed.
+Each runtime registers one skill (`ambient`) — so only one skill description sits
+in context. Everything else (the router's subskills, and every domain skill) is a
+plain file in the canonical library, read on demand. Nothing else loads into
+context until it's actually needed.
 
 ```
-ambient-library/                  (the plugin)
+ambient-library/                  (canonical library + runtime wrappers)
 ├── .claude-plugin/
-│   ├── plugin.json               # plugin manifest
-│   └── marketplace.json          # so it installs as a marketplace
+│   ├── plugin.json               # Claude Code plugin manifest
+│   └── marketplace.json          # Claude Code marketplace
+├── .codex-plugin/
+│   └── plugin.json               # Codex plugin manifest
+├── codex-skills/
+│   └── ambient/SKILL.md          # Codex adapter skill
 └── skills/
     └── ambient/
-        ├── SKILL.md              # the ONE registered skill (1 description)
-        ├── instructions.md       # router (loads when ambient triggers)
-        ├── subskills/            # install, select, manage, load, review
+        ├── SKILL.md              # Claude Code adapter skill
+        ├── instructions.md       # canonical router
+        ├── subskills/            # install, select, manage, load, review, admin
         └── library/              # domain skills — plain data, read on demand
             └── <skill>/instructions.md
 ```

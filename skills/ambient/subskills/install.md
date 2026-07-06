@@ -1,8 +1,7 @@
 # install
 
-Sets up ambient-library for the current project. The skill system itself is
-already installed (it's a plugin) — this just records which skills the project
-wants and confirms everything is ready.
+Sets up ambient-library for the current project: records which skills the
+project wants and confirms everything is ready.
 
 ## Scope — if the user is asking about WHERE to install
 
@@ -27,10 +26,20 @@ below unless they confirm the plugin is running in the target session.
 
 ## Steps
 
-### 1. Confirm the plugin is active
+### 1. Determine how you were loaded
 
-You are running, so the plugin is installed. Nothing to clone or download — the
-skills, subskills, and `library/` all live in `${CLAUDE_SKILL_DIR}`.
+**Plugin harness** (Claude Code, Codex): `${CLAUDE_SKILL_DIR}` or the plugin
+adapter resolved this file. Nothing to clone or download — the skills,
+subskills, and `library/` all live in the installed plugin. Continue to step 2.
+
+**Pointer harness** (any other agent — you reached this file via a path the
+user gave you or an existing AGENTS.md pointer): the library root is the
+`skills/ambient/` directory this file sits under — resolve it to an absolute
+path. If the project's `AGENTS.md` (or equivalent instruction file) doesn't
+yet reference the library, copy the template at
+`<library root>/../../templates/AGENTS-pointer.md` into it, replacing
+`{{LIBRARY_ROOT}}` with that absolute path. This pins the library location so
+future sessions route automatically without the user pointing you here.
 
 ### 2. Check existing setup
 
@@ -56,6 +65,8 @@ Read and execute `select.md` to choose domain skills for the project.
 
 ## Rules
 
-- The only project artifact is `skills-manifest.yaml`, and even that is optional.
-- No clone, no submodule, no scripts, no dotfile edits. The plugin is the install.
+- Project artifacts are `skills-manifest.yaml` (optional) and, on pointer
+  harnesses only, the AGENTS.md pointer block.
+- On plugin harnesses: no clone, no submodule, no scripts, no dotfile edits.
+  The plugin is the install.
 - Keep output minimal.

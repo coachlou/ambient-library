@@ -1,7 +1,21 @@
 # load
 
 Reads and applies a domain skill on demand. Invoked by the router when a request
-matches a skill in `library/`.
+matches a skill in `library/`, or when the user names one explicitly.
+
+## Explicit one-off invocation
+
+If the user names a specific skill or agent from the library ("use the
+<name> skill", "run <name> from the ambient library", "one-off: <name>"),
+skip the selection steps entirely:
+
+- Read `${CLAUDE_SKILL_DIR}/library/<name>/instructions.md` directly and
+  carry it out (steps 4–5 below still apply).
+- Ignore `skills-manifest.yaml` scoping — an explicit request overrides it.
+- Do **not** add the skill to the manifest or change any project file. The
+  invocation lives only in this conversation. If the user wants it permanently,
+  they'll say so (that's `manage.md`'s job).
+- If no skill matches the name, list the closest names from the catalog and stop.
 
 ## Steps
 

@@ -4,7 +4,7 @@
 
 ### How long does this take to set up?
 
-About a minute, all from within Claude Code:
+About a minute in Claude Code:
 
 ```
 /plugin marketplace add coachlou/ambient-library
@@ -12,6 +12,19 @@ About a minute, all from within Claude Code:
 ```
 
 Then say *"set up ambient-library in this project"* in any project.
+
+For Codex, install this repository as a Codex plugin from the plugin root. The
+Codex wrapper is `.codex-plugin/plugin.json`.
+
+### Does this work on harnesses without plugins (Gemini CLI, etc.)?
+
+Yes, via the pointer adapter: clone the repo once per machine, then point the
+agent at `skills/ambient/instructions.md` and ask it to set up the project. It
+writes a short routing block into your project's `AGENTS.md`; after that,
+matching requests route automatically. Triggering is instruction-based rather
+than harness-enforced, so indirect requests miss more often than with the
+plugin — if a request doesn't route, say *"use the ambient library for this."*
+Details: [INSTALLATION.md](INSTALLATION.md#other-harnesses-pointer-adapter).
 
 ### Do I need to install anything per project?
 
@@ -24,12 +37,12 @@ No. Claude Code fetches the plugin for you over HTTPS.
 
 ### Can I do this without the terminal?
 
-Yes — entirely. `/plugin marketplace add` and `/plugin install` run inside
-Claude Code.
+Yes in Claude Code — `/plugin marketplace add` and `/plugin install` run inside
+Claude Code. In Codex, use the Codex plugin installation flow.
 
 ### What about a new machine?
 
-Run the same two `/plugin` commands. Plugins are per-machine.
+Run the runtime's plugin install flow again. Plugins are per-machine.
 
 ---
 
@@ -56,6 +69,9 @@ and always available.
 
 **Domain skills** are project-specific capabilities in the plugin's `library/`.
 They're read on demand and optionally scoped per project via `skills-manifest.yaml`.
+
+Runtime wrappers are different from both: they are the thin Claude Code or Codex
+plugin layers that expose the canonical `ambient` skill.
 
 ---
 
@@ -95,9 +111,13 @@ The plugin may not be installed. Run:
 ```
 Then start a fresh session.
 
+In Codex, verify the Codex plugin is installed and that `.codex-plugin/plugin.json`
+points at `codex-skills/`.
+
 ### The `/plugin` command doesn't exist
 
-Update Claude Code to the latest version.
+Update Claude Code to the latest version. Codex uses its own plugin flow instead
+of Claude Code's `/plugin` command.
 
 ### How do I update?
 
@@ -105,9 +125,13 @@ Update Claude Code to the latest version.
 /plugin update ambient
 ```
 
+In Codex, use the Codex plugin update flow for the installed plugin.
+
 ### A skill edit isn't showing
 
-`/plugin update ambient`, then `/reload-plugins` or a fresh session.
+In Claude Code, run `/plugin update ambient`, then `/reload-plugins` or start a
+fresh session. In Codex, update or reinstall the plugin and start a fresh thread
+if needed.
 
 ---
 
@@ -115,7 +139,9 @@ Update Claude Code to the latest version.
 
 ### Can I add project-specific rules?
 
-Yes. Add a `CLAUDE.md` to your project root. The router merges it before acting.
+Yes. Add runtime-appropriate project guidance to your project root, such as
+`CLAUDE.md` for Claude Code or `AGENTS.md` for Codex. The adapter/router merges
+it before acting.
 
 ### Can I create private domain skills?
 
@@ -125,8 +151,9 @@ plugin's `library/` so the whole team gets it.
 
 ### Can projects use different skill versions?
 
-Plugins are versioned per machine, so all projects on a machine share the
-installed plugin version. Update everything at once with `/plugin update ambient`.
+Plugins are versioned per machine and per runtime, so all projects using the same
+installed runtime wrapper share that installed version. Update through the
+runtime's plugin flow.
 
 ---
 
