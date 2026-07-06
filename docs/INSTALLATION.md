@@ -27,6 +27,10 @@ plugin in the same marketplace:
 /plugin install audit-mcp@ambient-library
 ```
 
+Installing `aimm-commands` additionally registers all 54 AIMM prompts as real
+slash commands (`/aimm-commands:skeptic`, `/aimm-commands:canon-lock`, ...) —
+user-triggered, so they add no standing context.
+
 Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
 a standalone install registers that skill's description in standing context
 (reliable direct triggering, small per-skill cost), while the `ambient` plugin
