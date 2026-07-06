@@ -27,6 +27,8 @@ until the router reads one. Optionally scope which a project uses via
 | **writer** | Drafts a piece from a brief and optional dossier (drafting only) | *"Draft this"*, *"Turn this brief into a post"* |
 | **editor** | Surgically edits an existing draft for clarity, voice, structure | *"Edit this draft"*, *"Tighten this article"* |
 | **writing-team** | Full research → draft → edit pipeline to a publish-ready piece | *"Write me an article on X end to end"* |
+| **context-mgr** | Installs the multi-agent `.context/` continuity system into a project | *"Install context-mgr"*, *"Set up multi-agent context here"* |
+| **session** | Session check-in/check-out against a project's `.context/` store | *"What should I work on"*, *"Wrap up"*, *"Checkpoint"* |
 
 ### In-context vs. spawned execution
 

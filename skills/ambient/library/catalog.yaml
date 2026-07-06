@@ -12,3 +12,5 @@ skills:
   writer: Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for "draft this", "write a first draft from these notes", "turn this brief into a post".
   editor: Surgically edits an EXISTING draft; use for "edit this draft", "polish this", "tighten this article". Requires a draft to already exist.
   writing-team: Full research -> draft -> edit pipeline to a publish-ready piece; use for "write me an article on X end to end", "take this from idea to finished post". Use this when the user wants the whole pipeline, not a single stage.
+  context-mgr: Installs the multi-agent .context/ continuity system into a project; use for "install context-mgr", "set up multi-agent context here", "scaffold .context/", "add the shared brain to this project".
+  session: Runs session check-in/check-out against a project's .context/ store; use for "what should I work on", "resume work", "checkpoint", "save progress", "wrap up", "session check-in/check-out". Requires (or offers to bootstrap) a .context/ directory.
