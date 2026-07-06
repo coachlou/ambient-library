@@ -34,7 +34,7 @@ subskills, and `library/` all live in the installed plugin. Continue to step 2.
 
 **Pointer harness** (any other agent — you reached this file via a path the
 user gave you or an existing AGENTS.md pointer): the library root is the
-repository root this file's `subskills/` directory sits under — resolve it to
+repository root this file's `.aai/` directory sits under — resolve it to
 an absolute path. If the project's `AGENTS.md` (or equivalent instruction file)
 doesn't yet reference the library, copy the template at
 `<library root>/templates/AGENTS-pointer.md` into it, replacing

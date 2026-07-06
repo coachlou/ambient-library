@@ -25,7 +25,7 @@ this plugin root, or add it to a Codex marketplace when publishing.
 Other harnesses (Gemini CLI, etc.):
 
 No plugin needed. Clone this repo to a fixed location, then in your project
-tell the agent: *"Read `<clone>/instructions.md` and set up
+tell the agent: *"Read `<clone>/.aai/instructions.md` and set up
 ambient-library in this project."* The install flow writes a pointer block
 into the project's `AGENTS.md` so future requests route automatically. See
 [docs/INSTALLATION.md](docs/INSTALLATION.md#other-harnesses-pointer-adapter).
@@ -55,6 +55,12 @@ context until it's actually needed.
 
 ```
 ambient-library/                  (canonical library + runtime wrappers)
+├── .aai/                         # OWNED: this folder's own agentic intelligence
+│   ├── instructions.md           #   canonical router
+│   ├── identity.md               #   the folder's identity/soul
+│   └── skills/                   #   install, select, manage, load, review, admin
+├── library/                      # domain skills — plain data, read on demand
+│   └── <skill>/instructions.md
 ├── .claude-plugin/
 │   ├── plugin.json               # Claude Code plugin manifest
 │   └── marketplace.json          # Claude Code marketplace
@@ -63,12 +69,7 @@ ambient-library/                  (canonical library + runtime wrappers)
 ├── codex-skills/
 │   └── ambient/SKILL.md          # Codex adapter skill
 └── skills/
-    └── ambient/
-        ├── SKILL.md              # Claude Code adapter skill
-        ├── instructions.md       # canonical router
-        ├── subskills/            # install, select, manage, load, review, admin
-        └── library/              # domain skills — plain data, read on demand
-            └── <skill>/instructions.md
+    └── ambient/SKILL.md          # Claude Code adapter skill
 ```
 
 A project's only artifact is an optional `skills-manifest.yaml` scoping which

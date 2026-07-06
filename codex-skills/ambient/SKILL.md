@@ -19,7 +19,7 @@ Resolve that path relative to this `SKILL.md` file. Then read and follow the
 canonical router:
 
 ```text
-../../instructions.md
+../../.aai/instructions.md
 ```
 
 ## Codex Adapter Rules

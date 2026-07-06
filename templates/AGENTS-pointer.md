@@ -10,7 +10,7 @@ For any request about setting up or configuring project skills, updating or
 managing skills, code review, or a task covered by a domain skill (skill names
 and one-line descriptions are in `{{LIBRARY_ROOT}}/library/catalog.yaml`):
 
-**Read `{{LIBRARY_ROOT}}/instructions.md` and follow it before acting.**
+**Read `{{LIBRARY_ROOT}}/.aai/instructions.md` and follow it before acting.**
 
 Where those instructions mention `${CLAUDE_PLUGIN_ROOT}`, treat it as
 `{{LIBRARY_ROOT}}`. Do not read subskill or domain skill files until the

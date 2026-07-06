@@ -9,7 +9,7 @@ is a maintainer capability — it edits the library itself, not a project.
 it, so edits there silently vanish. Locate the source clone first:
 
 1. If the current project root is an ambient-library clone (has
-   `instructions.md` and `.claude-plugin/plugin.json`), use it.
+   `.aai/instructions.md` and `.claude-plugin/plugin.json`), use it.
 2. Otherwise ask the user for their clone's path. Do not clone one yourself
    and do not fall back to `${CLAUDE_PLUGIN_ROOT}`.
 

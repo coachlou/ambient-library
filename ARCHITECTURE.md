@@ -3,8 +3,10 @@
 ## The core idea
 
 ambient-library is an **ambiently intelligent agentic folder**: the repository
-root carries the folder's own behavior — `instructions.md` (the router) and
-`subskills/` — and `library/` holds a recursive set of smaller agentic folders,
+root carries the folder's own behavior in `.aai/` (`instructions.md` the
+router, plus `skills/` the subskills) — the `.aai`/`.ailib` scaffold defined in
+[templates/aai/README.md](templates/aai/README.md) — and `library/` holds a
+recursive set of smaller agentic folders,
 each a self-contained capability (instructions plus optional identity, scripts,
 references) that is also individually installable as a plugin. Thin runtime
 wrappers expose one registered `ambient` skill per harness and delegate back to
@@ -22,9 +24,10 @@ read on demand. So the only thing in context by default is one skill description
 
 ```
 repo root (the agentic folder)
-├── instructions.md                 ← the folder's behavior: canonical router
-├── identity.md                     ← the folder's identity/soul
-├── subskills/*.md                  ← core behaviors, read on demand
+├── .aai/                           ← OWNED: this folder's own agentic intelligence
+│   ├── instructions.md             ←   the folder's behavior: canonical router
+│   ├── identity.md                 ←   the folder's identity/soul
+│   └── skills/*.md                 ←   core behaviors, read on demand
 ├── library/                        ← recursive agentic folders (domain skills)
 │   ├── catalog.yaml                ← cheap routing index
 │   └── <skill>/

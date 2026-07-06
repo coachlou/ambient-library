@@ -8,13 +8,13 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 
 | User intent | Read and follow |
 |-------------|-----------------|
-| Set up / install ambient-library in this project | `subskills/install.md` |
-| Configure / choose which skills this project uses | `subskills/select.md` |
-| Update / refresh / add / remove skills | `subskills/manage.md` |
-| Review code / check for bugs or security issues | `subskills/review.md` |
-| A task a domain skill in `library/` covers | `subskills/load.md` |
-| Explicitly named skill, one-off ("use the <name> skill") | `subskills/load.md` |
-| Maintain the library itself — create/edit/delete a library skill, edit the catalog | `subskills/admin.md` |
+| Set up / install ambient-library in this project | `.aai/skills/install.md` |
+| Configure / choose which skills this project uses | `.aai/skills/select.md` |
+| Update / refresh / add / remove skills | `.aai/skills/manage.md` |
+| Review code / check for bugs or security issues | `.aai/skills/review.md` |
+| A task a domain skill in `library/` covers | `.aai/skills/load.md` |
+| Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
+| Maintain the library itself — create/edit/delete a library skill, edit the catalog | `.aai/skills/admin.md` |
 
 Disambiguation: "add <skill> **to this project**" is manage (edits the
 project's manifest); "add a skill **to the library**" is admin (edits the

@@ -90,7 +90,7 @@ requests to the canonical library.
    ```
 
 2. In your project, tell the agent:
-   *"Read ~/ambient-library/instructions.md and set up
+   *"Read ~/ambient-library/.aai/instructions.md and set up
    ambient-library in this project."*
 
 The install flow copies [templates/AGENTS-pointer.md](../templates/AGENTS-pointer.md)

@@ -156,8 +156,8 @@ includes writing-team).
 
 ## Updating Core Subskills
 
-The canonical router (`instructions.md`) and `subskills/` live at the repo
-root. Edit, bump affected wrapper versions, commit, push.
+The canonical router (`instructions.md`) and its subskills (`skills/`) live in
+`.aai/` at the repo root. Edit, bump affected wrapper versions, commit, push.
 Users get changes through their runtime's plugin update flow.
 
 ---
