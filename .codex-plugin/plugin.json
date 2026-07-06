@@ -1,0 +1,40 @@
+{
+  "name": "ambient-library",
+  "version": "1.6.0",
+  "description": "Canonical agent, skill, and capability library for Codex, exposed through one lazy-loading ambient router skill.",
+  "author": {
+    "name": "Coach Lou",
+    "url": "https://github.com/coachlou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT",
+  "keywords": [
+    "agents",
+    "skills",
+    "codex",
+    "claude-code",
+    "capability-library"
+  ],
+  "skills": "./codex-skills/",
+  "interface": {
+    "displayName": "Ambient Library",
+    "shortDescription": "Canonical capability library for Codex agents",
+    "longDescription": "Ambient Library exposes a centralized library of agents, skills, and reusable capabilities to Codex through one registered router skill. The Codex wrapper stays thin: it loads canonical instructions on demand, keeps domain skills out of context until selected, and preserves the same library used by other runtime adapters.",
+    "developerName": "Coach Lou",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/coachlou/ambient-library",
+    "defaultPrompt": [
+      "Set up ambient-library in this project",
+      "Configure my skills",
+      "Review this code"
+    ],
+    "brandColor": "#2563EB",
+    "screenshots": []
+  }
+}

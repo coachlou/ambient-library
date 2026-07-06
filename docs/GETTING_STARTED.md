@@ -2,7 +2,9 @@
 
 ## Install (once)
 
-From within Claude Code, run:
+ambient-library has one canonical library with separate runtime wrappers.
+
+Claude Code:
 
 ```
 /plugin marketplace add coachlou/ambient-library
@@ -13,9 +15,15 @@ The first command registers the marketplace; the second installs the `ambient`
 plugin at **user scope** — available in every project on this machine. To install
 for a specific project or team instead, see [INSTALLATION.md](INSTALLATION.md).
 
+Codex:
+
+Install this repository as a Codex plugin from the plugin root. The Codex
+manifest is `.codex-plugin/plugin.json`, and it registers the adapter skill in
+`codex-skills/`.
+
 ## First use
 
-Open Claude Code in any project and say:
+Open Claude Code or Codex in any project and say:
 
 > "Set up ambient-library in this project"
 
@@ -30,15 +38,13 @@ Just talk:
 - *"Review this code"*
 - *"Configure my skills"*
 - *"Add project-brief to this project"*
-- *"Update my skills"* → runs `/plugin update ambient`
+- *"Update my skills"* → points to the runtime's plugin update flow
 
 ## Updating
 
-```
-/plugin update ambient
-```
-
-Pulls the latest skills and library.
+Claude Code uses `/plugin update ambient`. Codex uses the Codex plugin update
+flow for the installed plugin. Both pull the latest wrappers and canonical
+library.
 
 ## Next Steps
 
