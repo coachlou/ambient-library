@@ -15,10 +15,13 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | A task a domain skill in `library/` covers | `.aai/skills/load.md` |
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
 | Maintain the library itself — create/edit/delete a library skill, edit the catalog | `.aai/skills/admin.md` |
+| Make another folder ambiently intelligent — stamp `.aai/` into it, vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 
 Disambiguation: "add <skill> **to this project**" is manage (edits the
 project's manifest); "add a skill **to the library**" is admin (edits the
-canonical library in a source clone).
+canonical library in a source clone); "add <skill> **into a folder's `.ailib`**"
+or "make this folder ambient" is lifecycle (stamps/vendors the `.aai`/`.ailib`
+scaffold into a target folder).
 
 Read the chosen file with the Read tool (resolve `${CLAUDE_PLUGIN_ROOT}` to its
 absolute path), then carry out its steps.
@@ -51,6 +54,22 @@ plain files — not registered skills — so they cost nothing in context until 
 
 Never load more than one domain skill body per request, and never load the whole
 library.
+
+## The ambient-folder model
+
+This folder is the reference `.aai`/`.ailib` ambient folder, and every folder it
+stamps inherits the same two-part contract:
+
+- **`.aai/` is owned.** Behavior, identity, forks, references, and memory live
+  here and are never overwritten by an update.
+- **`.ailib/` is vendored.** Pristine, read-only canonical capabilities, freely
+  deleted and re-synced. `.aai/` shadows it — a fork in `.aai/skills/` overrides
+  the `.ailib/` copy of the same capability.
+- **Memory graduates to references.** `.aai/memory/` is runtime state no update
+  touches; recurring patterns are promoted deliberately into `.aai/references/`.
+
+The operations that apply this model to other folders live in
+`.aai/skills/lifecycle.md`. The full spec is `templates/aai/README.md`.
 
 ## Rules
 
