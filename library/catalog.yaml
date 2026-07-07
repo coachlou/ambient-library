@@ -18,12 +18,8 @@
 namespaces:
   writing: [writer, editor, researcher, writing-team, brand-writing-team, aimm-writing-team, voice-profile-trainer, editorial-desk]
   thinking: [cognitive-operations, eigenthinking, latent-cartographer, paradigm-collision-engine, deep-field, enrich-prompt]
-  sessions: [session, wrap, extract-codify-patterns]
-  transcripts: [meeting-nuggets, transcript-to-content-pipeline, conversation-ip-extractor]
-  audit: [audit-fix, audit-mcp, fresh-eyes]
-  planning: [grill, harness-prd, to-issues, trello-pipeline]
-  knowledge: [graphify, knowledge-base-architect, conversation-consolidation-system]
-  email: [gmail-manager, gmail-triage, aimm-newsletter]
+  sessions: [session, wrap, extract-codify-patterns, conversation-ip-extractor, meeting-nuggets]
+  audit: [audit-fix, audit-mcp, fresh-eyes, grill]
 
 skills:
   project-brief: Creates a one-page project overview; use for "write a brief", "summarize this project", "project overview", "what is this project".

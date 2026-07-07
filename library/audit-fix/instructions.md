@@ -28,6 +28,9 @@ failure modes.
   that wrote the plan cannot see what is structurally invisible from the author's
   position, which is exactly what the blind-spots lens exists to catch. The fix
   pass stays in the parent, which has the context to fix root causes.
+  *(Premise not yet measured: that isolating the same weights in a fresh context
+  changes what gets caught. Treat cold-spawn as the prudent default, not proven
+  mechanism — a spawn-vs-in-context run on a known-flawed trace would settle it.)*
 
 ## Step 0 — Identify the target and mode
 

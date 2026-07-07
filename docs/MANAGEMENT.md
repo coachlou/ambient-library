@@ -128,8 +128,7 @@ gate protects catalog quality.
 ## Namespaces
 
 Related skills are grouped into logical namespaces in the catalog's
-`namespaces:` map (currently: `writing`, `thinking`, `sessions`,
-`transcripts`, `audit`, `planning`, `knowledge`, `email`).
+`namespaces:` map (currently: `writing`, `thinking`, `sessions`, `audit`).
 Namespaces are **logical only** — skill folders stay flat under `library/`.
 They give the router family-level disambiguation and let a project's
 `skills-manifest.yaml` scope in a whole family:
