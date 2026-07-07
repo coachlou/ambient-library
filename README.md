@@ -58,9 +58,10 @@ ambient-library/                  (canonical library + runtime wrappers)
 ├── .aai/                         # OWNED: this folder's own agentic intelligence
 │   ├── instructions.md           #   canonical router
 │   ├── identity.md               #   the folder's identity/soul
-│   └── skills/                   #   install, select, manage, load, review, admin
+│   └── skills/                   #   install, select, manage, load, review, admin, propose, lifecycle
 ├── library/                      # domain skills — plain data, read on demand
-│   └── <skill>/instructions.md
+│   ├── <skill>/instructions.md
+│   └── _staging/                 # proposed skills, drafted from real work, awaiting review
 ├── .claude-plugin/
 │   ├── plugin.json               # Claude Code plugin manifest
 │   └── marketplace.json          # Claude Code marketplace
@@ -74,6 +75,11 @@ ambient-library/                  (canonical library + runtime wrappers)
 
 A project's only artifact is an optional `skills-manifest.yaml` scoping which
 domain skills it uses.
+
+The library also grows from real work: after a task no skill covered, *"save this
+as a skill"* drafts one from the session trace into `library/_staging/`, where a
+reviewed *"promote"* moves it into the catalog. Proposals stay inert until then —
+never routed, never in the catalog.
 
 ## Documentation
 

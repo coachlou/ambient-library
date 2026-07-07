@@ -39,6 +39,7 @@ Just talk:
 - *"Configure my skills"*
 - *"Add project-brief to this project"*
 - *"Update my skills"* → points to the runtime's plugin update flow
+- *"Save this as a skill"* → drafts a proposal from your work into staging (see [USAGE.md](USAGE.md))
 
 ## Updating
 

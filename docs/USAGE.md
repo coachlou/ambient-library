@@ -74,6 +74,17 @@ and version bumps included. Requires a source clone of ambient-library (it
 never edits the installed plugin copy). Note the wording: *"to this project"*
 edits your project's manifest; *"to the library"* edits the library itself.
 
+### Grow the library from your work
+> "Save this as a skill"
+> "Propose a skill from what we just did"
+
+After a task no skill covered, this drafts a new skill **from the session
+trace** into `library/_staging/` — a proposal, not yet a real skill. It stays
+inert (never routed, not in the catalog) until you review it in a clone session:
+*"what's in staging?"* lists proposals, *"promote <name>"* moves it into the
+library, *"reject <name>"* deletes it. Requires a source clone. If the session
+has no real trace to draft from, it declines rather than inventing one.
+
 ## How Skills Activate
 
 The `ambient` skill is always available (one description in context per

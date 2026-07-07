@@ -74,7 +74,7 @@ This is why everything can be bundled in one plugin without context bloat.
 user request
   → runtime ambient skill description matches → ambient triggers
   → runtime adapter locates instructions.md
-  → canonical router routes to one subskill (install / select / manage / review / load / admin)
+  → canonical router routes to one subskill (install / select / manage / review / load / admin / propose / lifecycle)
   → subskill executes; if a domain skill applies, load.md reads
     library/<skill>/instructions.md and follows it
   → project rules are merged throughout
@@ -124,6 +124,18 @@ a real nested agentic folder only when its members need shared behavior —
 the promotion criterion and costs are recorded in
 [docs/MANAGEMENT.md](docs/MANAGEMENT.md) under "Namespaces".
 
+**Why do proposed skills go to `library/_staging/` instead of straight into the catalog?**
+Self-extension (`propose.md`) lets the library grow from real work, but a skill
+written mid-session and auto-added to the catalog is exactly the failure mode to
+avoid: unvetted skills underperform, and every catalog description is a routing
+trigger, so a bad entry degrades matching for its neighbors. Staging decouples
+authoring from promotion. Isolation is structural, not conventional — routing
+selection reads only `catalog.yaml` (see `load.md`), and nothing iterates the
+`library/` directory, so a folder absent from the catalog is unreachable by the
+router regardless of where it sits. The leading underscore is secondary hygiene.
+Promotion runs through `admin.md`, reusing the same create-a-skill steps, so a
+proposal enters the catalog only after a human review.
+
 **Why keep `skills-manifest.yaml` at all?**
 It's optional now. It scopes which domain skills the router considers for a
 project — useful for focus and for applying project-specific skills consistently.
@@ -148,6 +160,11 @@ the only description in context.
 (plus any sibling files), update `library/catalog.yaml`, commit,
 and bump each runtime plugin version as needed. Users get it through their
 runtime's plugin update flow. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
+
+**Let the library propose its own skills:** after a task no skill covered,
+`propose.md` drafts one from the session trace into `library/_staging/`;
+`admin.md` promotes it into the catalog after review. See
+[docs/MANAGEMENT.md](docs/MANAGEMENT.md) "Self-extension".
 
 **Project rules:** add runtime-appropriate project guidance such as `AGENTS.md`
 or `CLAUDE.md` to the project root; the adapter/router merges it.
