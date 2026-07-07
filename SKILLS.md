@@ -60,6 +60,12 @@ until the router reads one. Optionally scope which a project uses via
 | **wrap** | Full session close-out: commit, export, narrative, handoff, memories | *"Wrap up"*, *"Close out"* |
 | **aimm-commands** | Index of 54 named AIMM prompt commands, loaded one at a time | *"/aimm:skeptic"*, *"Run the skeptic"* |
 | **trello-pipeline** | Trello-board agentic pipeline from product idea to PRD | *"Run the Trello pipeline"* |
+| **editorial-desk** | Senior-editor orchestrator: specialist contributors over a shared blackboard | *"Run the editorial desk"*, *"Write a sharp argument piece and have it critiqued"* |
+| **to-issues** | Plan/spec/PRD → tracer-bullet vertical-slice issues on the tracker | *"Turn this plan into issues"* |
+| **harness-prd** | Interview-driven design of a harness ProcessSpec (agent state machine) | *"Build an agent process for X"*, *"Spec out an agent pipeline"* |
+| **graphify** | Any folder → persistent, queryable knowledge graph with community detection | *"Graphify this"*, codebase/architecture questions |
+| **gmail-triage** | Two-phase inbox sweep: batch-archive junk, then one-at-a-time triage | *"Check my email"*, *"Clean up my inbox"* |
+| **gmail-manager** | Cross-account Gmail management (search, read, send, label, drafts) | *"Send an email"*, *"Find that thread"* |
 
 ### In-context vs. spawned execution
 

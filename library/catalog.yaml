@@ -14,7 +14,7 @@
 # docs/MANAGEMENT.md "Namespaces".
 
 namespaces:
-  writing: [writer, editor, researcher, writing-team, brand-writing-team, aimm-writing-team, voice-profile-trainer]
+  writing: [writer, editor, researcher, writing-team, brand-writing-team, aimm-writing-team, voice-profile-trainer, editorial-desk]
   thinking: [cognitive-operations, eigenthinking, latent-cartographer, paradigm-collision-engine, deep-field, enrich-prompt]
   sessions: [session, wrap, extract-codify-patterns, conversation-ip-extractor, meeting-nuggets]
   audit: [audit-fix, audit-mcp, fresh-eyes, grill]
@@ -58,3 +58,9 @@ skills:
   wrap: Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for "wrap up", "close out", "export this conversation". For a plain .context/ checkpoint, prefer session.
   aimm-commands: Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming an AIMM command.
   trello-pipeline: Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for "run the Trello pipeline", "idea to PRD on my board", "set up the TrelloAgents board".
+  editorial-desk: Senior-editor orchestrator running specialist contributors (strategist, angle, drafter, adversary, headline) over a shared blackboard; use for "run the editorial desk", a critiqued-and-revised opinion/POV essay, or a sharp argument piece with editorial review.
+  to-issues: Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for "turn this plan into issues", "break this PRD into tickets".
+  harness-prd: Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for "build an agent process for X", "spec out an agent pipeline". NOT for code work-breakdowns (wbs-prd).
+  graphify: Turns any folder of files into a persistent, queryable knowledge graph with community detection; use for codebase/architecture questions, "graphify this", or any content query when graphify-out/ exists.
+  gmail-triage: Two-phase Gmail inbox sweep via the gmail MCP — batch-archive junk, then triage real emails one at a time; use for "check my email", "clean up my inbox".
+  gmail-manager: General Gmail management across accounts via the gmail MCP (search, read, send, label, archive, drafts); use for "send an email", "find that thread", or mailbox actions beyond triage.
