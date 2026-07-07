@@ -106,7 +106,7 @@ routing. The loop has three stops:
    skill"* (or the agent offers). `propose.md` drafts a skill **from the session
    trace** — the actual steps and corrections, not a vague idea — into
    `library/_staging/<name>/`, alongside a `PROPOSAL.md` (proposed description,
-   namespace, source trace, evidence, overlap check). If the session has no real
+   source trace, evidence, overlap check). If the session has no real
    trace to author from, it refuses.
 2. **Stage.** The proposal is inert: not in the catalog, `SKILLS.md`, or
    marketplace, and never loaded by the router (selection reads only the
@@ -124,63 +124,6 @@ shifts routing for its neighbors. Staging keeps the learning loop while a human
 gate protects catalog quality.
 
 ---
-
-## Namespaces
-
-Related skills are grouped into logical namespaces in the catalog's
-`namespaces:` map (currently: `writing`, `thinking`, `sessions`, `audit`).
-Namespaces are **logical only** — skill folders stay flat under `library/`.
-They give the router family-level disambiguation and let a project's
-`skills-manifest.yaml` scope in a whole family:
-
-```yaml
-namespaces:
-  - writing
-```
-
-**Design decision (recorded 2026-07-06): logical now, structural later.**
-Two implementation depths were considered:
-
-- *Logical* (current): a grouping map in catalog.yaml. Cheap, no moves,
-  no routing changes.
-- *Structural*: `library/<namespace>/` as a mid-level agentic folder with its
-  own `instructions.md` and `catalog.yaml`, skills nested inside. This is the
-  recursive agentic-folder framework applied one level down.
-
-**Promotion criterion — when to convert a namespace to structural form:**
-the moment a family needs *shared behavior* — e.g. "all writing skills load
-Lou's voice profile" or "all AIMM commands cite their source session." That
-shared rule needs a home, and the home is the namespace folder's own
-`instructions.md`. Until a family needs shared behavior, structural nesting
-is organization without function — don't do it. Converting costs: folder
-moves, marketplace source-path regeneration, two-hop routing in the router,
-and new trigger evals for the namespace-level catalog entries.
-
-Membership changes are one-line edits to the `namespaces:` map. A skill may
-belong to at most one namespace; skills outside every namespace are fine.
-
-### Choosing the axis
-
-Namespaces group by **function** — the job to be done (writing, thinking,
-audit) — never by team, brand, or expertise. Requests arrive as verbs
-("recap this meeting", "poke holes in this"), so only a functional grouping
-helps the router disambiguate at invocation time. The other axes are real
-but live in other layers:
-
-- **Team / brand / client** (AIMM, Leaderize, personal) is a *scoping*
-  concern — which skills a project sees at all. That belongs to bundles and
-  `skills-manifest.yaml`, not the namespace map. A brand-flavored skill
-  (`aimm-writing-team`) still joins its functional family (`writing`);
-  brand in the *name* is fine, brand as the *grouping* is the wrong axis.
-- **Expertise / role** (researcher, strategist, editor) describes *how* work
-  gets done, not *when* a skill applies — it lives as roles inside
-  multi-role skills, never as a namespace.
-
-**Earn-its-keep test:** a namespace must either disambiguate a real
-confusion cluster (skills the router mixes up, e.g. `writer` vs.
-`writing-team`) or be referenced by a project manifest. A namespace that
-does neither is decoration — delete it. Don't add one until a confusion
-cluster forces it.
 
 ## Bundles
 

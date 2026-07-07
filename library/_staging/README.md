@@ -11,7 +11,7 @@ Each proposal is `_staging/<name>/` with:
 
 - `instructions.md` — same format as a real domain skill.
 - `PROPOSAL.md` — where it came from and why it might earn a place (proposed
-  catalog description, namespace, source trace, evidence, overlap check).
+  catalog description, source trace, evidence, overlap check).
 
 Promotion or rejection goes through `.aai/skills/admin.md` ("Promote a staged
 proposal"). Nothing here auto-promotes — self-generated skills underperform

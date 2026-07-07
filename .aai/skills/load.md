@@ -22,13 +22,10 @@ skip the selection steps entirely:
 1. Read **only** `${CLAUDE_PLUGIN_ROOT}/library/catalog.yaml` to see the available
    skills and their one-line descriptions. This is the cheap selection step — do
    not open any skill's `instructions.md` yet.
-2. Choose the single best match. The catalog's `namespaces:` map groups
-   related skills — when several entries plausibly match, resolve within the
-   family the request points at (e.g. brand content -> `writing`) before
-   comparing across families. If the project has a `skills-manifest.yaml`,
-   restrict to the skills listed under `domain_skills` plus all members of
-   any families listed under `namespaces`. If nothing matches, stop and let
-   the router handle the request normally.
+2. Choose the single best match on the descriptions alone. If the project has
+   a `skills-manifest.yaml`, restrict to the skills listed under
+   `domain_skills`. If nothing matches, stop and let the router handle the
+   request normally.
 3. Read **only that one** skill's instructions:
    `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`.
 4. The skill may reference its own sibling files (e.g.
