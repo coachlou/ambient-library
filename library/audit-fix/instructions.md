@@ -23,6 +23,11 @@ failure modes.
 - **Audit the actual artifact, not your memory of it.** Re-read the plan/diff/spec
   fresh before attacking it. Auditing from memory reproduces the same blind spots
   that created the defects.
+- **The auditor must not share the author's context.** If this session produced or
+  shaped the artifact, run the audit as a cold spawned agent (Step 1) — a context
+  that wrote the plan cannot see what is structurally invisible from the author's
+  position, which is exactly what the blind-spots lens exists to catch. The fix
+  pass stays in the parent, which has the context to fix root causes.
 
 ## Step 0 — Identify the target and mode
 
@@ -32,7 +37,17 @@ failure modes.
 - **Mode**: full (audit → fix → verify, the default) or **report-only** (user said
   "report only", "don't act", "just audit") — stop after Step 2 and present.
 
-## Step 1 — Adversarial pass, six lenses
+## Step 1 — Adversarial pass, six lenses (cold)
+
+**Run this pass in a fresh spawned agent whenever the current session authored or
+shaped the artifact.** Write the artifact to a file first if it lives only in the
+conversation (a reasoning target, an unpasted plan). Spawn a general-purpose agent
+with: the artifact path (or diff command), one line of task framing (what the
+artifact is *for* — no history, no rationale), and an instruction to read this
+skill file and execute Steps 1–2 in report-only mode, returning survivors and
+discards. Do not pass the conversation's reasoning — the whole point is that the
+auditor sees only what a stranger would see. If spawning is unavailable, or the
+artifact arrived from outside this session, run the pass in-context instead.
 
 Attack the artifact as a hostile expert reviewer whose reputation depends on finding
 what the author missed. Work lens by lens; adjacent lenses catch different defects:
