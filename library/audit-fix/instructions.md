@@ -34,6 +34,11 @@ failure modes.
 - **Target**: a plan/spec (no code yet), a change (diff exists), or reasoning (a
   recommendation or analysis in this conversation). If ambiguous, the most recently
   produced artifact is the target.
+- **Output vs. process**: "audit this / the plan / the diff / the answer" targets an
+  *output* — audit it standalone, rationale withheld. "Audit the conversation",
+  "audit our reasoning", "audit how we got here", "audit the thinking" targets the
+  *process* — the reasoning trace itself is the artifact, exported in full. Default
+  to output when unstated; a process audit must be asked for.
 - **Mode**: full (audit → fix → verify, the default) or **report-only** (user said
   "report only", "don't act", "just audit") — stop after Step 2 and present.
 
@@ -48,6 +53,16 @@ skill file and execute Steps 1–2 in report-only mode, returning survivors and
 discards. Do not pass the conversation's reasoning — the whole point is that the
 auditor sees only what a stranger would see. If spawning is unavailable, or the
 artifact arrived from outside this session, run the pass in-context instead.
+
+**Process targets invert the rationale rule, not the cold rule.** When auditing the
+reasoning itself, the trace IS the artifact: export the conversation in full
+(transcript, thinking, dead ends) to a file and hand the spawned auditor all of it.
+Cold means a fresh reader, not a censored one — the auditor reads the reasoning as
+evidence on a page instead of holding it as its own convictions. Aim the lenses at
+moves rather than claims: invalid inference steps, options never generated,
+assumptions absorbed from the framing unexamined, premature convergence, drift
+between the user's ask and the final answer. A process audit can never run
+in-context: the session would re-execute its own reasoning, not review it.
 
 Attack the artifact as a hostile expert reviewer whose reputation depends on finding
 what the author missed. Work lens by lens; adjacent lenses catch different defects:
