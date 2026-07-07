@@ -97,6 +97,34 @@ If the skill belongs to any bundle in `bundles/`, remove its symlink there too.
 
 ---
 
+## Self-extension (propose → stage → promote)
+
+The library grows from real work without letting unvetted skills degrade
+routing. The loop has three stops:
+
+1. **Propose.** After a task no library skill covered, say *"save this as a
+   skill"* (or the agent offers). `propose.md` drafts a skill **from the session
+   trace** — the actual steps and corrections, not a vague idea — into
+   `library/_staging/<name>/`, alongside a `PROPOSAL.md` (proposed description,
+   namespace, source trace, evidence, overlap check). If the session has no real
+   trace to author from, it refuses.
+2. **Stage.** The proposal is inert: not in the catalog, `SKILLS.md`, or
+   marketplace, and never loaded by the router (selection reads only the
+   catalog, and the leading underscore sorts `_staging/` apart). Re-proposing the
+   same name appends evidence instead of overwriting — repetition is the
+   strongest promotion signal.
+3. **Promote.** In a clone session, *"what's in staging?"* lists proposals and
+   *"promote <name>"* reviews it against its overlap check, then runs the normal
+   create-a-skill steps (catalog, `SKILLS.md`, marketplace, version bumps).
+   *"reject <name>"* deletes it.
+
+Why gated rather than auto-committed: self-generated skills underperform unless
+authored from real traces and reviewed, and every unvetted catalog description
+shifts routing for its neighbors. Staging keeps the learning loop while a human
+gate protects catalog quality.
+
+---
+
 ## Namespaces
 
 Related skills are grouped into logical namespaces in the catalog's

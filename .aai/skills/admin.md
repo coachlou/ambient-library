@@ -43,6 +43,28 @@ it. Never overwrite on a create/save request.
 4. Add a human-readable entry to `SKILLS.md`.
 5. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
 
+### Promote a staged proposal
+
+`library/_staging/` holds skills drafted from real task traces by
+`propose.md` — inert until promoted here. To list them, read each
+`library/_staging/*/PROPOSAL.md` and show the proposed description and source
+trace.
+
+To promote `<name>`:
+
+1. Read `library/_staging/<name>/instructions.md` and its `PROPOSAL.md`. Sanity-
+   check the instructions against the proposal's overlap check — if an existing
+   skill already covers it, say so and recommend rejecting instead.
+2. Present the proposal summary and get an explicit go-ahead.
+3. Move `library/_staging/<name>/` to `library/<name>/` and delete its
+   `PROPOSAL.md`. Then run the **Create a domain skill** steps 3–5 above
+   (catalog entry using the proposal's description and namespace, `SKILLS.md`
+   entry, a `marketplace.json` plugin entry if sibling skills have one, version
+   bumps).
+
+To reject `<name>`: confirm, then delete `library/_staging/<name>/`. Nothing
+else changes.
+
 ### Update a domain skill
 
 "Update <name>" is itself approval to overwrite the existing skill — no extra
