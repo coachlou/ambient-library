@@ -37,9 +37,7 @@ it. Never overwrite on a create/save request.
    reference siblings as `${CLAUDE_PLUGIN_ROOT}/library/<name>/<file>` — never
    repo-relative or absolute paths — so the skill works from both the
    installed plugin and a pointer-adapter clone.
-3. Add the one-line entry to `library/catalog.yaml`. If the skill belongs
-   to a family in the catalog's `namespaces:` map, add it there too (one
-   namespace max; none is fine).
+3. Add the one-line entry to `library/catalog.yaml`.
 4. Add a human-readable entry to `SKILLS.md`.
 5. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
 
@@ -58,9 +56,8 @@ To promote `<name>`:
 2. Present the proposal summary and get an explicit go-ahead.
 3. Move `library/_staging/<name>/` to `library/<name>/` and delete its
    `PROPOSAL.md`. Then run the **Create a domain skill** steps 3–5 above
-   (catalog entry using the proposal's description and namespace, `SKILLS.md`
-   entry, a `marketplace.json` plugin entry if sibling skills have one, version
-   bumps).
+   (catalog entry using the proposal's description, `SKILLS.md` entry, a
+   `marketplace.json` plugin entry if sibling skills have one, version bumps).
 
 To reject `<name>`: confirm, then delete `library/_staging/<name>/`. Nothing
 else changes.

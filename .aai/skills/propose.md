@@ -47,7 +47,6 @@ All paths below are relative to that clone.
 4. Write `library/_staging/<name>/PROPOSAL.md` with exactly these fields:
    - **Proposed description** — the one-line catalog entry it would get, phrased
      as *when it applies* (user intent, not implementation).
-   - **Namespace** — an existing `catalog.yaml` namespace, or "none".
    - **Source trace** — date, project, and 2–3 sentences on the task it came from.
    - **Evidence** — what in the session shows the pattern is real and repeatable.
    - **Overlap check** — the nearest existing catalog entries and why they don't

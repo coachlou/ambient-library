@@ -23,16 +23,49 @@ failure modes.
 - **Audit the actual artifact, not your memory of it.** Re-read the plan/diff/spec
   fresh before attacking it. Auditing from memory reproduces the same blind spots
   that created the defects.
+- **The auditor must not share the author's context.** If this session produced or
+  shaped the artifact, run the audit as a cold spawned agent (Step 1) — a context
+  that wrote the plan cannot see what is structurally invisible from the author's
+  position, which is exactly what the blind-spots lens exists to catch. The fix
+  pass stays in the parent, which has the context to fix root causes.
+  *(Premise not yet measured: that isolating the same weights in a fresh context
+  changes what gets caught. Treat cold-spawn as the prudent default, not proven
+  mechanism — a spawn-vs-in-context run on a known-flawed trace would settle it.)*
 
 ## Step 0 — Identify the target and mode
 
 - **Target**: a plan/spec (no code yet), a change (diff exists), or reasoning (a
   recommendation or analysis in this conversation). If ambiguous, the most recently
   produced artifact is the target.
+- **Output vs. process**: "audit this / the plan / the diff / the answer" targets an
+  *output* — audit it standalone, rationale withheld. "Audit the conversation",
+  "audit our reasoning", "audit how we got here", "audit the thinking" targets the
+  *process* — the reasoning trace itself is the artifact, exported in full. Default
+  to output when unstated; a process audit must be asked for.
 - **Mode**: full (audit → fix → verify, the default) or **report-only** (user said
   "report only", "don't act", "just audit") — stop after Step 2 and present.
 
-## Step 1 — Adversarial pass, six lenses
+## Step 1 — Adversarial pass, six lenses (cold)
+
+**Run this pass in a fresh spawned agent whenever the current session authored or
+shaped the artifact.** Write the artifact to a file first if it lives only in the
+conversation (a reasoning target, an unpasted plan). Spawn a general-purpose agent
+with: the artifact path (or diff command), one line of task framing (what the
+artifact is *for* — no history, no rationale), and an instruction to read this
+skill file and execute Steps 1–2 in report-only mode, returning survivors and
+discards. Do not pass the conversation's reasoning — the whole point is that the
+auditor sees only what a stranger would see. If spawning is unavailable, or the
+artifact arrived from outside this session, run the pass in-context instead.
+
+**Process targets invert the rationale rule, not the cold rule.** When auditing the
+reasoning itself, the trace IS the artifact: export the conversation in full
+(transcript, thinking, dead ends) to a file and hand the spawned auditor all of it.
+Cold means a fresh reader, not a censored one — the auditor reads the reasoning as
+evidence on a page instead of holding it as its own convictions. Aim the lenses at
+moves rather than claims: invalid inference steps, options never generated,
+assumptions absorbed from the framing unexamined, premature convergence, drift
+between the user's ask and the final answer. A process audit can never run
+in-context: the session would re-execute its own reasoning, not review it.
 
 Attack the artifact as a hostile expert reviewer whose reputation depends on finding
 what the author missed. Work lens by lens; adjacent lenses catch different defects:

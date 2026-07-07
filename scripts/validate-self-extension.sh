@@ -13,7 +13,6 @@ set -e
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 TEST_SKILL="test-validation-skill"
-TEST_NAMESPACE="testing"
 CLEANUP=false
 
 if [[ "$1" == "--cleanup" ]]; then
@@ -62,8 +61,6 @@ cat > "$REPO_ROOT/library/_staging/$TEST_SKILL/PROPOSAL.md" <<EOF
 
 **Proposed description:** Test skill to validate the self-extension pipeline; use to verify propose→stage→promote works end-to-end.
 
-**Namespace:** $TEST_NAMESPACE
-
 **Source trace:** Validation script $(date '+%Y-%m-%d'), ambient-library self-extension feature test.
 
 **Evidence:** This is a synthetic proposal created by the validation script to exercise the propose→stage→promote loop without requiring a full Claude session.
@@ -102,15 +99,9 @@ mv "$REPO_ROOT/library/_staging/$TEST_SKILL" "$REPO_ROOT/library/$TEST_SKILL"
 rm -f "$REPO_ROOT/library/$TEST_SKILL/PROPOSAL.md"
 echo "✓ Folder moved to library/"
 
-# Add to catalog
-if ! grep -q "^$TEST_NAMESPACE:" "$REPO_ROOT/library/catalog.yaml"; then
-  # Namespace doesn't exist, add it
-  sed -i '' "/^namespaces:/a\\
-  $TEST_NAMESPACE: [$TEST_SKILL]" "$REPO_ROOT/library/catalog.yaml"
-else
-  # Namespace exists, add skill to its list
-  sed -i '' "s/^  $TEST_NAMESPACE: \[\(.*\)\]$/  $TEST_NAMESPACE: [\1, $TEST_SKILL]/" "$REPO_ROOT/library/catalog.yaml"
-fi
+# Add to catalog under skills:
+sed -i '' "/^skills:/a\\
+  $TEST_SKILL: Test skill to validate the self-extension pipeline; use to verify propose→stage→promote works end-to-end." "$REPO_ROOT/library/catalog.yaml"
 echo "✓ Added to catalog.yaml"
 
 # Add to SKILLS.md
