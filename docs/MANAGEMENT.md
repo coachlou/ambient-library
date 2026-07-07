@@ -128,7 +128,8 @@ gate protects catalog quality.
 ## Namespaces
 
 Related skills are grouped into logical namespaces in the catalog's
-`namespaces:` map (currently: `writing`, `thinking`, `sessions`, `audit`).
+`namespaces:` map (currently: `writing`, `thinking`, `sessions`,
+`transcripts`, `audit`, `planning`, `knowledge`, `email`).
 Namespaces are **logical only** — skill folders stay flat under `library/`.
 They give the router family-level disambiguation and let a project's
 `skills-manifest.yaml` scope in a whole family:
@@ -158,6 +159,29 @@ and new trigger evals for the namespace-level catalog entries.
 
 Membership changes are one-line edits to the `namespaces:` map. A skill may
 belong to at most one namespace; skills outside every namespace are fine.
+
+### Choosing the axis
+
+Namespaces group by **function** — the job to be done (writing, thinking,
+audit) — never by team, brand, or expertise. Requests arrive as verbs
+("recap this meeting", "poke holes in this"), so only a functional grouping
+helps the router disambiguate at invocation time. The other axes are real
+but live in other layers:
+
+- **Team / brand / client** (AIMM, Leaderize, personal) is a *scoping*
+  concern — which skills a project sees at all. That belongs to bundles and
+  `skills-manifest.yaml`, not the namespace map. A brand-flavored skill
+  (`aimm-writing-team`) still joins its functional family (`writing`);
+  brand in the *name* is fine, brand as the *grouping* is the wrong axis.
+- **Expertise / role** (researcher, strategist, editor) describes *how* work
+  gets done, not *when* a skill applies — it lives as roles inside
+  multi-role skills, never as a namespace.
+
+**Earn-its-keep test:** a namespace must either disambiguate a real
+confusion cluster (skills the router mixes up, e.g. `writer` vs.
+`writing-team`) or be referenced by a project manifest. A namespace that
+does neither is decoration — delete it. Don't add one until a confusion
+cluster forces it.
 
 ## Bundles
 
