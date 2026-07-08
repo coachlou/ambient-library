@@ -38,10 +38,24 @@ rather than merely stale.
 - **Check the state file before running anything** — it prevents duplicate
   mining and tells you which mode is actually due.
 
+## Data location
+
+This skill reads and writes the cognitive-mirror data in the global ambient
+home `~/.aai/`, the same home the `cognitive-mirror` skill owns:
+
+- Profile + directives (owned references): `~/.aai/references/cognitive-profile-<name>.md`, `~/.aai/references/operational-directives.md`
+- Run state + evidence + harvest (owned memory): `~/.aai/memory/cognitive-mirror/`
+
+The canonical map of these locations is the routing table at
+`~/.aai/context.md` (no filesystem symlinks — portable across
+macOS/Linux/Windows). Always **write** to the `~/.aai/` paths.
+Cognitive-mirror's static doctrine (dimensions, scheduled-task prompts) ships
+read-only in `library/cognitive-mirror/references/`.
+
 ## State file
 
-`~/.claude/skills/cognitive-mirror/references/deep-mirror-state.json` — lives
-with the cognitive-mirror data it manages. Create on first run:
+`~/.aai/memory/cognitive-mirror/deep-mirror-state.json` — lives with the
+cognitive-mirror data it manages. Create on first run:
 
 ```json
 {
@@ -112,7 +126,7 @@ phrases ("no, I meant", "that's not what", "again", "stop"), repeated identical
 requests across weeks, time-of-day distribution.
 
 Merge everything into
-`~/.claude/skills/cognitive-mirror/references/deep-mine-evidence.md`, every
+`~/.aai/memory/cognitive-mirror/deep-mine-evidence.md`, every
 claim carrying at least one dated receipt, sections marked "insufficient data"
 rather than padded. Do not interpret while collecting — evidence gathered
 under a conclusion is contaminated.
@@ -120,7 +134,7 @@ under a conclusion is contaminated.
 ### 3. Integrate — feed the cognitive-mirror pipeline
 
 Now (and only now) read the cognitive profile
-(`~/.claude/skills/cognitive-mirror/references/cognitive-profile-lou.md`) and
+(`~/.aai/references/cognitive-profile-<name>.md`) and
 run the equivalent of cognitive-mirror's Diff mode using the deep-mine evidence
 as the observation source: Stable / Strengthened / Weakened / New / Evolved.
 Propose line-level profile updates and any directive changes as diffs. Apply
@@ -155,7 +169,7 @@ This mode is a thin dispatcher — the work belongs to `cognitive-mirror`.
 4. Update `last_weekly` in the state file.
 
 If Lou asks for weekly runs on a schedule, point him at cognitive-mirror's
-`references/scheduled-task-prompts.md` and add
+`library/cognitive-mirror/references/scheduled-task-prompts.md` and add
 "run deep-mirror weekly mode" as the scheduled prompt — the state file makes
 repeated firings idempotent within a week (if `last_weekly` is under 6 days
 old, report "not due" and stop).
@@ -180,7 +194,7 @@ scope, get Lou's go.
 **Do not read the profile, directives, or prior evidence files.** Run the same
 subagent mining as bootstrap §2 (cheap models, batches of ~25, six categories,
 dated receipts) over the new files only. Write cold findings to
-`~/.claude/skills/cognitive-mirror/references/audit-evidence-YYYY-MM-DD.md`.
+`~/.aai/memory/cognitive-mirror/audit-evidence-YYYY-MM-DD.md`.
 
 ### 3. Reveal and diff
 

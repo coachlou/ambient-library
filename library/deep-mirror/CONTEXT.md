@@ -26,12 +26,14 @@ Conclusions that shaped the design:
 ## Invocation
 - Inputs: mode (bootstrap | weekly | audit | status), inferred from phrasing.
 - Preconditions: Claude Code with subagent support and filesystem access;
-  cognitive-mirror skill installed at ~/.claude/skills/cognitive-mirror/.
+  cognitive-mirror capability available in the library and the global ambient
+  home readable at ~/.aai/.
 - Outputs: evidence markdown files, state JSON, proposed profile/directive
   diffs (applied only on approval), harvest-store appends via
   cognitive-mirror's machinery.
-- Side effects: writes under cognitive-mirror's references/ dir only; never
-  writes profile/CLAUDE.md without an approved diff.
+- Side effects: writes under the ambient home (~/.aai/references/ and
+  ~/.aai/memory/cognitive-mirror/) only; never writes profile/CLAUDE.md without
+  an approved diff.
 
 ## Trigger phrases
 Positive: "bootstrap the mirror", "deep mine my session logs", "weekly

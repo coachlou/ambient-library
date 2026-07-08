@@ -51,7 +51,12 @@ own `instructions.md` (behavior) and whatever identity, rules, or context files
 that behavior loads. The repo is one; each library skill is a smaller one; a
 skill's own subfolders can be smaller ones still. Runtime memory does **not**
 live in these folders — installed copies are overwritten on update, so memory
-belongs to the project (e.g. `.context/`) or a per-user data dir.
+belongs to the project (e.g. `.context/`) or a per-user data dir. The canonical
+per-user data dir is the **global ambient home** `~/.aai/` (owned `references/`
++ `memory/`, mirroring the `.aai` model at user scope); the `cognitive-mirror`
+and `deep-mirror` skills are its first users. Skills locate that data through
+the routing table `~/.aai/context.md` rather than symlinks or hardcoded paths —
+see the design decision below.
 
 ## Context cost
 
@@ -132,6 +137,18 @@ proposal enters the catalog only after a human review.
 **Why keep `skills-manifest.yaml` at all?**
 It's optional now. It scopes which domain skills the router considers for a
 project — useful for focus and for applying project-specific skills consistently.
+
+**Why a routing table for per-user data instead of symlinks or hardcoded paths?**
+Skills that persist data (like `cognitive-mirror`) need a stable home separate
+from their own overwrite-on-update install dir. Hardcoding one skill's install
+path into another (e.g. `deep-mirror` writing into
+`~/.claude/skills/cognitive-mirror/references/`) couples them to a runtime layout
+and breaks when either moves. Symlinks from the old path to the new home fix
+resolution but aren't portable — Windows needs elevated permissions or Developer
+Mode, and links rarely survive zip/copy. So the redirect lives in **data the
+agent reads**: `~/.aai/context.md` maps every logical data name to its path, and
+each skill body resolves through it. Adding a consumer or moving the home is a
+one-line table edit, and it works identically on every OS and runtime.
 
 ## Running a domain skill in its own context
 
