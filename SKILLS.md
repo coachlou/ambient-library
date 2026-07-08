@@ -38,6 +38,7 @@ until the router reads one. Optionally scope which a project uses via
 | **conversation-consolidation-system** | Pipeline turning Claude chat history into a searchable Obsidian brain | *"Second brain for my AI work"* |
 | **conversation-ip-extractor** | Extracts frameworks and publishable IP from a conversation transcript | *"What did I figure out here?"* |
 | **deep-comprehension-assessment** | Rigorous text-comprehension assessments with feedback | *"Test my understanding of this text"* |
+| **cognitive-mirror** | Live cognitive-profile extractor: /loms, Mine, Diff, Query, Harvest — models how you think from conversation evidence | *"/loms"*, *"Mine my conversations"*, *"Harvest my decisions"* |
 | **deep-mirror** | Cognitive-DB lifecycle: bootstrap log mine, weekly maintenance, quarterly blind audit | *"Bootstrap the mirror"*, *"Audit the mirror"* |
 | **deep-field** | Eigenthinking + latent cartography + wisdom-of-crowds insight system | *"Run deep field"* |
 | **eigenthinking** | Nine-step framework turning tacit expertise into branded IP | *"Package my methodology"* |
