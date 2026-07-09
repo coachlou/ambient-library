@@ -17,6 +17,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote a staged proposal | `.aai/skills/admin.md` |
 | Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |
 | Make another folder ambiently intelligent — stamp `.aai/` into it, vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
+| Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
 
 Disambiguation: "add <skill> **to this project**" is manage (edits the
 project's manifest); "add a skill **to the library**" with content you supply is

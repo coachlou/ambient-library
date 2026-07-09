@@ -1,7 +1,7 @@
 # lifecycle
 
 Operations that make another folder ambiently intelligent and maintain it over
-time: the **stamp → install → personalize → learn → update** lifecycle of the
+time: the **stamp → install → personalize → learn → update → sweep** lifecycle of the
 `.aai`/`.ailib` scaffold. The full spec is
 `${CLAUDE_PLUGIN_ROOT}/templates/aai/README.md` — read it if a detail here is
 ambiguous.
@@ -54,6 +54,25 @@ notices; references are where it has learned.
 2. `.aai/` — forks, references, and memory — is untouched. That is the entire
    point of the ownership boundary: a personalized fork keeps overriding the
    refreshed `.ailib/` copy via shadowing.
+
+## Sweep — detect rot in the canonical library
+
+Context rots: model behavior shifts, tools deprecate, trigger phrases drift.
+Update re-syncs vendored copies, but nothing checks whether the *canonical*
+skills are still true. Sweep does, on request ("rot sweep", "what's stale").
+
+1. **Find stale candidates by git age** — don't duplicate dates into files:
+   `git log -1 --format=%as -- library/<skill>/` per catalog entry. Thresholds:
+   domain skills 90 days; `.aai/` router, subskills, and `identity.md` 180
+   days. A skill touched more recently is presumed fresh — skip it.
+2. **Check each stale candidate against three questions:**
+   - Do its referenced paths, tools, and commands still exist?
+   - Would its catalog description still win routing for its real use cases?
+   - Does it over-instruct current models (steps newer models no longer need)?
+3. **Report, don't fix.** One ranked list — skill, age, failed question,
+   one-line suggested remedy. Changing a description re-routes the whole
+   catalog, so every fix is a deliberate follow-up via review.md, never part
+   of the sweep itself.
 
 ## Rules
 
