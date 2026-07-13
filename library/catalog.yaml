@@ -53,3 +53,4 @@ skills:
   graphify: Turns any folder of files into a persistent, queryable knowledge graph with community detection; use for codebase/architecture questions, "graphify this", or any content query when graphify-out/ exists.
   gmail-triage: Two-phase Gmail inbox sweep via the gmail MCP — batch-archive junk, then triage real emails one at a time; use for "check my email", "clean up my inbox".
   gmail-manager: General Gmail management across accounts via the gmail MCP (search, read, send, label, archive, drafts); use for "send an email", "find that thread", or mailbox actions beyond triage.
+  gears-broadcast: Sends any email to GEARS licensees (gears_owners) via Resend, drafting subject/body with the user if not already given, straight from raw HTML/text with no dashboard-editor round trip; use for "send a gears broadcast", "email the licensees", "notify gears owners", "send this to gears_owners".

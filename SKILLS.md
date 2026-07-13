@@ -68,6 +68,7 @@ until the router reads one. Optionally scope which a project uses via
 | **graphify** | Any folder → persistent, queryable knowledge graph with community detection | *"Graphify this"*, codebase/architecture questions |
 | **gmail-triage** | Two-phase inbox sweep: batch-archive junk, then one-at-a-time triage | *"Check my email"*, *"Clean up my inbox"* |
 | **gmail-manager** | Cross-account Gmail management (search, read, send, label, drafts) | *"Send an email"*, *"Find that thread"* |
+| **gears-broadcast** | Sends any GEARS licensee email via Resend — drafts subject/body if not given | *"Send a gears broadcast"*, *"Email the licensees"* |
 
 ### In-context vs. spawned execution
 

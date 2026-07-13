@@ -1,0 +1,11 @@
+{
+  "name": "gears-broadcast",
+  "description": "Sends any email to GEARS licensees (gears_owners) via Resend — accepts a subject/body if already given, otherwise drafts them with the user first; use for \"send a gears broadcast\", \"email the licensees\", \"notify gears owners\", \"send this to gears_owners\". Skips Resend's dashboard-editor round trip and sends straight from raw HTML/text.",
+  "version": "2.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}
