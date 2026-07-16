@@ -1,0 +1,22 @@
+[
+  {"query": "ok I want to finally bootstrap the mirror - deep mine everything in ~/.claude/projects and my codex sessions, the whole history", "should_trigger": true},
+  {"query": "can you check what's due on my cognitive db? haven't run anything since like early june", "should_trigger": true},
+  {"query": "run the quarterly audit on my profile - blind re-mine, don't peek at the profile first", "should_trigger": true},
+  {"query": "is my cognitive profile still accurate or has it calcified? feels like it keeps telling me the same things", "should_trigger": true},
+  {"query": "mirror status", "should_trigger": true},
+  {"query": "its monday, run my weekly mirror maintenance", "should_trigger": true},
+  {"query": "I've got months of claude code session logs sitting on disk - mine them for patterns about how I actually work", "should_trigger": true},
+  {"query": "deep mine my session logs but keep the cost down, use cheap subagents for the file reading", "should_trigger": true},
+  {"query": "my opencode and claude histories have never been analyzed. excavate them and feed what you find into my cognitive profile", "should_trigger": true},
+  {"query": "audit the mirror - it's been about 3 months since bootstrap", "should_trigger": true},
+  {"query": "/loms", "should_trigger": false},
+  {"query": "mine my last 10 conversations and update the cognitive profile", "should_trigger": false},
+  {"query": "harvest my decisions from this week's chats for the dspy training set", "should_trigger": false},
+  {"query": "how do I typically approach client intake calls? what's my pattern", "should_trigger": false},
+  {"query": "audit this plan for the newsletter launch - poke holes in it before I commit", "should_trigger": false},
+  {"query": "audit this MCP server repo before I install it: github.com/foo/bar-mcp", "should_trigger": false},
+  {"query": "help me find my irreplaceable edge as a coach, the thing clients can't get elsewhere", "should_trigger": false},
+  {"query": "my ~/.claude/projects folder is 300MB, clean up the old session logs to free space", "should_trigger": false},
+  {"query": "export this conversation and save it to my vault, I want the transcript", "should_trigger": false},
+  {"query": "build me a second brain from my claude chat history, something searchable in obsidian", "should_trigger": false}
+]

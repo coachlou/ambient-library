@@ -1,0 +1,86 @@
+Split: 12 train, 8 test (holdout=0.4)
+
+============================================================
+Iteration 1/5
+Description: Lifecycle manager for the cognitive-mirror database — orchestrates the one-time deep mine of raw agent session logs (bootstrap), weekly Mine/Harvest maintenance, and the quarterly blind audit that re-mines new logs cold and diffs them against the profile. Use for "bootstrap the mirror", "deep mine my session logs", "weekly mirror", "run mirror maintenance", "audit the mirror", "blind re-mine", "is my profile still accurate", "mirror status", or any request to mine ~/.claude/projects or other agent session archives for behavioral patterns. Requires Claude Code with subagents; raw-log mining is delegated to cheap-model subagents.
+============================================================
+Train: 21/36 correct, precision=100% recall=17% accuracy=58% (58.6s)
+  [FAIL] rate=0/3 expected=True: its monday, run my weekly mirror maintenance
+  [FAIL] rate=1/3 expected=True: I've got months of claude code session logs sitting on disk 
+  [FAIL] rate=0/3 expected=True: mirror status
+  [FAIL] rate=0/3 expected=True: audit the mirror - it's been about 3 months since bootstrap
+  [PASS] rate=0/3 expected=False: mine my last 10 conversations and update the cognitive profi
+  [FAIL] rate=1/3 expected=True: ok I want to finally bootstrap the mirror - deep mine everyt
+  [FAIL] rate=1/3 expected=True: can you check what's due on my cognitive db? haven't run any
+  [PASS] rate=0/3 expected=False: /loms
+  [PASS] rate=0/3 expected=False: my ~/.claude/projects folder is 300MB, clean up the old sess
+  [PASS] rate=0/3 expected=False: export this conversation and save it to my vault, I want the
+  [PASS] rate=0/3 expected=False: help me find my irreplaceable edge as a coach, the thing cli
+  [PASS] rate=0/3 expected=False: build me a second brain from my claude chat history, somethi
+Test : 13/24 correct, precision=100% recall=8% accuracy=54% (0.0s)
+  [FAIL] rate=1/3 expected=True: deep mine my session logs but keep the cost down, use cheap 
+  [FAIL] rate=0/3 expected=True: is my cognitive profile still accurate or has it calcified? 
+  [FAIL] rate=0/3 expected=True: run the quarterly audit on my profile - blind re-mine, don't
+  [FAIL] rate=0/3 expected=True: my opencode and claude histories have never been analyzed. e
+  [PASS] rate=0/3 expected=False: how do I typically approach client intake calls? what's my p
+  [PASS] rate=0/3 expected=False: audit this MCP server repo before I install it: github.com/f
+  [PASS] rate=0/3 expected=False: harvest my decisions from this week's chats for the dspy tra
+  [PASS] rate=0/3 expected=False: audit this plan for the newsletter launch - poke holes in it
+
+Improving description...
+Proposed (15.4s): Use this skill whenever the user wants to run, schedule, check, or audit their cognitive-mirror / behavioral-profile system — it is the lifecycle operator, not the live extractor. Trigger it for: any "mirror" operation (weekly mirror, mirror maintenance, mirror status, audit the mirror, bootstrap the mirror, blind re-mine); any mining of stored agent session logs on disk (~/.claude/projects, codex sessions, months of Claude Code history) for patterns in how the user works; and any status or "what's due" check on the cognitive database or profile freshness ("is my profile still accurate", "haven't run maintenance since June"). Covers three jobs: one-time bootstrap deep-mine, recurring weekly Mine/Harvest maintenance, and quarterly blind audits that re-mine cold and diff against the profile. Prefer this over cognitive-mirror when the request is about maintaining, scheduling, auditing, or bulk-mining logs rather than extracting from the current conversation.
+
+============================================================
+Iteration 2/5
+Description: Use this skill whenever the user wants to run, schedule, check, or audit their cognitive-mirror / behavioral-profile system — it is the lifecycle operator, not the live extractor. Trigger it for: any "mirror" operation (weekly mirror, mirror maintenance, mirror status, audit the mirror, bootstrap the mirror, blind re-mine); any mining of stored agent session logs on disk (~/.claude/projects, codex sessions, months of Claude Code history) for patterns in how the user works; and any status or "what's due" check on the cognitive database or profile freshness ("is my profile still accurate", "haven't run maintenance since June"). Covers three jobs: one-time bootstrap deep-mine, recurring weekly Mine/Harvest maintenance, and quarterly blind audits that re-mine cold and diff against the profile. Prefer this over cognitive-mirror when the request is about maintaining, scheduling, auditing, or bulk-mining logs rather than extracting from the current conversation.
+============================================================
+Train: 20/36 correct, precision=100% recall=11% accuracy=56% (26.0s)
+  [FAIL] rate=0/3 expected=True: mirror status
+  [FAIL] rate=1/3 expected=True: its monday, run my weekly mirror maintenance
+  [FAIL] rate=0/3 expected=True: audit the mirror - it's been about 3 months since bootstrap
+  [FAIL] rate=0/3 expected=True: I've got months of claude code session logs sitting on disk 
+  [PASS] rate=0/3 expected=False: mine my last 10 conversations and update the cognitive profi
+  [FAIL] rate=1/3 expected=True: can you check what's due on my cognitive db? haven't run any
+  [PASS] rate=0/3 expected=False: export this conversation and save it to my vault, I want the
+  [PASS] rate=0/3 expected=False: my ~/.claude/projects folder is 300MB, clean up the old sess
+  [FAIL] rate=0/3 expected=True: ok I want to finally bootstrap the mirror - deep mine everyt
+  [PASS] rate=0/3 expected=False: /loms
+  [PASS] rate=0/3 expected=False: help me find my irreplaceable edge as a coach, the thing cli
+  [PASS] rate=0/3 expected=False: build me a second brain from my claude chat history, somethi
+Test : 12/24 correct, precision=100% recall=0% accuracy=50% (0.0s)
+  [FAIL] rate=0/3 expected=True: deep mine my session logs but keep the cost down, use cheap 
+  [FAIL] rate=0/3 expected=True: is my cognitive profile still accurate or has it calcified? 
+  [FAIL] rate=0/3 expected=True: run the quarterly audit on my profile - blind re-mine, don't
+  [FAIL] rate=0/3 expected=True: my opencode and claude histories have never been analyzed. e
+  [PASS] rate=0/3 expected=False: how do I typically approach client intake calls? what's my p
+  [PASS] rate=0/3 expected=False: audit this MCP server repo before I install it: github.com/f
+  [PASS] rate=0/3 expected=False: harvest my decisions from this week's chats for the dspy tra
+  [PASS] rate=0/3 expected=False: audit this plan for the newsletter launch - poke holes in it
+
+Improving description...
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/loudalo/.claude/skills/create-skill/scripts/run_loop.py", line 328, in <module>
+    main()
+    ~~~~^^
+  File "/Users/loudalo/.claude/skills/create-skill/scripts/run_loop.py", line 293, in main
+    output = run_loop(
+        eval_set=eval_set,
+    ...<11 lines>...
+        log_dir=log_dir,
+    )
+  File "/Users/loudalo/.claude/skills/create-skill/scripts/run_loop.py", line 199, in run_loop
+    new_description = improve_description(
+        skill_name=name,
+    ...<6 lines>...
+        iteration=iteration,
+    )
+  File "/Users/loudalo/.claude/skills/create-skill/scripts/improve_description.py", line 144, in improve_description
+    text = _call_claude(prompt, model)
+  File "/Users/loudalo/.claude/skills/create-skill/scripts/improve_description.py", line 44, in _call_claude
+    raise RuntimeError(
+        f"claude -p exited {result.returncode}\nstderr: {result.stderr}"
+    )
+RuntimeError: claude -p exited 1
+stderr: 
