@@ -1,9 +1,18 @@
 # ambient-library
 
+> **Status: distribution snapshot (not the active canonical library).** This repo
+> began as a globally-accessible, read-only snapshot of the canonical library —
+> from before Claudio could self-improve and author its own capabilities. The
+> active canonical **and development** library now lives in `coachlou/aai-framework`
+> under `canonical-library/`: that copy syncs with its remote origin and carries
+> the live notes, updates, and pattern-gap tracking. Treat this repo as a
+> point-in-time distribution snapshot — don't develop against it, and expect it to
+> lag the canonical source.
+
 A runtime-agnostic library of agents, skills, and reusable capabilities. It ships
-thin plugin wrappers for Claude Code and Codex, while the canonical library stays
-in one place. Project setup, skill selection, management, and code review all
-work through natural language.
+thin plugin wrappers for Claude Code and Codex, packaging a snapshot of the
+canonical library for global, harness-agnostic access. Project setup, skill
+selection, management, and code review all work through natural language.
 
 **New here?** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
 
@@ -54,7 +63,7 @@ plain file in the canonical library, read on demand. Nothing else loads into
 context until it's actually needed.
 
 ```
-ambient-library/                  (canonical library + runtime wrappers)
+ambient-library/                  (snapshot of the canonical library + runtime wrappers)
 ├── .aai/                         # OWNED: this folder's own agentic intelligence
 │   ├── instructions.md           #   canonical router
 │   ├── identity.md               #   the folder's identity/soul
