@@ -9,7 +9,7 @@
     {
       "name": "ambient",
       "source": "./",
-      "description": "Ambient skill library \u2014 project setup, skill selection, management, and code review, all through natural language."
+      "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language."
     },
     {
       "name": "aimm-commands",
@@ -27,6 +27,11 @@
       "description": "Autonomous multi-role team (Researcher, Strategist, Writer, Editor, Publisher) for thought-leadership articles; use for explicit role commands like \"Use Strategist mode\" or a full AIMM article run."
     },
     {
+      "name": "ambient-folder",
+      "source": "./library/ambient-folder",
+      "description": "Makes a folder ambiently intelligent and maintains it — interviews for purpose when it's unclear, writes the .aai/ scaffold, vendors canonical capabilities into .ailib/, forks them, re-syncs; use for \"make this folder ambient\", \"set up an agentic folder for X\", \"stamp .aai here\", \"interview me about this folder\", \"add a capability to this folder\", \"re-sync my vendored skills\"."
+    },
+    {
       "name": "audit-fix",
       "source": "./library/audit-fix",
       "description": "Adversarial six-lens audit (errors, omissions, oversights, blind spots, conflicts, duplications) of a plan or change, then root-cause fixes; use for \"audit this\", \"pressure test\", \"poke holes\", \"what did we miss\"."
@@ -40,6 +45,11 @@
       "name": "brand-writing-team",
       "source": "./library/brand-writing-team",
       "description": "Multi-role team for brand-building long-form content with structured intake, end to end; use for \"help me write a post about X\", \"turn this idea into a piece\" when the goal is personal/company brand."
+    },
+    {
+      "name": "cognitive-mirror",
+      "source": "./library/cognitive-mirror",
+      "description": "Live extractor for the user's cognitive profile — observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for \"/loms\", \"look over my shoulder\", \"mine my conversations\", \"update my cognitive profile\", \"harvest my decisions\", \"how do I typically approach X\", \"what's my pattern when\". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/."
     },
     {
       "name": "cognitive-operations",
@@ -72,9 +82,19 @@
       "description": "Integrated insight system combining Eigenthinking, latent-space cartography, and wisdom-of-crowds validation; use for \"run deep field\", frontier-quality insight beyond default reasoning."
     },
     {
+      "name": "deep-mirror",
+      "source": "./library/deep-mirror",
+      "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) — bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
+    },
+    {
       "name": "editor",
       "source": "./library/editor",
       "description": "Surgically edits an EXISTING draft; use for \"edit this draft\", \"polish this\", \"tighten this article\". Requires a draft to already exist."
+    },
+    {
+      "name": "editorial-desk",
+      "source": "./library/editorial-desk",
+      "description": "Senior-editor orchestrator running specialist contributors (strategist, angle, drafter, adversary, headline) over a shared blackboard; use for \"run the editorial desk\", a critiqued-and-revised opinion/POV essay, or a sharp argument piece with editorial review."
     },
     {
       "name": "eigenthinking",
@@ -97,14 +117,39 @@
       "description": "Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for \"fresh eyes\", \"does the onboarding work\", \"test the docs\"."
     },
     {
+      "name": "gears-broadcast",
+      "source": "./library/gears-broadcast",
+      "description": "Sends any email to GEARS licensees (gears_owners) via Resend, drafting subject/body with the user if not already given, straight from raw HTML/text with no dashboard-editor round trip; use for \"send a gears broadcast\", \"email the licensees\", \"notify gears owners\", \"send this to gears_owners\"."
+    },
+    {
       "name": "geo-authority-architect",
       "source": "./library/geo-authority-architect",
       "description": "Builds a GEO/AI-citation authority strategy and Canon/Frameworks/Diagnostics content architecture; use for \"GEO strategy\", \"get cited by AI\", \"GEARS\"."
     },
     {
+      "name": "gmail-manager",
+      "source": "./library/gmail-manager",
+      "description": "General Gmail management across accounts via the gmail MCP (search, read, send, label, archive, drafts); use for \"send an email\", \"find that thread\", or mailbox actions beyond triage."
+    },
+    {
+      "name": "gmail-triage",
+      "source": "./library/gmail-triage",
+      "description": "Two-phase Gmail inbox sweep via the gmail MCP — batch-archive junk, then triage real emails one at a time; use for \"check my email\", \"clean up my inbox\"."
+    },
+    {
+      "name": "graphify",
+      "source": "./library/graphify",
+      "description": "Turns any folder of files into a persistent, queryable knowledge graph with community detection; use for codebase/architecture questions, \"graphify this\", or any content query when graphify-out/ exists."
+    },
+    {
       "name": "grill",
       "source": "./library/grill",
       "description": "Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for \"grill me\", \"interview me\", \"ask me questions one at a time\"."
+    },
+    {
+      "name": "harness-prd",
+      "source": "./library/harness-prd",
+      "description": "Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for \"build an agent process for X\", \"spec out an agent pipeline\". NOT for code work-breakdowns (wbs-prd)."
     },
     {
       "name": "ireport",
@@ -139,7 +184,7 @@
     {
       "name": "multi-model-debate-live",
       "source": "./library/multi-model-debate-live",
-      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" \u2014 the live workflow, not the prompt protocol."
+      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" — the live workflow, not the prompt protocol."
     },
     {
       "name": "paradigm-collision-engine",
@@ -149,7 +194,7 @@
     {
       "name": "polyglot-language-coach",
       "source": "./library/polyglot-language-coach",
-      "description": "Gently coaches when the user writes in a non-English language mid-conversation \u2014 corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
+      "description": "Gently coaches when the user writes in a non-English language mid-conversation — corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
     },
     {
       "name": "project-brief",
@@ -165,6 +210,11 @@
       "name": "session",
       "source": "./library/session",
       "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
+    },
+    {
+      "name": "to-issues",
+      "source": "./library/to-issues",
+      "description": "Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for \"turn this plan into issues\", \"break this PRD into tickets\"."
     },
     {
       "name": "transcript-to-content-pipeline",
@@ -189,22 +239,22 @@
     {
       "name": "wrap",
       "source": "./library/wrap",
-      "description": "Full session close-out ritual \u2014 commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
+      "description": "Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
     },
     {
       "name": "writer",
       "source": "./library/writer",
-      "description": "Drafts a piece from a brief (and optional dossier) \u2014 drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
+      "description": "Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
+    },
+    {
+      "name": "writing-suite",
+      "source": "./bundles/writing-suite",
+      "description": "Bundle: the complete writing toolkit — researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
     },
     {
       "name": "writing-team",
       "source": "./library/writing-team",
       "description": "Full research -> draft -> edit pipeline to a publish-ready piece; use for \"write me an article on X end to end\", \"take this from idea to finished post\". Use this when the user wants the whole pipeline, not a single stage."
-    },
-    {
-      "name": "writing-suite",
-      "source": "./bundles/writing-suite",
-      "description": "Bundle: the complete writing toolkit \u2014 researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
     }
   ]
 }

@@ -15,6 +15,23 @@ it, so edits there silently vanish. Locate the source clone first:
 
 All paths below are relative to that clone.
 
+## Four files, not one
+
+A skill is **routable** when it is in `library/catalog.yaml` — that is all the
+router needs. It is **distributable** only when it also has `SKILL.md`,
+`.claude-plugin/plugin.json`, and a `marketplace.json` entry, which is what lets
+someone install it standalone. Touching the catalog alone leaves a skill the
+router can pick and nobody can install; nine skills drifted that way before this
+was written down. Every create, update, and delete below touches all four.
+
+Descriptions: the `plugin.json` and `marketplace.json` descriptions are display
+metadata and must be the catalog line **verbatim**. The `SKILL.md` description
+is a live routing trigger for the standalone install — it may legitimately be
+longer or tuned differently, because there it competes against every skill the
+user has rather than 47 siblings.
+
+Verify with `python3 scripts/audit-distribution.py` (exit 0 = no drift).
+
 ## Operations
 
 ### List / inspect
@@ -37,9 +54,20 @@ it. Never overwrite on a create/save request.
    reference siblings as `${CLAUDE_PLUGIN_ROOT}/library/<name>/<file>` — never
    repo-relative or absolute paths — so the skill works from both the
    installed plugin and a pointer-adapter clone.
-3. Add the one-line entry to `library/catalog.yaml`.
-4. Add a human-readable entry to `SKILLS.md`.
-5. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
+3. Write `library/<name>/SKILL.md` — frontmatter `name:` (must equal the folder
+   name) and `description:`, then the two standard body paragraphs. Copy a
+   sibling's exactly; the path note is what makes a standalone install resolve
+   `${CLAUDE_PLUGIN_ROOT}` paths correctly.
+4. Write `library/<name>/.claude-plugin/plugin.json` — `name`, `description`,
+   `version` (start at `1.0.0`), and the `author`/`homepage`/`repository`/
+   `license` block copied from a sibling.
+5. Add the one-line entry to `library/catalog.yaml`.
+6. Add the `.claude-plugin/marketplace.json` plugin entry: `name`,
+   `source` `./library/<name>`, `description` matching the catalog line.
+   Entries sort by name after the leading `ambient` entry.
+7. Add a human-readable entry to `SKILLS.md`.
+8. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
+9. Run `python3 scripts/audit-distribution.py` and confirm it exits 0.
 
 ### Promote a staged proposal
 
@@ -55,9 +83,10 @@ To promote `<name>`:
    skill already covers it, say so and recommend rejecting instead.
 2. Present the proposal summary and get an explicit go-ahead.
 3. Move `library/_staging/<name>/` to `library/<name>/` and delete its
-   `PROPOSAL.md`. Then run the **Create a domain skill** steps 3–5 above
-   (catalog entry using the proposal's description, `SKILLS.md` entry, a
-   `marketplace.json` plugin entry if sibling skills have one, version bumps).
+   `PROPOSAL.md`. Then run the **Create a domain skill** steps 3–9 above,
+   using the proposal's description as the catalog line. A staged proposal
+   carries only `instructions.md`, so `SKILL.md`, `plugin.json`, and the
+   marketplace entry are all still missing at this point.
 
 To reject `<name>`: confirm, then delete `library/_staging/<name>/`. Nothing
 else changes.
@@ -66,15 +95,28 @@ else changes.
 
 "Update <name>" is itself approval to overwrite the existing skill — no extra
 confirmation needed. If the skill doesn't exist, say so and offer to create it
-instead. Edit its `instructions.md`; bump wrapper versions. If the **catalog
-description** changes, warn the user: descriptions are routing triggers, and a
-change can shift routing for neighboring skills — re-test matching before
-release.
+instead. Edit its `instructions.md`; bump the skill's own
+`library/<name>/.claude-plugin/plugin.json` `version` as well as the wrapper
+versions. If any distribution file is missing, add it now per the create steps
+above — an update is the cheapest moment to close the gap.
+
+If the **catalog description** changes, warn the user: descriptions are routing
+triggers, and a change can shift routing for neighboring skills — re-test
+matching before release. Then re-sync it into the skill's `plugin.json` and its
+`marketplace.json` entry (verbatim), and decide deliberately whether `SKILL.md`
+should follow — that one is the standalone install's trigger, so changing it is
+its own routing decision.
+
+Finish by running `python3 scripts/audit-distribution.py`.
 
 ### Delete a domain skill
 
-Confirm with the user first, then: remove the skill folder, its `catalog.yaml`
-line, and its `SKILLS.md` entry; bump wrapper versions.
+Confirm with the user first, then: remove the skill folder (which takes its
+`SKILL.md` and `plugin.json` with it), its `catalog.yaml` line, its
+`marketplace.json` entry, and its `SKILLS.md` entry; bump wrapper versions. A
+left-behind marketplace entry points at a missing source and breaks the
+marketplace for every skill in it, so run
+`python3 scripts/audit-distribution.py` to confirm nothing dangles.
 
 ### Create or edit a bundle
 
