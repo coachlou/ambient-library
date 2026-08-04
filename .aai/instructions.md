@@ -16,7 +16,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
 | Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote a staged proposal | `.aai/skills/admin.md` |
 | Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |
-| Make another folder ambiently intelligent — stamp `.aai/` into it, vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
+| Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 | Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
 
 Disambiguation: "add <skill> **to this project**" is manage (edits the
@@ -24,8 +24,10 @@ project's manifest); "add a skill **to the library**" with content you supply is
 admin (edits the canonical library in a source clone); "save **this session's
 work** as a skill" is propose (drafts from the trace into `library/_staging/`,
 where admin later promotes it); "add <skill> **into a folder's `.ailib`**"
-or "make this folder ambient" is lifecycle (stamps/vendors the `.aai`/`.ailib`
-scaffold into a target folder).
+or "make this folder ambient" or "set up a folder that does X" is lifecycle,
+which delegates every folder operation to the `ambient-folder` domain skill —
+that skill interviews first when the purpose still needs drawing out, and
+stamps directly when the user already stated it.
 
 Read the chosen file with the Read tool (resolve `${CLAUDE_PLUGIN_ROOT}` to its
 absolute path), then carry out its steps.

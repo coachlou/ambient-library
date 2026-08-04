@@ -1,6 +1,6 @@
 ---
 name: ambient
-description: Use for ambient-library operations in Codex. Triggers on setting up ambient-library in a project, configuring project skills, updating or managing skills, code review, and any project-specific task covered by a canonical domain skill such as writing a project brief or summarizing a project.
+description: Use for ambient-library operations in Codex. Triggers on setting up ambient-library in a project, configuring project skills, updating or managing skills, code review, making a folder ambiently intelligent (stamping .aai or creating an ambient folder for a purpose), and any project-specific task covered by a canonical domain skill such as writing a project brief or summarizing a project.
 ---
 
 # ambient

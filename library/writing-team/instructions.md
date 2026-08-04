@@ -58,9 +58,14 @@ the researcher flagged as unverified must be surfaced, not asserted.
 Read and follow `${CLAUDE_PLUGIN_ROOT}/library/editor/instructions.md`
 against `DRAFT-<slug>.md`. It edits in place.
 
-> **Path note:** `${CLAUDE_PLUGIN_ROOT}` resolves inside a spawned subagent. If
-> for some reason it isn't substituted, derive the library directory from this
-> file's own location (the sibling folders `researcher/`, `writer/`, `editor/`).
+> **Resolving the three stages:** they are named capabilities, not fixed paths.
+> The `${CLAUDE_PLUGIN_ROOT}` form above is the bundled-plugin case. Resolve
+> each name — `researcher`, `writer`, `editor` — by taking the first that
+> exists: `.aai/skills/<name>/`, then `.ailib/<name>/`, then
+> `${CLAUDE_PLUGIN_ROOT}/library/<name>/`, then a sibling folder next to this
+> file. This is what lets the pipeline work when vendored into a folder's
+> `.ailib/`, where no plugin root exists. If a stage can't be resolved, say
+> which one is missing — never improvise the stage inline.
 
 ### 5. Deliver
 
