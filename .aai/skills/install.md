@@ -35,11 +35,16 @@ subskills, and `library/` all live in the installed plugin. Continue to step 2.
 **Pointer harness** (any other agent — you reached this file via a path the
 user gave you or an existing AGENTS.md pointer): the library root is the
 repository root this file's `.aai/` directory sits under — resolve it to
-an absolute path. If the project's `AGENTS.md` (or equivalent instruction file)
-doesn't yet reference the library, copy the template at
-`<library root>/templates/AGENTS-pointer.md` into it, replacing
+an absolute path. If the project doesn't yet reference the library, copy the
+template at `<library root>/templates/AGENTS-pointer.md` into it, replacing
 `{{LIBRARY_ROOT}}` with that absolute path. This pins the library location so
 future sessions route automatically without the user pointing you here.
+
+**Put it in the file the harness actually auto-loads**, or it is never read and
+the agent improvises: Claude Code loads `CLAUDE.md`, **not** `AGENTS.md`; Codex
+loads `AGENTS.md`; Gemini loads `GEMINI.md`. The template ships both blocks —
+paste the canonical block into `AGENTS.md`, and the one-line redirect into
+`CLAUDE.md`/`GEMINI.md`, so the pointer lives in exactly one place.
 
 ### 2. Check existing setup
 
