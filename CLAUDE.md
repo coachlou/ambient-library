@@ -15,17 +15,19 @@ The canonical capability library — 56 domain skills in `library/`, plus the
 thin plugin wrappers for Claude Code (`.claude-plugin/`) and Codex
 (`.codex-plugin/`), but the library is plain files and works without either.
 
-## This clone is the dev workspace
+## Which clone am I in?
 
-Two clones of this repo exist, distinguished only by a `.aai/PRODUCTION` marker
-file:
+**Check whether `.aai/PRODUCTION` exists in this folder.** That file, and only
+that file, decides this clone's role — this pointer is byte-identical in both,
+so it cannot tell you on its own.
 
-| Clone | Marker | Authoring |
+| `.aai/PRODUCTION` | Role | Authoring |
 |---|---|---|
-| **this one** (dev) | absent | allowed — `admin.md`, `propose.md` |
-| `~/GitHub/ambient-library` (production) | present | refused; installs and vends only |
+| absent | dev workspace | allowed — `admin.md`, `propose.md` |
+| present | production; folders install and vend from it | refused |
 
-**Author here.** Adding or editing a library skill goes through
+Author in a clone without the marker. Adding or editing a library skill goes
+through
 `.aai/skills/admin.md`, which writes all four files a skill needs to be both
 routable and installable — skill dir, `.claude-plugin/plugin.json`, a
 `library/catalog.yaml` line, and a `.claude-plugin/marketplace.json` entry.
