@@ -9,16 +9,18 @@
 > `admin.md`, and no marketplace, so nothing committed there is installable.
 > Develop here.
 >
-> This repo is used in two roles, distinguished only by a `.aai/PRODUCTION`
-> marker file:
+> **Dev and production are different things, not two clones.** This repo is the
+> source. The production library is *built* from it:
 >
-> | Role | Clone | Marker | Can author? |
-> |---|---|---|---|
-> | **Dev workspace** | the canonical working clone | absent | yes — `admin.md`, `propose.md` |
-> | **Production** | what folders install and vend from | present | no — maintenance routes refuse |
+> | | |
+> |---|---|
+> | `RELEASE.yaml` | explicit list of what ships — nothing else does |
+> | `scripts/build-production.sh` | assembles production from `HEAD` and rsyncs it into place |
 >
-> Both are ordinary clones of this same remote and stay byte-identical in git.
-> Production is a role, not a fork — `git pull` is the whole update mechanism.
+> Committing a skill does not release it. Releasing is a separate one-line edit
+> to `RELEASE.yaml`, reviewable as a diff, reversible by deleting the line and
+> rebuilding. The build drops `admin.md` and `propose.md`, so a production
+> library cannot author — not by policy, but because the files are not there.
 
 A runtime-agnostic library of agents, skills, and reusable capabilities. It ships
 thin plugin wrappers for Claude Code and Codex, packaging the canonical

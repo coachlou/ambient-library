@@ -77,19 +77,19 @@ stamps inherits the same two-part contract:
 The operations that apply this model to other folders live in
 `.aai/skills/lifecycle.md`. The full spec is `templates/aai/README.md`.
 
-## Production libraries are read-only
+## Production is a build output
 
-Before routing to `admin.md` or `propose.md`, check whether a `PRODUCTION`
-marker file sits next to this one (`.aai/PRODUCTION`). If it does, **refuse
-the operation.** That library is a distribution copy folders install and vend
-from, not a place to author. Tell the user which library this is, and that
-library maintenance happens in the dev workspace — the marker file names it.
+`.aai/PRODUCTION` marks a built production library. If it is present, this is
+not a place to author: it was assembled by `scripts/build-production.sh` from a
+dev workspace, `admin.md` and `propose.md` were not copied into it, and any
+edit here is overwritten by the next build. The marker file names the dev
+workspace to work in instead.
 
-Every other route is unaffected: install, select, manage, load, review, and
-lifecycle all work normally in a production copy. That is what it is for.
+Everything else works normally — install, select, manage, load, review, and
+lifecycle are exactly what a production library is for.
 
-This is a marker rather than a file deletion so the two copies stay identical
-in git — a production clone that has had files removed fights every `git pull`.
+In a dev workspace (no marker), authoring works and nothing you create reaches
+production until its name is added to `RELEASE.yaml` and the build is re-run.
 
 ## Rules
 

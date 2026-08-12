@@ -15,6 +15,15 @@ it, so edits there silently vanish. Locate the source clone first:
 
 All paths below are relative to that clone.
 
+## Authoring does not release
+
+Creating a skill makes it exist in the dev workspace. It does **not** reach
+production. Production is built from `RELEASE.yaml` by
+`scripts/build-production.sh`, and a skill not named there does not ship.
+
+This is deliberate: a skill should be exercised on real work before folders
+start installing it. Create, use, then release — see **Release a skill** below.
+
 ## Four files, not one
 
 A skill is **routable** when it is in `library/catalog.yaml` — that is all the
@@ -68,6 +77,28 @@ it. Never overwrite on a create/save request.
 7. Add a human-readable entry to `SKILLS.md`.
 8. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
 9. Run `python3 scripts/audit-distribution.py` and confirm it exits 0.
+
+### Release a skill to production
+
+Only after the skill has been exercised on real work. Releasing an untested
+skill is how a library accumulates capabilities nobody trusts.
+
+1. Confirm it is complete: `python3 scripts/audit-distribution.py` exits 0.
+2. Add its name to the `skills:` list in `RELEASE.yaml`, alphabetically. One
+   line. This edit is the release decision and should read as one in the diff.
+3. Preview: `scripts/build-production.sh --dry-run`. Nothing is written; you
+   see exactly which files would land.
+4. Build: `scripts/build-production.sh`.
+
+The build refuses if the audit fails, if `RELEASE.yaml` names a skill that
+does not exist or is not in the catalog, or if it is run from a clone marked
+`.aai/PRODUCTION`. It builds from `HEAD`, never the working tree, so an
+uncommitted edit cannot ship — commit first.
+
+**Unreleasing** is the same edit in reverse: delete the line, rebuild. The
+build uses `rsync --delete`, so the skill disappears from production. Folders
+that already vendored it into their `.ailib/` keep their copy until they
+re-sync — vendored copies are theirs, by design.
 
 ### Promote a staged proposal
 

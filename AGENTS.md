@@ -15,29 +15,32 @@ The canonical capability library — 56 domain skills in `library/`, plus the
 thin plugin wrappers for Claude Code (`.claude-plugin/`) and Codex
 (`.codex-plugin/`), but the library is plain files and works without either.
 
-## Which clone am I in?
+## Dev workspace or production build?
 
-**Check whether `.aai/PRODUCTION` exists in this folder.** That file, and only
-that file, decides this clone's role — this pointer is byte-identical in both,
-so it cannot tell you on its own.
+**Check whether `.aai/PRODUCTION` exists here.**
 
-| `.aai/PRODUCTION` | Role | Authoring |
+| `.aai/PRODUCTION` | What this is | Authoring |
 |---|---|---|
-| absent | dev workspace | allowed — `admin.md`, `propose.md` |
-| present | production; folders install and vend from it | refused |
+| absent | the dev workspace — the source | yes: `admin.md`, `propose.md` |
+| present | a build output folders install from | no — those files aren't here |
 
-Author in a clone without the marker. Adding or editing a library skill goes
-through
-`.aai/skills/admin.md`, which writes all four files a skill needs to be both
-routable and installable — skill dir, `.claude-plugin/plugin.json`, a
-`library/catalog.yaml` line, and a `.claude-plugin/marketplace.json` entry.
-Touching the catalog alone leaves a skill the router can pick and nobody can
-install.
+**Production is built, not cloned.** `scripts/build-production.sh` reads
+`RELEASE.yaml`, copies only the skills named there, drops the authoring
+subskills and maintainer docs, and `rsync --delete`s the result into the
+production folder. So:
 
-Verify with `python3 scripts/audit-distribution.py` — exit 0 means no drift.
+- Committing a skill does **not** ship it. Releasing is a separate, deliberate
+  edit to `RELEASE.yaml`.
+- The build runs from `HEAD`, never the working tree — an uncommitted edit
+  cannot ship.
+- Unrelease by deleting the line and rebuilding.
+- Preview any release with `scripts/build-production.sh --dry-run`.
 
-Production updates by `git pull`. Both clones stay byte-identical in git; the
-marker is gitignored, so the role is local to each clone.
+Adding or editing a skill goes through `.aai/skills/admin.md`, which writes all
+four files a skill needs to be routable and installable — skill dir,
+`.claude-plugin/plugin.json`, a `library/catalog.yaml` line, and a
+`.claude-plugin/marketplace.json` entry. Verify with
+`python3 scripts/audit-distribution.py` (exit 0 = no drift).
 
 ## Do not develop in the copy
 

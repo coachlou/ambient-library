@@ -1,0 +1,73 @@
+# RELEASE.yaml — what ships to production
+#
+# The production library is BUILT from this file by scripts/build-production.sh.
+# A skill in library/ that is not listed here does not ship. Nothing is
+# released by accident: adding a name below is a deliberate, reviewable edit.
+#
+# Workflow:
+#   1. author in library/ via .aai/skills/admin.md   (dev only, not shipped)
+#   2. exercise it until you trust it
+#   3. add its name here
+#   4. scripts/build-production.sh                   (rebuilds the prod folder)
+#
+# To pull a skill back: delete its line and rebuild. The build uses
+# `rsync --delete`, so it disappears from production on the next run.
+#
+# Seeded 53 names on 2026-08-11 from library/catalog.yaml — everything that
+# was already reaching production when the manifest was introduced, so the
+# first build is a no-op. New skills default to UNRELEASED from here on.
+
+skills:
+  - aimm-commands
+  - aimm-newsletter
+  - aimm-writing-team
+  - ambient-folder
+  - audit-fix
+  - audit-mcp
+  - brand-writing-team
+  - cognitive-mirror
+  - cognitive-operations
+  - connector-bridge
+  - context-mgr
+  - conversation-consolidation-system
+  - conversation-ip-extractor
+  - deep-comprehension-assessment
+  - deep-field
+  - deep-mirror
+  - editor
+  - editorial-desk
+  - eigenthinking
+  - enrich-prompt
+  - extract-codify-patterns
+  - fresh-eyes
+  - gauntlet
+  - gears-broadcast
+  - geo-authority-architect
+  - gmail-manager
+  - gmail-triage
+  - graphify
+  - grill
+  - harness-prd
+  - ireport
+  - irreplaceable-edge
+  - knowledge-base-architect
+  - latent-cartographer
+  - leaderize-storytelling-framework
+  - meeting-nuggets
+  - multi-model-debate-live
+  - paradigm-collision-engine
+  - polyglot-language-coach
+  - project-brief
+  - researcher
+  - session
+  - skill-evals
+  - teaching-block-synthesized
+  - to-issues
+  - transcript-to-content-pipeline
+  - trello-pipeline
+  - trigger-runner
+  - voice-crm-pipeline
+  - voice-profile-trainer
+  - wrap
+  - writer
+  - writing-team

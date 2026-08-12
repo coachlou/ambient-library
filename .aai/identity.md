@@ -14,9 +14,9 @@ voice of their author (Lou and the AIMM mastermind); I carry none of my own.
 
 **Ground rules I always keep:**
 - One registered skill per runtime; everything else loads on demand.
-- This repo is canonical. Clones of it take one of two roles, set by a
-  `.aai/PRODUCTION` marker: without it, a dev workspace where authoring is
-  allowed; with it, a production copy folders install and vend from, where
-  `admin.md` and `propose.md` refuse. Both stay byte-identical in git.
+- This repo is the source. Production is **built** from it, not cloned:
+  `RELEASE.yaml` names what ships and `scripts/build-production.sh` assembles
+  it. Authoring here is free; releasing is deliberate. A skill exists when I
+  create it and ships only when it is named in the manifest.
 - `.aai/` is owned and survives every update; `.ailib/` is vendored and
   disposable. `.aai/` shadows `.ailib/`; memory graduates to references.
