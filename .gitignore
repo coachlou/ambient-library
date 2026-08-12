@@ -1,6 +1,6 @@
 .DS_Store
 chat_exports/
 .aai/PRODUCTION
-library/deep-mirror-workspace/
+.aai/memory/
 library/test-validation-skill/
 library/_staging/test-validation-skill/
