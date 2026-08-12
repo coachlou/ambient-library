@@ -57,6 +57,90 @@ edit history, observations across runs. Rules:
   `.aai/references/` as a rule. Memory is where the folder notices;
   references are where it has learned.
 
+## Augmenting a folder's capabilities
+
+When an agent — or its human — determines the folder needs a capability it
+doesn't have, placement is decided by this test, not improvised. Apply it to
+the **smallest independently owned unit**: composite workflows decompose into
+their reference, skill, and agent parts before placing each.
+
+### The placement test
+
+Two questions, in order. **Q1 — what does the knowledge DO?**
+inform | transform | decide. **Q2 — what does it NEED?**
+nothing | deterministic steps | stateless inference | accreting memory +
+jurisdiction | a home with a corpus. Stop at the first rung that holds.
+
+| Rung | It... | And needs... | Then it is a... | Lives at |
+|---|---|---|---|---|
+| 0 | is needed once | — | nothing — do it inline | (nowhere) |
+| 1 | informs (constraints, formats, facts) | to be consulted | **reference**; if parametric and machine-consumed, a **profile** | `.aai/references/` |
+| 2 | transforms input→output | deterministic steps | **script** | alongside its consumer |
+| 3 | transforms, same for a stranger | inference, no memory | **skill** | resolved from canonical, or `.aai/skills/` |
+| 4 | decides — discretion that accretes | memory + jurisdiction | **agent** (a hire) | its own `.aai/` folder |
+| 5 | any of the above | to live WITH a corpus/place | **ambient folder** — stamp `.aai/` on the data's folder | the data's folder |
+
+Clarifications the rungs need:
+
+- **Rung 0 is real but bounded.** Inline is for reversible, low-risk work
+  inside existing gates. Side-effectful or gated acts (publish, send,
+  delete) keep their approval gates regardless of how rarely they occur.
+- **A stateless verdict is a transform, not a decision.** An evaluator that
+  takes a draft and returns a judgment, cold, with no memory, is rung 3 —
+  and its blindness is usually the point. Rung 4 "decide" means accreting
+  discretion over a jurisdiction, not producing a judgment output.
+- **Rung 5 uses invariant 4's threshold.** A corpus stays plain data —
+  visible input — until it needs behavior beyond a single instructions
+  file. Only then does it earn its own `.aai/`, which is then authoritative
+  for it (outer agents defer).
+
+### Sourcing — canonical library first
+
+Two distinct orders. **Discovery** (acquiring, rungs 1–4): check the
+canonical library first — it is the default, expected home of
+ambient-agentic capability; augmenting a folder normally means resolving or
+installing from it, not creating. Create only when the library lacks it:
+born owned, in the `.aai/` of the folder that needed it, authored from the
+real task trace — never from speculation. **Execution** (running): the
+shadowing rule, unchanged — `.aai/` fork over `.ailib/` copy over canonical.
+
+Promotion runs the reverse of discovery: an owned creation graduates to the
+canonical library when recorded evidence shows a second consumer or repeated
+use (dated memory/debrief entries are the evidence — not impressions).
+Promotion is a deliberate, human-approved act, never a side effect.
+
+### Competence vs. configuration
+
+Skills own **competence** — how a class of work is done, including its
+domain knowledge (a video skill legitimately knows video formats). Agents
+own **instance configuration** — which capability applies here, with what
+parameters, for this folder and this human — resolved at plan time and
+passed via briefs. An executor that absorbs instance configuration forces
+one-executor-per-variant sprawl; an agent that absorbs competence stops
+being a router and becomes a bottleneck.
+
+### Migration — capabilities move rungs over their lifetime
+
+A reference that hardens into procedure (same steps, recorded 3+ times)
+promotes to a script or skill. A skill that starts accreting state is
+misplaced — move the state to an agent's memory, restore the skill to
+statelessness. An agent whose memory and jurisdiction never differentiate
+is a costume — demote to a skill or profile.
+
+### Decision rights
+
+| Act | Who decides |
+|---|---|
+| Create/update a reference, profile, or script | the agent, freely; recorded in memory/debrief |
+| Fork a canonical capability (shadowing rule) | the agent, freely |
+| Create a NEW owned skill | the agent — usable in this folder at once; discoverable to others only via promotion |
+| Hire an agent / stamp a new ambient folder | proposal to the human — never unilateral |
+| Promote anything to the canonical library | human-approved, always |
+
+One writer per folder: an ambient folder's `.aai/` is written only by its
+own agent. Dispatched executors return outputs to the dispatcher; they never
+write shared state directly.
+
 ## Invariants
 
 1. **Behavior travels with the folder.** Copy the folder, you've copied its

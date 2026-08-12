@@ -26,10 +26,18 @@ skip the selection steps entirely:
    a `skills-manifest.yaml`, restrict to the skills listed under
    `domain_skills`. If nothing matches, stop and let the router handle the
    request normally.
-3. Read **only that one** skill's instructions:
-   `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`.
+3. Resolve the skill body through the overlay cascade, most specific first:
+   a. `<project root>/.ambient/<skill-name>/instructions.md`
+   b. `~/.aai/library/<skill-name>/instructions.md`
+   c. `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`
+
+   Read the **first** one that exists — that is the skill body. Then append any
+   `overrides.md` present at (b), then at (a), and treat them as additional
+   rules that follow the body. Skip the cascade entirely when no overlay
+   directory exists; (c) is the normal case.
 4. The skill may reference its own sibling files (e.g.
-   `library/<skill-name>/references/...`). Read those only as the skill directs.
+   `library/<skill-name>/references/...`). Resolve those relative to the layer
+   that supplied the body, and read them only as the skill directs.
 5. Merge rules from the project's `CLAUDE.md` if present, then carry out the skill.
 
 ## Rules
@@ -37,3 +45,8 @@ skip the selection steps entirely:
 - Selection reads the catalog only. Execution reads exactly one skill body.
 - Never load more than one domain skill per request. Never load the whole library.
 - Never mention `library/`, the catalog, manifests, or paths unless the user asks.
+- Overlays override by canonical name — they never add new catalog entries.
+  Selection still reads only `catalog.yaml`, so an overlay for a skill absent
+  from the catalog is unreachable (that's `propose.md`'s job, not an overlay's).
+- Say which layer supplied the body **only** when it wasn't (c) — a silent
+  override is the one thing that makes a skill's behavior inexplicable.

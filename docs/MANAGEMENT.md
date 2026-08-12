@@ -148,6 +148,48 @@ includes writing-team).
 
 ---
 
+## Overlays (local customization without forking)
+
+A canonical skill can be adjusted per-project or per-user **without copying it**,
+so it keeps receiving upstream updates. `load.md` resolves a skill body through
+three layers, most specific first:
+
+| Layer | Path | Scope |
+|-------|------|-------|
+| project | `<project>/.ambient/<skill>/` | this repo only |
+| user | `~/.aai/library/<skill>/` | you, everywhere |
+| canonical | `library/<skill>/` (in the plugin) | everyone |
+
+Two filenames, two very different costs:
+
+**`overrides.md` — appended to the canonical body. Keeps upstream updates.**
+This is the case worth reaching for. Adding a few project rules no longer
+requires owning the whole skill:
+
+```bash
+mkdir -p .ambient/writing-team
+cat > .ambient/writing-team/overrides.md <<'EOF'
+# Project rules
+- Drafts land in `content/drafts/`, never the repo root.
+- House style: no em-dashes in headings.
+EOF
+```
+
+**`instructions.md` — full replacement. You own it; no more updates.**
+Only when the canonical skill is genuinely wrong for you.
+
+Both overlay roots live **outside** the installed plugin, so a plugin update
+overwrites `library/` and leaves overlays untouched. That's the whole mechanism
+— no merge logic, no versioning, no protected paths.
+
+Overlays override **by canonical name**; they don't add catalog entries.
+Authoring a genuinely new skill is still propose → stage → promote above.
+
+When an overlay supplies the body, the agent says so. A silent override is what
+makes a skill's behavior impossible to explain later.
+
+---
+
 ## Updating Core Subskills
 
 The canonical router (`instructions.md`) and its subskills (`skills/`) live in
