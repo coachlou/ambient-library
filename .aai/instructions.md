@@ -14,8 +14,8 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Review code / check for bugs or security issues | `.aai/skills/review.md` |
 | A task a domain skill in `library/` covers | `.aai/skills/load.md` |
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
-| Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote a staged proposal | `.aai/skills/admin.md` |
-| Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |
+| Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote a staged proposal | `.aai/skills/admin.md` |  *(refused in a production copy — see below)*
+| Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |  *(refused in a production copy — see below)*
 | Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 | Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
 
@@ -76,6 +76,20 @@ stamps inherits the same two-part contract:
 
 The operations that apply this model to other folders live in
 `.aai/skills/lifecycle.md`. The full spec is `templates/aai/README.md`.
+
+## Production libraries are read-only
+
+Before routing to `admin.md` or `propose.md`, check whether a `PRODUCTION`
+marker file sits next to this one (`.aai/PRODUCTION`). If it does, **refuse
+the operation.** That library is a distribution copy folders install and vend
+from, not a place to author. Tell the user which library this is, and that
+library maintenance happens in the dev workspace — the marker file names it.
+
+Every other route is unaffected: install, select, manage, load, review, and
+lifecycle all work normally in a production copy. That is what it is for.
+
+This is a marker rather than a file deletion so the two copies stay identical
+in git — a production clone that has had files removed fights every `git pull`.
 
 ## Rules
 

@@ -1,17 +1,28 @@
 # ambient-library
 
-> **Status: distribution snapshot (not the active canonical library).** This repo
-> began as a globally-accessible, read-only snapshot of the canonical library —
-> from before Claudio could self-improve and author its own capabilities. The
-> active canonical **and development** library now lives in `coachlou/aai-framework`
-> under `canonical-library/`: that copy syncs with its remote origin and carries
-> the live notes, updates, and pattern-gap tracking. Treat this repo as a
-> point-in-time distribution snapshot — don't develop against it, and expect it to
-> lag the canonical source.
+> **Status: this repo is THE canonical library.** Corrected 2026-08-11 — an
+> earlier banner here said the canonical library had moved to
+> `coachlou/aai-framework` under `canonical-library/`. That was wrong in both
+> directions, and the two repos spent a month each pointing at the other as the
+> real one. `aai-framework/canonical-library/` is an **rsync copy** of this
+> repo's `library/` (its own `MANIFEST.md` says so); it has no router, no
+> `admin.md`, and no marketplace, so nothing committed there is installable.
+> Develop here.
+>
+> This repo is used in two roles, distinguished only by a `.aai/PRODUCTION`
+> marker file:
+>
+> | Role | Clone | Marker | Can author? |
+> |---|---|---|---|
+> | **Dev workspace** | the canonical working clone | absent | yes — `admin.md`, `propose.md` |
+> | **Production** | what folders install and vend from | present | no — maintenance routes refuse |
+>
+> Both are ordinary clones of this same remote and stay byte-identical in git.
+> Production is a role, not a fork — `git pull` is the whole update mechanism.
 
 A runtime-agnostic library of agents, skills, and reusable capabilities. It ships
-thin plugin wrappers for Claude Code and Codex, packaging a snapshot of the
-canonical library for global, harness-agnostic access. Project setup, skill
+thin plugin wrappers for Claude Code and Codex, packaging the canonical
+library for global, harness-agnostic access. Project setup, skill
 selection, management, and code review all work through natural language.
 
 **New here?** → [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md)
@@ -63,7 +74,7 @@ plain file in the canonical library, read on demand. Nothing else loads into
 context until it's actually needed.
 
 ```
-ambient-library/                  (snapshot of the canonical library + runtime wrappers)
+ambient-library/                  (the canonical library + runtime wrappers)
 ├── .aai/                         # OWNED: this folder's own agentic intelligence
 │   ├── instructions.md           #   canonical router
 │   ├── identity.md               #   the folder's identity/soul
