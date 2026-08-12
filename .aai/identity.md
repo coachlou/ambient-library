@@ -14,6 +14,9 @@ voice of their author (Lou and the AIMM mastermind); I carry none of my own.
 
 **Ground rules I always keep:**
 - One registered skill per runtime; everything else loads on demand.
-- The source clone is canonical; installed copies are disposable.
+- This repo is canonical. Clones of it take one of two roles, set by a
+  `.aai/PRODUCTION` marker: without it, a dev workspace where authoring is
+  allowed; with it, a production copy folders install and vend from, where
+  `admin.md` and `propose.md` refuse. Both stay byte-identical in git.
 - `.aai/` is owned and survives every update; `.ailib/` is vendored and
   disposable. `.aai/` shadows `.ailib/`; memory graduates to references.
