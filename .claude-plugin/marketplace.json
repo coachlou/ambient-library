@@ -9,7 +9,7 @@
     {
       "name": "ambient",
       "source": "./",
-      "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language."
+      "description": "Ambient skill library \u2014 project setup, skill selection, management, and code review, all through natural language."
     },
     {
       "name": "aimm-commands",
@@ -29,7 +29,7 @@
     {
       "name": "ambient-folder",
       "source": "./library/ambient-folder",
-      "description": "Makes a folder ambiently intelligent and maintains it — interviews for purpose when it's unclear, writes the .aai/ scaffold, vendors canonical capabilities into .ailib/, forks them, re-syncs; use for \"make this folder ambient\", \"set up an agentic folder for X\", \"stamp .aai here\", \"interview me about this folder\", \"add a capability to this folder\", \"re-sync my vendored skills\"."
+      "description": "Makes a folder ambiently intelligent and maintains it \u2014 interviews for purpose when it's unclear, writes the .aai/ scaffold, vendors canonical capabilities into .ailib/, forks them, re-syncs; use for \"make this folder ambient\", \"set up an agentic folder for X\", \"stamp .aai here\", \"interview me about this folder\", \"add a capability to this folder\", \"re-sync my vendored skills\"."
     },
     {
       "name": "audit-fix",
@@ -49,12 +49,17 @@
     {
       "name": "cognitive-mirror",
       "source": "./library/cognitive-mirror",
-      "description": "Live extractor for the user's cognitive profile — observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for \"/loms\", \"look over my shoulder\", \"mine my conversations\", \"update my cognitive profile\", \"harvest my decisions\", \"how do I typically approach X\", \"what's my pattern when\". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/."
+      "description": "Live extractor for the user's cognitive profile \u2014 observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for \"/loms\", \"look over my shoulder\", \"mine my conversations\", \"update my cognitive profile\", \"harvest my decisions\", \"how do I typically approach X\", \"what's my pattern when\". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/."
     },
     {
       "name": "cognitive-operations",
       "source": "./library/cognitive-operations",
       "description": "Applies the Lenses/Operations/Recipes structured-thinking system to complex problems and decisions; use for \"think through\", \"what am I missing\", \"run a pre-mortem\", \"use mental models\"."
+    },
+    {
+      "name": "connector-bridge",
+      "source": "./library/connector-bridge",
+      "description": "Resolves a folder's declared .aai/connectors.md needs against whatever the current harness actually offers (MCP tools, CLIs, or nothing), caching successful matches in .aai/memory/; use for \"wire up this connector\", \"resolve connectors.md\", \"what can reach X here\"."
     },
     {
       "name": "context-mgr",
@@ -84,7 +89,7 @@
     {
       "name": "deep-mirror",
       "source": "./library/deep-mirror",
-      "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) — bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
+      "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) \u2014 bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
     },
     {
       "name": "editor",
@@ -117,6 +122,11 @@
       "description": "Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for \"fresh eyes\", \"does the onboarding work\", \"test the docs\"."
     },
     {
+      "name": "gauntlet",
+      "source": "./library/gauntlet",
+      "description": "Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops."
+    },
+    {
       "name": "gears-broadcast",
       "source": "./library/gears-broadcast",
       "description": "Sends any email to GEARS licensees (gears_owners) via Resend, drafting subject/body with the user if not already given, straight from raw HTML/text with no dashboard-editor round trip; use for \"send a gears broadcast\", \"email the licensees\", \"notify gears owners\", \"send this to gears_owners\"."
@@ -134,7 +144,7 @@
     {
       "name": "gmail-triage",
       "source": "./library/gmail-triage",
-      "description": "Two-phase Gmail inbox sweep via the gmail MCP — batch-archive junk, then triage real emails one at a time; use for \"check my email\", \"clean up my inbox\"."
+      "description": "Two-phase Gmail inbox sweep via the gmail MCP \u2014 batch-archive junk, then triage real emails one at a time; use for \"check my email\", \"clean up my inbox\"."
     },
     {
       "name": "graphify",
@@ -184,7 +194,7 @@
     {
       "name": "multi-model-debate-live",
       "source": "./library/multi-model-debate-live",
-      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" — the live workflow, not the prompt protocol."
+      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" \u2014 the live workflow, not the prompt protocol."
     },
     {
       "name": "paradigm-collision-engine",
@@ -194,7 +204,7 @@
     {
       "name": "polyglot-language-coach",
       "source": "./library/polyglot-language-coach",
-      "description": "Gently coaches when the user writes in a non-English language mid-conversation — corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
+      "description": "Gently coaches when the user writes in a non-English language mid-conversation \u2014 corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
     },
     {
       "name": "project-brief",
@@ -212,6 +222,16 @@
       "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
     },
     {
+      "name": "skill-evals",
+      "source": "./library/skill-evals",
+      "description": "Runs one skill's existing evals/evals.json \u2014 triggering cases against a fresh subagent, quality cases judged against prose pass criteria \u2014 and reports a PASS/FAIL table, no scores; use for \"run the evals for X\", \"test this skill's evals\", \"does X still trigger right\"."
+    },
+    {
+      "name": "teaching-block-synthesized",
+      "source": "./library/teaching-block-synthesized",
+      "description": "Writes one publishable teaching-block article from a working session \u2014 real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for \"write this up as a teaching block\", \"field guide this\", \"debrief this session\", \"turn this session into an article\". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead."
+    },
+    {
       "name": "to-issues",
       "source": "./library/to-issues",
       "description": "Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for \"turn this plan into issues\", \"break this PRD into tickets\"."
@@ -227,6 +247,11 @@
       "description": "Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for \"run the Trello pipeline\", \"idea to PRD on my board\", \"set up the TrelloAgents board\"."
     },
     {
+      "name": "trigger-runner",
+      "source": "./library/trigger-runner",
+      "description": "Runs a folder's declared .aai/triggers.md standing intentions \u2014 compares each to last-run stamps in .aai/memory/, runs what's due, and can offer promotion to native hooks/cron on a capable harness; use for \"check triggers\", \"run due triggers\", \"session-start due-check\"."
+    },
+    {
       "name": "voice-crm-pipeline",
       "source": "./library/voice-crm-pipeline",
       "description": "Builds a hands-free voice-to-database capture chain (Siri to Shortcut to GPT to Sheets); use for \"I never update my CRM\", \"talk to my database\", \"voice-to-sheet workflow\"."
@@ -239,17 +264,17 @@
     {
       "name": "wrap",
       "source": "./library/wrap",
-      "description": "Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
+      "description": "Full session close-out ritual \u2014 commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
     },
     {
       "name": "writer",
       "source": "./library/writer",
-      "description": "Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
+      "description": "Drafts a piece from a brief (and optional dossier) \u2014 drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
     },
     {
       "name": "writing-suite",
       "source": "./bundles/writing-suite",
-      "description": "Bundle: the complete writing toolkit — researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
+      "description": "Bundle: the complete writing toolkit \u2014 researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
     },
     {
       "name": "writing-team",

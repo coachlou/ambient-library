@@ -1,7 +1,7 @@
 {
-  "name": "ambient",
-  "description": "Ambient skill library \u2014 project setup, skill selection, management, and code review, all through natural language.",
-  "version": "1.17.0",
+  "name": "gauntlet",
+  "description": "Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops.",
+  "version": "1.0.0",
   "author": {
     "name": "Coach Lou"
   },

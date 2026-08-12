@@ -7,8 +7,13 @@
 #   <skill-name>: <one-line description of when it applies>
 
 skills:
+  connector-bridge: Resolves a folder's declared .aai/connectors.md needs against whatever the current harness actually offers (MCP tools, CLIs, or nothing), caching successful matches in .aai/memory/; use for "wire up this connector", "resolve connectors.md", "what can reach X here".
+  gauntlet: Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops.
   project-brief: Creates a one-page project overview; use for "write a brief", "summarize this project", "project overview", "what is this project".
   researcher: Gathers sources into a structured research dossier; use for "research this topic", "find sources on X", "compile background". NOT for writing or editing the piece.
+  skill-evals: Runs one skill's existing evals/evals.json — triggering cases against a fresh subagent, quality cases judged against prose pass criteria — and reports a PASS/FAIL table, no scores; use for "run the evals for X", "test this skill's evals", "does X still trigger right".
+  teaching-block-synthesized: Writes one publishable teaching-block article from a working session — real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for "write this up as a teaching block", "field guide this", "debrief this session", "turn this session into an article". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead.
+  trigger-runner: Runs a folder's declared .aai/triggers.md standing intentions — compares each to last-run stamps in .aai/memory/, runs what's due, and can offer promotion to native hooks/cron on a capable harness; use for "check triggers", "run due triggers", "session-start due-check".
   writer: Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for "draft this", "write a first draft from these notes", "turn this brief into a post".
   editor: Surgically edits an EXISTING draft; use for "edit this draft", "polish this", "tighten this article". Requires a draft to already exist.
   writing-team: Full research -> draft -> edit pipeline to a publish-ready piece; use for "write me an article on X end to end", "take this from idea to finished post". Use this when the user wants the whole pipeline, not a single stage.
