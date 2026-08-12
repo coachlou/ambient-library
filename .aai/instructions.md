@@ -14,8 +14,9 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Review code / check for bugs or security issues | `.aai/skills/review.md` |
 | A task a domain skill in `library/` covers | `.aai/skills/load.md` |
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
-| Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote a staged proposal | `.aai/skills/admin.md` |  *(refused in a production copy — see below)*
-| Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |  *(refused in a production copy — see below)*
+| Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote something from `in-progress/` | `.aai/skills/admin.md` |
+| Release or deploy — "ship it", "release X", "push to production", "deploy", "pull X back", "what's released", "what am I working on" | `.aai/skills/admin.md` (it opens with a phrasebook) |  *(not present in a production build)*
+| Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |  *(not present in a production build)*
 | Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 | Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
 

@@ -2,22 +2,55 @@
 set -e
 
 # Validate the propose→stage→promote self-extension loop
-# Usage: bash scripts/validate-self-extension.sh [--cleanup]
+# Usage: bash scripts/validate-self-extension.sh [--keep]
 #
 # This script validates the gated self-extension feature by:
 # 1. Creating a test proposal in in-progress/
 # 2. Verifying it's isolated (not in catalog, not routable)
 # 3. Running the promotion flow (move, update catalog/SKILLS/marketplace/versions)
 # 4. Verifying the promoted skill is live and routable
-# 5. Cleaning up (revert test commit if --cleanup passed)
+# 5. Cleaning up — ALWAYS, including on failure or interrupt (--keep opts out)
+#
+# Cleanup is a trap, not a final block: `set -e` means a failing stage exits
+# before any trailing code runs, which is how a previous run left
+# test-validation-skill behind in library/ — where it was committed, and
+# shipped to production.
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 TEST_SKILL="test-validation-skill"
-CLEANUP=false
+CLEANUP=true
 
-if [[ "$1" == "--cleanup" ]]; then
-  CLEANUP=true
-fi
+case "${1:-}" in
+  --keep)    CLEANUP=false ;;
+  --cleanup) ;;                 # accepted: it used to be required
+  "")        ;;
+  *)         echo "unknown flag: $1 (use --keep to leave artifacts in place)" >&2; exit 2 ;;
+esac
+
+cleanup() {
+  local rc=$?
+  if [[ $CLEANUP == true ]]; then
+    echo ""
+    echo "Reverting test artifacts..."
+    git -C "$REPO_ROOT" checkout library/catalog.yaml SKILLS.md \
+      .claude-plugin/plugin.json .codex-plugin/plugin.json \
+      .claude-plugin/marketplace.json 2>/dev/null || true
+    rm -rf "$REPO_ROOT/library/$TEST_SKILL" "$REPO_ROOT/in-progress/$TEST_SKILL"
+    if [[ -n "$(git -C "$REPO_ROOT" status --porcelain -- library SKILLS.md .claude-plugin .codex-plugin in-progress)" ]]; then
+      echo "! cleanup left changes behind — inspect before committing:"
+      git -C "$REPO_ROOT" status --short -- library SKILLS.md .claude-plugin .codex-plugin in-progress
+    else
+      echo "Clean."
+    fi
+  else
+    echo ""
+    echo "--keep: test artifacts left in place. To revert:"
+    echo "  git -C $REPO_ROOT checkout library/catalog.yaml SKILLS.md .claude-plugin/plugin.json .codex-plugin/plugin.json .claude-plugin/marketplace.json"
+    echo "  rm -rf $REPO_ROOT/library/$TEST_SKILL $REPO_ROOT/in-progress/$TEST_SKILL"
+  fi
+  exit $rc
+}
+trap cleanup EXIT INT TERM
 
 echo "=== Self-Extension Validation ==="
 echo "Repo root: $REPO_ROOT"
@@ -176,18 +209,3 @@ echo "  2. Staging is invisible to the catalog and router"
 echo "  3. Promotion moves the skill to library/ and updates all artifacts"
 echo "  4. The promoted skill is now live in the catalog and routable"
 echo ""
-
-if [[ $CLEANUP == true ]]; then
-  echo "Cleaning up test skill..."
-  git -C "$REPO_ROOT" checkout library/catalog.yaml SKILLS.md .claude-plugin/plugin.json .codex-plugin/plugin.json .claude-plugin/marketplace.json 2>/dev/null || true
-  rm -rf "$REPO_ROOT/library/$TEST_SKILL"
-  git -C "$REPO_ROOT" status --short
-  echo "Test artifacts reverted."
-else
-  echo "To clean up the test skill and revert changes, run:"
-  echo "  git -C $REPO_ROOT checkout library/catalog.yaml SKILLS.md .claude-plugin/plugin.json .codex-plugin/plugin.json .claude-plugin/marketplace.json"
-  echo "  rm -rf $REPO_ROOT/library/$TEST_SKILL"
-  echo ""
-  echo "Or run this script with --cleanup:"
-  echo "  bash scripts/validate-self-extension.sh --cleanup"
-fi

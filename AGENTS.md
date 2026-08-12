@@ -15,6 +15,13 @@ The canonical capability library — 56 domain skills in `library/`, plus the
 thin plugin wrappers for Claude Code (`.claude-plugin/`) and Codex
 (`.codex-plugin/`), but the library is plain files and works without either.
 
+## Say it plainly; the router picks the command
+
+`.aai/skills/admin.md` opens with a phrasebook mapping ordinary requests —
+"ship it", "promote this", "what am I working on", "pull it back" — to the
+right command. Read that table before reaching for a script, and run the
+command rather than telling the user to.
+
 ## Dev workspace or production build?
 
 **Check whether `.aai/PRODUCTION` exists here.**

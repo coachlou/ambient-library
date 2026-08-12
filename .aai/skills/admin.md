@@ -15,6 +15,33 @@ it, so edits there silently vanish. Locate the source clone first:
 
 All paths below are relative to that clone.
 
+## What you say, and what it means
+
+You do not need to remember any command or flag. Match the request to a row and
+run the command yourself — never make the user type it, and never ask them
+which script they meant.
+
+| The user says | Run | Notes |
+|---|---|---|
+| "start a new skill", "I want to build X", "new capability" | create `in-progress/<name>/` | Never straight into `library/`. Work in flight is not a library skill. |
+| "what am I working on", "what's in flight", "what's unfinished" | `ls in-progress/` + read its README "Currently here" | |
+| "this is ready", "promote it", "move it into the library", "add it to the canonical library" | `bash scripts/promote.sh <name>` | Run `--dry-run` first and show them the plan. Then do the catalog/marketplace/SKILLS steps it prints — do not hand that list back as homework. |
+| "I'm reworking X", "make a new version of X" | copy `library/<name>/` to `in-progress/<name>/` | The live one keeps serving production while they work. |
+| "ship it", "release it", "make it available", "push it to production", "deploy" | add to `RELEASE.yaml` → `bash scripts/build-production.sh` | Commit and push first — the build reads `HEAD`, so uncommitted work silently will not ship. Say so if the tree is dirty. |
+| "what would change if I deploy", "preview the release" | `bash scripts/build-production.sh --dry-run` | Writes nothing. |
+| "pull it back", "unrelease", "stop shipping X", "remove from production" | delete its line in `RELEASE.yaml` → rebuild | It stays in the library. Folders that already vendored it keep their copy. |
+| "what's released", "what do folders actually get" | read `RELEASE.yaml` | Not `catalog.yaml` — that is everything in the library, released or not. |
+| "is anything broken", "check the library", "did I miss a file" | `python3 scripts/audit-distribution.py` | Exit 0 = no drift. |
+| "test the whole flow", "does self-extension still work" | `bash scripts/validate-self-extension.sh` | Cleans up after itself, including on failure. |
+| "throw it away", "abandon X" | delete `in-progress/<name>/` | Nothing references it. |
+| "update X", "change X's instructions" | edit `library/<name>/` directly | Small edits do not need the in-progress round trip. Bump the version; production is stale until rebuilt. |
+| "delete the X skill" | `admin.md` → **Delete a domain skill** | Confirm first. Four files to remove, plus `RELEASE.yaml` if released. |
+
+**Two things that are always separate, no matter how it is phrased:**
+promoting into the library is not releasing, and releasing is not deploying
+until the build runs. If a request bundles them ("finish X and ship it"), do
+each step and say which ones happened.
+
 ## Three stages, three promotions
 
 | Stage | Where | Reachable | Ships |
