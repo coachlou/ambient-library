@@ -15,6 +15,19 @@ it, so edits there silently vanish. Locate the source clone first:
 
 All paths below are relative to that clone.
 
+## Three stages, three promotions
+
+| Stage | Where | Reachable | Ships |
+|---|---|---|---|
+| in progress | `in-progress/<name>/` | no | no |
+| in the library | `library/<name>/` + catalog line | yes, here | no |
+| released | named in `RELEASE.yaml` | yes | yes |
+
+Work being figured out belongs in `in-progress/` — nothing there is catalogued,
+so the router cannot reach it and no folder can install it. Promote it into
+`library/` with **Create a domain skill** below only once it works. See
+`in-progress/README.md`.
+
 ## Authoring does not release
 
 Creating a skill makes it exist in the dev workspace. It does **not** reach

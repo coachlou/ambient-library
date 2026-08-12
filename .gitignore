@@ -4,3 +4,4 @@ chat_exports/
 .aai/memory/
 library/test-validation-skill/
 library/_staging/test-validation-skill/
+in-progress/*/references/data/

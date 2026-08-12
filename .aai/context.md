@@ -12,6 +12,7 @@
 | `library/<skill>/instructions.md` | one domain skill's behavior | after catalog match |
 | `templates/aai/README.md` | the `.aai`/`.ailib` scaffold spec | a lifecycle detail is ambiguous |
 | `ARCHITECTURE.md` | full design rationale | understanding *why*, not routing |
+| `in-progress/` | capabilities being built — not catalogued, not routable, not shipped | user is building something new, or asks what's in flight |
 | `RELEASE.yaml` | what ships to production — explicit list, nothing else ships | releasing or unreleasing a skill |
 | `scripts/build-production.sh` | builds the production library from `RELEASE.yaml` | after a release decision |
 | `docs/MANAGEMENT.md` | maintainer workflows (add/update/delete a skill) | doing library upkeep |
