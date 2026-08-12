@@ -14,11 +14,19 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Review code / check for bugs or security issues | `.aai/skills/review.md` |
 | A task a domain skill in `library/` covers | `.aai/skills/load.md` |
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
-| Maintain the library itself — create/edit/delete a library skill, edit the catalog, promote something from `in-progress/` | `.aai/skills/admin.md` |
-| Release or deploy — "ship it", "release X", "push to production", "deploy", "pull X back", "what's released", "what am I working on" | `.aai/skills/admin.md` (it opens with a phrasebook) |  *(not present in a production build)*
+| Maintain the library — create, edit, or delete a library skill; edit the catalog | `.aai/skills/admin.md` |  *(not present in a production build)*
+| Build something new, or promote it — "start a new skill", "I want to build X", "this is ready", "promote it", "move it into the library", "I'm reworking X" | `.aai/skills/admin.md` |  *(not present in a production build)*
+| Release or deploy — "ship it", "release X", "push to production", "deploy", "pull it back", "unrelease", "preview the release" | `.aai/skills/admin.md` |  *(not present in a production build)*
+| Status of the library or the work — "what am I working on", "what's in flight", "what's unfinished", "what's still open", "what's released", "what do folders actually get", "is anything broken", "did I miss a file" | `.aai/skills/admin.md` |  *(not present in a production build)*
 | Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |  *(not present in a production build)*
 | Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 | Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
+
+The four `admin.md` rows are one capability split by intent so a request lands
+on the right row; `admin.md` opens with a phrasebook covering all of them,
+including phrasings not listed above. If a request is *about the library
+itself* — building, promoting, releasing, deploying, or its status — route
+there and match the phrasebook, rather than deciding it doesn't fit a row.
 
 Disambiguation: "add <skill> **to this project**" is manage (edits the
 project's manifest); "add a skill **to the library**" with content you supply is

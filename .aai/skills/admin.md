@@ -24,7 +24,7 @@ which script they meant.
 | The user says | Run | Notes |
 |---|---|---|
 | "start a new skill", "I want to build X", "new capability" | create `in-progress/<name>/` | Never straight into `library/`. Work in flight is not a library skill. |
-| "what am I working on", "what's in flight", "what's unfinished" | `ls in-progress/` + read its README "Currently here" | |
+| "what am I working on", "what's in flight", "what's unfinished", "what's still open", "where did I leave off" | `ls in-progress/` + read its README "Currently here" | |
 | "this is ready", "promote it", "move it into the library", "add it to the canonical library" | `bash scripts/promote.sh <name>` | Run `--dry-run` first and show them the plan. Then do the catalog/marketplace/SKILLS steps it prints — do not hand that list back as homework. |
 | "I'm reworking X", "make a new version of X" | copy `library/<name>/` to `in-progress/<name>/` | The live one keeps serving production while they work. |
 | "ship it", "release it", "make it available", "push it to production", "deploy" | add to `RELEASE.yaml` → `bash scripts/build-production.sh` | Commit and push first — the build reads `HEAD`, so uncommitted work silently will not ship. Say so if the tree is dirty. |
@@ -36,6 +36,11 @@ which script they meant.
 | "throw it away", "abandon X" | delete `in-progress/<name>/` | Nothing references it. |
 | "update X", "change X's instructions" | edit `library/<name>/` directly | Small edits do not need the in-progress round trip. Bump the version; production is stale until rebuilt. |
 | "delete the X skill" | `admin.md` → **Delete a domain skill** | Confirm first. Four files to remove, plus `RELEASE.yaml` if released. |
+
+**A phrasing not in this table is still this table's job.** These are examples,
+not an allowlist. If the request is about the library itself — building,
+promoting, releasing, deploying, or its status — pick the closest row and run
+it. Say what you matched. Never answer "that isn't a supported command."
 
 **Two things that are always separate, no matter how it is phrased:**
 promoting into the library is not releasing, and releasing is not deploying
