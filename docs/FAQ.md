@@ -153,7 +153,7 @@ plugin's `library/` so the whole team gets it.
 
 Yes, with a review gate. After a task no skill covered, say *"save this as a
 skill"* — the agent drafts one **from the actual session trace** into
-`library/_staging/`. That's a proposal, not a live skill: it's never routed and
+`in-progress/`. That's a proposal, not a live skill: it's never routed and
 not in the catalog. In a clone session you review it and *"promote"* it into the
 library or *"reject"* it. Nothing auto-promotes — self-generated skills
 underperform unless authored from real work and reviewed, and an unvetted

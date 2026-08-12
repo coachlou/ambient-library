@@ -79,7 +79,7 @@ edits your project's manifest; *"to the library"* edits the library itself.
 > "Propose a skill from what we just did"
 
 After a task no skill covered, this drafts a new skill **from the session
-trace** into `library/_staging/` — a proposal, not yet a real skill. It stays
+trace** into `in-progress/` — a proposal, not yet a real skill. It stays
 inert (never routed, not in the catalog) until you review it in a clone session:
 *"what's in staging?"* lists proposals, *"promote <name>"* moves it into the
 library, *"reject <name>"* deletes it. Requires a source clone. If the session

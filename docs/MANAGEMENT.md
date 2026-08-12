@@ -105,12 +105,12 @@ routing. The loop has three stops:
 1. **Propose.** After a task no library skill covered, say *"save this as a
    skill"* (or the agent offers). `propose.md` drafts a skill **from the session
    trace** — the actual steps and corrections, not a vague idea — into
-   `library/_staging/<name>/`, alongside a `PROPOSAL.md` (proposed description,
+   `in-progress/<name>/`, alongside a `PROPOSAL.md` (proposed description,
    source trace, evidence, overlap check). If the session has no real
    trace to author from, it refuses.
 2. **Stage.** The proposal is inert: not in the catalog, `SKILLS.md`, or
    marketplace, and never loaded by the router (selection reads only the
-   catalog, and the leading underscore sorts `_staging/` apart). Re-proposing the
+   catalog, and `in-progress/` sits outside `library/` entirely). Re-proposing the
    same name appends evidence instead of overwriting — repetition is the
    strongest promotion signal.
 3. **Promote.** In a clone session, *"what's in staging?"* lists proposals and

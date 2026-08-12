@@ -122,7 +122,7 @@ Registered skill paths are runtime-specific. Domain skills are project-specific
 and potentially numerous, so they live in the canonical `library/` as
 `instructions.md` files — read on demand, zero standing cost.
 
-**Why do proposed skills go to `library/_staging/` instead of straight into the catalog?**
+**Why do proposed skills go to `in-progress/` instead of straight into the catalog?**
 Self-extension (`propose.md`) lets the library grow from real work, but a skill
 written mid-session and auto-added to the catalog is exactly the failure mode to
 avoid: unvetted skills underperform, and every catalog description is a routing
@@ -130,7 +130,7 @@ trigger, so a bad entry degrades matching for its neighbors. Staging decouples
 authoring from promotion. Isolation is structural, not conventional — routing
 selection reads only `catalog.yaml` (see `load.md`), and nothing iterates the
 `library/` directory, so a folder absent from the catalog is unreachable by the
-router regardless of where it sits. The leading underscore is secondary hygiene.
+router regardless of where it sits. Sitting outside `library/` entirely is secondary hygiene.
 Promotion runs through `admin.md`, reusing the same create-a-skill steps, so a
 proposal enters the catalog only after a human review.
 
@@ -172,7 +172,7 @@ and bump each runtime plugin version as needed. Users get it through their
 runtime's plugin update flow. See [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
 
 **Let the library propose its own skills:** after a task no skill covered,
-`propose.md` drafts one from the session trace into `library/_staging/`;
+`propose.md` drafts one from the session trace into `in-progress/`;
 `admin.md` promotes it into the catalog after review. See
 [docs/MANAGEMENT.md](docs/MANAGEMENT.md) "Self-extension".
 

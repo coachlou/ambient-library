@@ -22,7 +22,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 Disambiguation: "add <skill> **to this project**" is manage (edits the
 project's manifest); "add a skill **to the library**" with content you supply is
 admin (edits the canonical library in a source clone); "save **this session's
-work** as a skill" is propose (drafts from the trace into `library/_staging/`,
+work** as a skill" is propose (drafts from the trace into `in-progress/`,
 where admin later promotes it); "add <skill> **into a folder's `.ailib`**"
 or "make this folder ambient" or "set up a folder that does X" is lifecycle,
 which delegates every folder operation to the `ambient-folder` domain skill —

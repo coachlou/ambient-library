@@ -5,7 +5,7 @@ set -e
 # Usage: bash scripts/validate-self-extension.sh [--cleanup]
 #
 # This script validates the gated self-extension feature by:
-# 1. Creating a test proposal in library/_staging/
+# 1. Creating a test proposal in in-progress/
 # 2. Verifying it's isolated (not in catalog, not routable)
 # 3. Running the promotion flow (move, update catalog/SKILLS/marketplace/versions)
 # 4. Verifying the promoted skill is live and routable
@@ -25,12 +25,12 @@ echo ""
 
 # === STAGE 1: Verify staging area exists and is isolated ===
 echo "[1/5] Checking staging area structure..."
-if [[ ! -d "$REPO_ROOT/library/_staging" ]]; then
-  echo "❌ FAIL: library/_staging/ doesn't exist"
+if [[ ! -d "$REPO_ROOT/in-progress" ]]; then
+  echo "❌ FAIL: in-progress/ doesn't exist"
   exit 1
 fi
-if [[ ! -f "$REPO_ROOT/library/_staging/README.md" ]]; then
-  echo "❌ FAIL: library/_staging/README.md missing"
+if [[ ! -f "$REPO_ROOT/in-progress/README.md" ]]; then
+  echo "❌ FAIL: in-progress/README.md missing"
   exit 1
 fi
 echo "✓ Staging area exists"
@@ -38,9 +38,9 @@ echo ""
 
 # === STAGE 2: Create a test proposal ===
 echo "[2/5] Creating test proposal in staging..."
-mkdir -p "$REPO_ROOT/library/_staging/$TEST_SKILL"
+mkdir -p "$REPO_ROOT/in-progress/$TEST_SKILL"
 
-cat > "$REPO_ROOT/library/_staging/$TEST_SKILL/instructions.md" <<'EOF'
+cat > "$REPO_ROOT/in-progress/$TEST_SKILL/instructions.md" <<'EOF'
 # test-validation-skill
 
 A test skill to validate the self-extension pipeline. This demonstrates that
@@ -52,11 +52,11 @@ This is a minimal validation skill with no real functionality — it exists only
 to verify the propose→stage→promote loop works end-to-end.
 
 1. If you see this, the promotion succeeded.
-2. The skill was authored in a trace, staged in _staging/, and promoted to
+2. The skill was authored in a trace, staged in in-progress/, and promoted to
    library/ through the admin flow.
 EOF
 
-cat > "$REPO_ROOT/library/_staging/$TEST_SKILL/PROPOSAL.md" <<EOF
+cat > "$REPO_ROOT/in-progress/$TEST_SKILL/PROPOSAL.md" <<EOF
 # Proposal: $TEST_SKILL
 
 **Proposed description:** Test skill to validate the self-extension pipeline; use to verify propose→stage→promote works end-to-end.
@@ -69,7 +69,7 @@ cat > "$REPO_ROOT/library/_staging/$TEST_SKILL/PROPOSAL.md" <<EOF
 EOF
 
 echo "✓ Test proposal created"
-if [[ ! -f "$REPO_ROOT/library/_staging/$TEST_SKILL/instructions.md" ]]; then
+if [[ ! -f "$REPO_ROOT/in-progress/$TEST_SKILL/instructions.md" ]]; then
   echo "❌ FAIL: proposal instructions.md not created"
   exit 1
 fi
@@ -78,14 +78,14 @@ echo ""
 # === STAGE 3: Verify isolation (not in catalog, not routable) ===
 echo "[3/5] Verifying staging is isolated from routing..."
 
-if grep -q "$TEST_SKILL\|_staging" "$REPO_ROOT/library/catalog.yaml" 2>/dev/null; then
-  echo "❌ FAIL: test skill or _staging appears in catalog.yaml (should be invisible)"
+if grep -q "$TEST_SKILL\|in-progress" "$REPO_ROOT/library/catalog.yaml" 2>/dev/null; then
+  echo "❌ FAIL: test skill or in-progress appears in catalog.yaml (should be invisible)"
   exit 1
 fi
 echo "✓ Catalog isolation verified"
 
-if grep -q "_staging" "$REPO_ROOT/.aai/skills/load.md" 2>/dev/null; then
-  echo "❌ FAIL: load.md (routing path) mentions _staging (should never route proposals)"
+if grep -q "in-progress" "$REPO_ROOT/.aai/skills/load.md" 2>/dev/null; then
+  echo "❌ FAIL: load.md (routing path) mentions in-progress (should never route proposals)"
   exit 1
 fi
 echo "✓ Router isolation verified"
@@ -95,7 +95,7 @@ echo ""
 echo "[4/5] Promoting test skill from staging to library..."
 
 # Move folder
-mv "$REPO_ROOT/library/_staging/$TEST_SKILL" "$REPO_ROOT/library/$TEST_SKILL"
+mv "$REPO_ROOT/in-progress/$TEST_SKILL" "$REPO_ROOT/library/$TEST_SKILL"
 rm -f "$REPO_ROOT/library/$TEST_SKILL/PROPOSAL.md"
 echo "✓ Folder moved to library/"
 
@@ -161,8 +161,8 @@ fi
 echo "✓ Skill in SKILLS.md"
 
 # Verify not in staging
-if [[ -d "$REPO_ROOT/library/_staging/$TEST_SKILL" ]]; then
-  echo "❌ FAIL: test skill still in _staging after promotion"
+if [[ -d "$REPO_ROOT/in-progress/$TEST_SKILL" ]]; then
+  echo "❌ FAIL: test skill still in in-progress after promotion"
   exit 1
 fi
 echo "✓ Removed from staging"
@@ -171,7 +171,7 @@ echo ""
 echo "=== ✓ ALL VALIDATION CHECKS PASSED ==="
 echo ""
 echo "The self-extension loop works correctly:"
-echo "  1. Proposed skills land in library/_staging/ (isolated from routing)"
+echo "  1. Proposed skills land in in-progress/ (isolated from routing)"
 echo "  2. Staging is invisible to the catalog and router"
 echo "  3. Promotion moves the skill to library/ and updates all artifacts"
 echo "  4. The promoted skill is now live in the catalog and routable"

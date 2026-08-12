@@ -20,14 +20,19 @@ routable and installable. Stage 2 → 3 is one line in `RELEASE.yaml` plus
 
 ## Promoting out of here
 
-1. Get it working. Exercise it on real tasks while it sits here.
-2. Run it past `.aai/skills/admin.md` — it needs `instructions.md`, `SKILL.md`,
-   `.claude-plugin/plugin.json`, a `catalog.yaml` line, and a
-   `marketplace.json` entry. Missing any of those is what "not in the library
-   yet" actually means.
-3. Move the folder to `library/<name>/` and delete it from here.
-4. `python3 scripts/audit-distribution.py` — exit 0 or it is not done.
-5. Release it separately, later, once you trust it.
+    bash scripts/promote.sh <name>          # --dry-run to see the plan first
+
+It checks the four-file contract before moving anything, moves the folder to
+`library/<name>/`, and prints what is left: catalog line, marketplace entry,
+`audit-distribution.py`, commit, push, and — separately — release.
+
+**Reworking something already live is the normal case.** Develop the new
+version here while the old one stays in `library/` serving production. On
+promote, the script shows the version delta and a file diff, warns if you did
+not bump the version, and tells you production is stale if the skill is
+released. Production keeps serving the old version until you rebuild, which is
+deliberate: promoting to the canonical library and shipping to folders are
+different decisions on different days.
 
 ## Abandoning something
 
@@ -44,10 +49,9 @@ the library that nothing installs from, so it was never reachable. 31 files,
 10 MB capability should be vendored into folders at all, and whether the data
 belongs in the skill or behind a lookup script.
 
-## Note on `library/_staging/`
+## Where proposals go
 
-There is a second pre-library area: `library/_staging/`, which
-`.aai/skills/propose.md` writes into when it drafts a skill from a session
-trace. Same stage, different origin — that one is machine-drafted, this one is
-hand-built. If keeping both proves confusing, merge them; `_staging` is
-referenced by `propose.md` and `scripts/validate-self-extension.sh`.
+`.aai/skills/propose.md` drafts skills here too, when you say "save this as a
+skill" after a session. Hand-built or machine-drafted, same folder, same
+promotion path — there is no separate staging area. (`library/_staging/` was
+merged into this folder on 2026-08-11.)

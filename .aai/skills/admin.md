@@ -91,6 +91,28 @@ it. Never overwrite on a create/save request.
 8. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
 9. Run `python3 scripts/audit-distribution.py` and confirm it exits 0.
 
+### Promote from in-progress into the library
+
+`scripts/promote.sh <name>` — checks the four-file contract before moving
+anything, moves `in-progress/<name>/` to `library/<name>/`, and prints what is
+left to do. `--dry-run` shows the plan without moving.
+
+**Reworking a live capability is the normal case.** You can develop a new
+version in `in-progress/<name>/` while the old one stays in `library/` and
+keeps serving production. On promote, the script detects the replacement, shows
+the version delta and a file-level diff, warns if the version was not bumped,
+and — if the skill is in `RELEASE.yaml` — tells you production is now stale.
+
+It deliberately does not commit, push, or deploy. Promotion and release are
+separate decisions, and so is the moment you ship:
+
+    in-progress/  --promote-->  library/  --commit+push-->  canonical
+                                          --RELEASE.yaml + build--> production
+
+Production keeps serving the previous version until you rebuild. That is a
+feature: a promoted capability can sit in the canonical library through as many
+sessions as you like before it reaches anyone's folder.
+
 ### Release a skill to production
 
 Only after the skill has been exercised on real work. Releasing an untested
@@ -115,24 +137,24 @@ re-sync — vendored copies are theirs, by design.
 
 ### Promote a staged proposal
 
-`library/_staging/` holds skills drafted from real task traces by
+`in-progress/` holds skills drafted from real task traces by
 `propose.md` — inert until promoted here. To list them, read each
-`library/_staging/*/PROPOSAL.md` and show the proposed description and source
+`in-progress/*/PROPOSAL.md` and show the proposed description and source
 trace.
 
 To promote `<name>`:
 
-1. Read `library/_staging/<name>/instructions.md` and its `PROPOSAL.md`. Sanity-
+1. Read `in-progress/<name>/instructions.md` and its `PROPOSAL.md`. Sanity-
    check the instructions against the proposal's overlap check — if an existing
    skill already covers it, say so and recommend rejecting instead.
 2. Present the proposal summary and get an explicit go-ahead.
-3. Move `library/_staging/<name>/` to `library/<name>/` and delete its
+3. Move `in-progress/<name>/` to `library/<name>/` and delete its
    `PROPOSAL.md`. Then run the **Create a domain skill** steps 3–9 above,
    using the proposal's description as the catalog line. A staged proposal
    carries only `instructions.md`, so `SKILL.md`, `plugin.json`, and the
    marketplace entry are all still missing at this point.
 
-To reject `<name>`: confirm, then delete `library/_staging/<name>/`. Nothing
+To reject `<name>`: confirm, then delete `in-progress/<name>/`. Nothing
 else changes.
 
 ### Update a domain skill
