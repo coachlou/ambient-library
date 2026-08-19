@@ -33,6 +33,7 @@ until the router reads one. Optionally scope which a project uses via
 | **aimm-writing-team** | Autonomous multi-role AIMM article team (Researcher → Publisher) | *"Use Strategist mode"*, full AIMM article run |
 | **audit-fix** | Six-lens adversarial audit of a plan or change, then root-cause fixes | *"Audit this"*, *"Pressure test"*, *"Poke holes"* |
 | **audit-mcp** | Security audit of a third-party MCP server repo before install | *"Audit this MCP"*, *"Is this MCP safe"* |
+| **skill-auditor** | Audits a skill's `SKILL.md` frontmatter, catalog projection, references, and evals shape against the library schema | *"Audit this skill"*, *"Does X follow the schema"*, *"Lint X against the catalog"* |
 | **brand-writing-team** | Multi-role team for brand-building long-form content, end to end | *"Help me write a post about X"* (brand content) |
 | **cognitive-operations** | Structured thinking via Lenses, Operations, and 40 Recipes | *"Think through"*, *"Run a pre-mortem"* |
 | **conversation-consolidation-system** | Pipeline turning Claude chat history into a searchable Obsidian brain | *"Second brain for my AI work"* |
