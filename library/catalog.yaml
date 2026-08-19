@@ -40,6 +40,7 @@ skills:
   fresh-eyes: Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for "fresh eyes", "does the onboarding work", "test the docs".
   geo-authority-architect: Builds a GEO/AI-citation authority strategy and Canon/Frameworks/Diagnostics content architecture; use for "GEO strategy", "get cited by AI", "GEARS".
   grill: Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for "grill me", "interview me", "ask me questions one at a time".
+  hot-take-forge: Hardens a contrarian claim by forcing it to survive repeated self-attack until it is simultaneously novel AND true; use for "give me a hot take on X", "pressure test this take", "is this angle actually original".
   ireport: Generates styled, interactive HTML research reports from a topic or notes; use for "interactive report", "HTML report on X", "deep research document".
   irreplaceable-edge: Guided live discovery of a professional's irreplaceable competitive edge against AI-first competition; use for "find my edge", "what's my moat", "how do I compete with AI".
   knowledge-base-architect: Guides design and deployment of a personal AI knowledge base from accumulated expertise assets; use for "talk to my own knowledge", "build a private ChatGPT on my material".

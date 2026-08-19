@@ -49,6 +49,7 @@ until the router reads one. Optionally scope which a project uses via
 | **fresh-eyes** | Zero-context agent walks docs/onboarding cold, fix-and-respawn | *"Fresh eyes"*, *"Test the docs"* |
 | **geo-authority-architect** | GEO / AI-citation authority strategy and content architecture | *"GEO strategy"*, *"Get cited by AI"* |
 | **grill** | One-question-at-a-time convergence with a decisions ledger | *"Grill me"*, *"Interview me"* |
+| **hot-take-forge** | Hardens a contrarian claim until it is both novel and true | *"Give me a hot take on X"*, *"Pressure test this take"* |
 | **ireport** | Styled, interactive HTML research reports | *"Interactive report on X"* |
 | **irreplaceable-edge** | Live discovery of an irreplaceable competitive edge vs. AI competition | *"Find my edge"*, *"What's my moat"* |
 | **knowledge-base-architect** | Designs and deploys a personal AI knowledge base from expertise assets | *"Talk to my own knowledge"* |

@@ -162,6 +162,11 @@
       "description": "Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for \"build an agent process for X\", \"spec out an agent pipeline\". NOT for code work-breakdowns (wbs-prd)."
     },
     {
+      "name": "hot-take-forge",
+      "source": "./library/hot-take-forge",
+      "description": "Hardens a contrarian claim by forcing it to survive repeated self-attack until it is simultaneously novel AND true; use for \"give me a hot take on X\", \"pressure test this take\", \"is this angle actually original\"."
+    },
+    {
       "name": "ireport",
       "source": "./library/ireport",
       "description": "Generates styled, interactive HTML research reports from a topic or notes; use for \"interactive report\", \"HTML report on X\", \"deep research document\"."
