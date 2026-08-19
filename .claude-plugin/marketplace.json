@@ -212,6 +212,11 @@
       "description": "Creates a one-page project overview; use for \"write a brief\", \"summarize this project\", \"project overview\", \"what is this project\"."
     },
     {
+      "name": "project-index",
+      "source": "./library/project-index",
+      "description": "Scans one or more directories (no recursion) and produces a project inventory \u2014 markdown table plus a searchable, filterable HTML page \u2014 with an inferred one-line description and status per folder; use for \"what have I been working on\", \"index my projects folder\", \"status of everything in this directory\", \"catalog these folders\"."
+    },
+    {
       "name": "researcher",
       "source": "./library/researcher",
       "description": "Gathers sources into a structured research dossier; use for \"research this topic\", \"find sources on X\", \"compile background\". NOT for writing or editing the piece."

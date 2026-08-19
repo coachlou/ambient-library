@@ -23,6 +23,7 @@ until the router reads one. Optionally scope which a project uses via
 | Skill | What it does | How to invoke |
 |-------|-------------|---------------|
 | **project-brief** | Creates a one-page project overview anyone can read and share | *"Write a project brief"*, *"Summarize this project"* |
+| **project-index** | Scans a folder of project folders into an at-a-glance inventory — markdown table + searchable HTML page | *"Index my GitHub folder"*, *"What have I been working on"*, *"Status of everything in this directory"* |
 | **researcher** | Gathers sources into a structured research dossier | *"Research this topic"*, *"Find sources on X"* |
 | **writer** | Drafts a piece from a brief and optional dossier (drafting only) | *"Draft this"*, *"Turn this brief into a post"* |
 | **editor** | Surgically edits an existing draft for clarity, voice, structure | *"Edit this draft"*, *"Tighten this article"* |
