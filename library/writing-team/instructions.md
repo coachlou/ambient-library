@@ -32,7 +32,7 @@ For a single stage only, use `researcher`, `writer`, or `editor` directly.
 Gather, in one pass:
 - Topic / thesis
 - Audience and desired reader end-state (what they should think/feel/do)
-- Voice (from the brief; a named `~/.claude/voice_styles/` file if it exists,
+- Voice (from the brief; a named `~/.aai/references/voice/` file if it exists,
   else the brief's stated tone)
 - Length / format target
 - Source constraints (must-cite, must-not-cite, recency)

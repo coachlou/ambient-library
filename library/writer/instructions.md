@@ -24,10 +24,10 @@ and the **length/format**. If any are missing, ask once, then draft.
 ### 2. Set the voice
 
 Voice comes from the brief. If the brief names a voice and a matching file exists
-under `~/.claude/voice_styles/`, load and apply it. Otherwise write to the tone
+under `~/.aai/references/voice/`, load and apply it. Otherwise write to the tone
 the brief describes.
 
-If `~/.claude/rules/content.md` exists, honor it as an enhancement — but never
+If `~/.aai/rules/content.md` exists, honor it as an enhancement — but never
 depend on it. The skill must work without it (so it works for every plugin user,
 not just one machine).
 
@@ -53,5 +53,5 @@ sanity-check the angle.
 - One main idea per piece. If it's drifting, stop and re-state the thesis.
 - Concrete over abstract; take a point of view; no hedging.
 - Don't invent facts or sources. Pull only from the brief and dossier.
-- Don't cite section numbers of `~/.claude/rules/content.md` — that file may not
+- Don't cite section numbers of `~/.aai/rules/content.md` — that file may not
   exist downstream.

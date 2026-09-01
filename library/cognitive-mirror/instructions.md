@@ -14,8 +14,8 @@ accordingly:
 
 | What | Where | Access |
 |---|---|---|
-| Your cognitive profile | `~/.aai/references/cognitive-profile-<name>.md` | read/write |
-| Operational directives | `~/.aai/references/operational-directives.md` | read/write |
+| Your cognitive identity/profile | `~/.aai/identity.md` | read/write |
+| Operational directives | `~/.aai/rules/operational.md` | read/write |
 | Harvest store (sharded) + index | `~/.aai/memory/cognitive-mirror/harvest-store/` | read/write |
 | Harvest dedup log | `~/.aai/memory/cognitive-mirror/harvest-log.txt` | read/write |
 | Extraction dimensions | `references/extraction-dimensions.md` (this skill dir) | read-only |
@@ -24,10 +24,9 @@ accordingly:
 | Scheduled-task prompts | `references/scheduled-task-prompts*.md` (this skill dir) | read-only |
 | DSPy training exports | `~/.aai/memory/cognitive-mirror/exports/` | write |
 
-`<name>` is the logged-in user (e.g. `cognitive-profile-lou.md`). If no profile
-exists, copy `references/cognitive-profile-template.md` to
-`~/.aai/references/cognitive-profile-<name>.md` and bootstrap from there. Create
-`~/.aai/references/` and `~/.aai/memory/cognitive-mirror/` if missing.
+If no identity exists, copy `references/cognitive-profile-template.md` to
+`~/.aai/identity.md` and bootstrap from there. Create `~/.aai/` and
+`~/.aai/memory/cognitive-mirror/` if missing.
 
 Routing note: the canonical map of these locations is `~/.aai/context.md` — the
 routing table every consumer resolves through (no filesystem symlinks, so it's
@@ -91,7 +90,7 @@ overlap. That overlap is a feature.
 **Trigger:** User types `/loms` during or at the end of a conversation.
 
 **Behavior:**
-1. Read the cognitive profile (`~/.aai/references/cognitive-profile-<name>.md`)
+1. Read the cognitive profile (`~/.aai/identity.md`)
    to load the current profile.
 2. Read `references/extraction-dimensions.md` for the observation framework.
 3. Analyze the CURRENT conversation (all messages in the active chat) through
@@ -121,8 +120,8 @@ Absent signals:          [expected patterns that didn't appear]
 
 6. Ask: "Want me to apply these updates to the profile?"
 7. If yes AND running with file system access (Claude Code / Cowork), write the
-   changes to `~/.aai/references/cognitive-profile-<name>.md` and, if directives
-   changed, `~/.aai/references/operational-directives.md`. If running read-only
+   changes to `~/.aai/identity.md` and, if directives
+   changed, `~/.aai/rules/operational.md`. If running read-only
    (browser chat), present the proposed updates as formatted text to apply
    manually.
 
@@ -158,7 +157,7 @@ recent chats," "run the mirror on my last N conversations."
 as step 2 after Mine mode.
 
 **Behavior:**
-1. Read the profile and `~/.aai/references/operational-directives.md`.
+1. Read `~/.aai/identity.md` and `~/.aai/rules/operational.md`.
 2. If invoked standalone, run a lightweight Mine pass against the last 5
    conversations first to generate fresh observations. If invoked after Mine
    mode, use those observations.

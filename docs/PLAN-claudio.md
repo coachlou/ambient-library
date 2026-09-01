@@ -16,7 +16,7 @@ The grilling dissolved almost all of that into things that already exist or were
 already rejected:
 
 - **Persona + soul + memory of Lou** → already produced and owned by
-  `cognitive-mirror` (`~/.aai/references/cognitive-profile-lou.md`, routed via
+  `cognitive-mirror` (`~/.aai/identity.md`, routed via
   `~/.aai/context.md`). Claudio would *read* it, not own a second copy.
 - **"Hire this capability for future use" (HR agent)** → already built and
   deliberately human-gated as `propose.md → library/_staging/ → admin.md`.

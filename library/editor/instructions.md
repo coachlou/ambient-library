@@ -30,7 +30,7 @@ the piece more itself, not more generic.
 For **major** structural changes (reordering sections, changing the angle,
 rewriting the lead), propose the change and get a yes before executing.
 
-If `~/.claude/rules/content.md` exists, apply it as an enhancement; otherwise
+If `~/.aai/rules/content.md` exists, apply it as an enhancement; otherwise
 edit to the voice the draft and brief already establish. Never hard-depend on it.
 
 ### 3. Apply and summarize

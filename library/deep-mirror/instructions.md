@@ -43,7 +43,7 @@ rather than merely stale.
 This skill reads and writes the cognitive-mirror data in the global ambient
 home `~/.aai/`, the same home the `cognitive-mirror` skill owns:
 
-- Profile + directives (owned references): `~/.aai/references/cognitive-profile-<name>.md`, `~/.aai/references/operational-directives.md`
+- Identity + directives (owned context): `~/.aai/identity.md`, `~/.aai/rules/operational.md`
 - Run state + evidence + harvest (owned memory): `~/.aai/memory/cognitive-mirror/`
 
 The canonical map of these locations is the routing table at
@@ -134,7 +134,7 @@ under a conclusion is contaminated.
 ### 3. Integrate — feed the cognitive-mirror pipeline
 
 Now (and only now) read the cognitive profile
-(`~/.aai/references/cognitive-profile-<name>.md`) and
+(`~/.aai/identity.md`) and
 run the equivalent of cognitive-mirror's Diff mode using the deep-mine evidence
 as the observation source: Stable / Strengthened / Weakened / New / Evolved.
 Propose line-level profile updates and any directive changes as diffs. Apply

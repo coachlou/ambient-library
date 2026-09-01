@@ -4,7 +4,7 @@ Derived from the six eval files that already existed in the library
 (`grill`, `wrap`, `audit-fix`, `enrich-prompt`, `fresh-eyes`, `eigenthinking`)
 rather than invented — this is the smallest superset that covers what they
 already do plus the one gap they're missing (triggering cases), per
-`~/.claude/rules/skills.md` §10's two eval categories.
+`~/.aai/rules/capability-authoring.md` §10's two eval categories.
 
 ## File shape
 

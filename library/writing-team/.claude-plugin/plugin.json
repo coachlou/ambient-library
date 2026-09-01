@@ -1,7 +1,7 @@
 {
   "name": "writing-team",
   "description": "Full research -> draft -> edit pipeline to a publish-ready piece; use for \"write me an article on X end to end\", \"take this from idea to finished post\". Use this when the user wants the whole pipeline, not a single stage.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Coach Lou"
   },
