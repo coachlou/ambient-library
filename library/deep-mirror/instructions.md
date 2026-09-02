@@ -29,9 +29,9 @@ rather than merely stale.
   character. Subagents must return dated receipts, not impressions.
 - **Absence is data.** What never appears in the logs (shipping, delegating,
   finishing) is as diagnostic as what recurs.
-- **Never write to the profile, directives, or CLAUDE.md without showing a
-  diff and getting approval.** Evidence files and the state file are yours to
-  write; the profile is Lou's.
+- **Never write a concise root, detailed identity module, directive module, or
+  CLAUDE.md without showing a diff and getting approval.** Evidence files and
+  the state file are yours to write; profile and directive context are Lou's.
 - **Session logs contain secrets.** Instruct every mining subagent: never quote
   API keys, credentials, or third-party names into findings. Everything stays
   on this machine.
@@ -43,7 +43,8 @@ rather than merely stale.
 This skill reads and writes the cognitive-mirror data in the global ambient
 home `~/.aai/`, the same home the `cognitive-mirror` skill owns:
 
-- Identity + directives (owned context): `~/.aai/identity.md`, `~/.aai/rules/operational.md`
+- Concise routers (owned context): `~/.aai/identity.md`, `~/.aai/rules/operational.md`
+- Detailed identity + directives (owned context): `~/.aai/references/identity/`, `~/.aai/rules/operational/`
 - Run state + evidence + harvest (owned memory): `~/.aai/memory/cognitive-mirror/`
 
 The canonical map of these locations is the routing table at
@@ -133,12 +134,12 @@ under a conclusion is contaminated.
 
 ### 3. Integrate — feed the cognitive-mirror pipeline
 
-Now (and only now) read the cognitive profile
-(`~/.aai/identity.md`) and
-run the equivalent of cognitive-mirror's Diff mode using the deep-mine evidence
-as the observation source: Stable / Strengthened / Weakened / New / Evolved.
-Propose line-level profile updates and any directive changes as diffs. Apply
-only what Lou approves.
+Now (and only now) read the concise identity root, every detailed identity
+module, the concise operational router, and the domain directive modules. Run the
+equivalent of cognitive-mirror's Diff mode using the deep-mine evidence as the
+observation source: Stable / Strengthened / Weakened / New / Evolved. Propose
+line-level updates against the owning detailed module, reserving a concise-root
+edit for a true contract/router change. Apply only what Lou approves.
 
 Decision-shaped findings (input → Lou's choice → reasoning, with receipts) go
 to the harvest store using cognitive-mirror's Harvest record format and

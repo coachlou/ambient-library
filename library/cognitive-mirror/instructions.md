@@ -14,8 +14,10 @@ accordingly:
 
 | What | Where | Access |
 |---|---|---|
-| Your cognitive identity/profile | `~/.aai/identity.md` | read/write |
-| Operational directives | `~/.aai/rules/operational.md` | read/write |
+| Concise identity contract + router | `~/.aai/identity.md` | read; write only when the concise contract changes |
+| Detailed identity profile | `~/.aai/references/identity/` | read/write; write each approved observation to its owning module |
+| Universal directives + domain router | `~/.aai/rules/operational.md` | read; write only when a universal directive or router changes |
+| Domain operational directives | `~/.aai/rules/operational/` | read/write; write approved changes to the matching domain module |
 | Harvest store (sharded) + index | `~/.aai/memory/cognitive-mirror/harvest-store/` | read/write |
 | Harvest dedup log | `~/.aai/memory/cognitive-mirror/harvest-log.txt` | read/write |
 | Extraction dimensions | `references/extraction-dimensions.md` (this skill dir) | read-only |
@@ -24,8 +26,10 @@ accordingly:
 | Scheduled-task prompts | `references/scheduled-task-prompts*.md` (this skill dir) | read-only |
 | DSPy training exports | `~/.aai/memory/cognitive-mirror/exports/` | write |
 
-If no identity exists, copy `references/cognitive-profile-template.md` to
-`~/.aai/identity.md` and bootstrap from there. Create `~/.aai/` and
+If no identity exists, create the recognized roots and `references/identity/`.
+Use `references/cognitive-profile-template.md` as source material for the
+detailed modules; do not copy a full profile into `~/.aai/identity.md`. Create
+that root as a concise, user-approved contract and router. Create `~/.aai/` and
 `~/.aai/memory/cognitive-mirror/` if missing.
 
 Routing note: the canonical map of these locations is `~/.aai/context.md` — the
@@ -90,8 +94,8 @@ overlap. That overlap is a feature.
 **Trigger:** User types `/loms` during or at the end of a conversation.
 
 **Behavior:**
-1. Read the cognitive profile (`~/.aai/identity.md`)
-   to load the current profile.
+1. Read the concise identity root (`~/.aai/identity.md`) and the detailed identity
+   modules whose task triggers match the current conversation.
 2. Read `references/extraction-dimensions.md` for the observation framework.
 3. Analyze the CURRENT conversation (all messages in the active chat) through
    the extraction dimensions.
@@ -119,11 +123,12 @@ Absent signals:          [expected patterns that didn't appear]
    - **Proposed directive updates** — any new or modified operational directives
 
 6. Ask: "Want me to apply these updates to the profile?"
-7. If yes AND running with file system access (Claude Code / Cowork), write the
-   changes to `~/.aai/identity.md` and, if directives
-   changed, `~/.aai/rules/operational.md`. If running read-only
-   (browser chat), present the proposed updates as formatted text to apply
-   manually.
+7. If yes AND running with file system access (Claude Code / Cowork), write each
+   profile observation to its owning file in `~/.aai/references/identity/` and
+   each directive change to its owning module in `~/.aai/rules/operational/`.
+   Change a concise root only when its own contract or router changes. If running
+   read-only (browser chat), present the proposed updates as formatted text to
+   apply manually.
 
 **Critical behavior:** Show evidence, not just claims. Every pattern assertion
 must point to a specific moment. "You caught the scope creep when you said [X]
@@ -137,8 +142,9 @@ in response to [Y]" — not "You tend to catch scope creep."
 recent chats," "run the mirror on my last N conversations."
 
 **Behavior:**
-1. Read the profile and `references/extraction-dimensions.md` (do NOT load
-   harvest-dimensions.md — that's Harvest mode).
+1. Read the concise identity root, the relevant detailed identity modules, and
+   `references/extraction-dimensions.md` (do NOT load harvest-dimensions.md —
+   that's Harvest mode).
 2. Use `recent_chats` and/or `conversation_search` to pull conversation
    summaries from the specified time range.
 3. For each conversation, run the extraction framework against the summary.
@@ -157,15 +163,18 @@ recent chats," "run the mirror on my last N conversations."
 as step 2 after Mine mode.
 
 **Behavior:**
-1. Read `~/.aai/identity.md` and `~/.aai/rules/operational.md`.
+1. Read `~/.aai/identity.md`, every detailed identity module, the concise
+   operational router, and every domain-directive module before producing the
+   full-profile diff.
 2. If invoked standalone, run a lightweight Mine pass against the last 5
    conversations first to generate fresh observations. If invoked after Mine
    mode, use those observations.
 3. Compare observations against the profile.
 4. Produce a structured diff: **Stable / Strengthened / Weakened / New /
    Evolved**.
-5. Propose specific line-level changes to the profile.
-6. Propose any needed changes to operational directives.
+5. Propose specific line-level changes to the owning identity module; identify a
+   root change separately when it is genuinely concise-contract material.
+6. Propose any directive change against its owning universal or domain module.
 
 ---
 
@@ -175,7 +184,8 @@ as step 2 after Mine mode.
 "what would I usually do here?"
 
 **Behavior:**
-1. Read the profile.
+1. Read the concise identity root, then only the detailed module needed to answer
+   the question.
 2. Answer from the profile, citing specific documented patterns.
 3. If the profile doesn't cover the question, say so honestly and offer to run a
    Mine pass to gather evidence. (Read-only — works on every surface.)
@@ -199,7 +209,8 @@ instances → Layer 1 (DSPy-compilable training examples).
 
 **Behavior:**
 
-1. Read the profile to understand existing patterns.
+1. Read the concise identity root and only the detailed modules relevant to the
+   decision domain.
 2. Read `references/harvest-dimensions.md` for the decision detection framework
    (do NOT load extraction-dimensions.md).
 3. Read `~/.aai/memory/cognitive-mirror/harvest-log.txt` to check which
