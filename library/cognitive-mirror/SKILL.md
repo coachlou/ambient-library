@@ -1,16 +1,6 @@
 ---
 name: cognitive-mirror
-description: >
-  Self-observation system that extracts how the user thinks, decides, and
-  evaluates from conversation evidence — the live extractor, not the lifecycle
-  manager. 5 modes: /loms (live extraction from the current chat), Mine (batch
-  from past chats), Diff (compare against the profile), Query (answer from the
-  profile), Harvest (extract decision instances for DSPy). Trigger on: "/loms",
-  "look over my shoulder", "cognitive mirror", "mine my conversations", "update
-  my cognitive profile", "harvest my decisions", "how do I typically approach
-  X", "what's my pattern when". Prefer deep-mirror instead when the request is
-  about maintaining, scheduling, auditing, or bulk-mining raw session logs on
-  disk. Do NOT trigger for cognitive-operations or irreplaceable-edge requests.
+description: Live extractor for the user's cognitive profile — observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for "/loms", "look over my shoulder", "mine my conversations", "update my cognitive profile", "harvest my decisions", "how do I typically approach X", "what's my pattern when". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/.
 ---
 
 Read `instructions.md` in this skill's directory and follow it.

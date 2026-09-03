@@ -1,6 +1,6 @@
 ---
 name: gauntlet
-description: Drives an ambitious deliverable through bounded parallel workstreams, evidence-based acceptance criteria, independent adversarial review, and targeted revision loops; use for "run the gauntlet", "make this exceptional", "fan out and critique", or work needing a stringent quality bar without unsupported claims of perfection.
+description: Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops.
 metadata:
   summary: Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops.
 ---
