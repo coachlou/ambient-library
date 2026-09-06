@@ -21,6 +21,14 @@ library reachable.
 
 ## Install — make a folder a SoloFactory workspace
 
+Without the library plugin (member one-liner, same result):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/library/solofactory/bootstrap.sh | bash -s -- <target>
+```
+
+With the plugin installed:
+
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" --check <target>   # plan only
 bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" <target>           # default: cwd
