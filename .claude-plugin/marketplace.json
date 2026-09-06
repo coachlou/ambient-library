@@ -242,6 +242,11 @@
       "description": "Runs one skill's existing evals/evals.json — triggering cases against a fresh subagent, quality cases judged against prose pass criteria — and reports a PASS/FAIL table, no scores; use for \"run the evals for X\", \"test this skill's evals\", \"does X still trigger right\"."
     },
     {
+      "name": "solofactory",
+      "source": "./library/solofactory",
+      "description": "Installs and operates SoloFactory, a local-first software factory (interview → PRD → subscription-backed build → gates → local deploy) as a folder's agentic function with one project per run under projects/; use for \"set up solofactory here\", \"make this folder a software factory\", \"start the factory\", \"update my solofactory\"."
+    },
+    {
       "name": "teaching-block-synthesized",
       "source": "./library/teaching-block-synthesized",
       "description": "Writes one publishable teaching-block article from a working session — real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for \"write this up as a teaching block\", \"field guide this\", \"debrief this session\", \"turn this session into an article\". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead."

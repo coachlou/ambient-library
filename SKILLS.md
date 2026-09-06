@@ -77,6 +77,7 @@ until the router reads one. Optionally scope which a project uses via
 | **teaching-block-synthesized** | One working session → a publishable teaching article, with diagrams and rendered HTML | *"Write this up as a teaching block"*, *"Field guide this"* |
 | **connector-bridge** | Resolves a folder's declared `.aai/connectors.md` needs against what the harness actually offers | *"Wire up this connector"*, *"What can reach X here"* |
 | **trigger-runner** | Runs a folder's declared `.aai/triggers.md` standing intentions, and can promote them to hooks/cron | *"Check triggers"*, *"Run due triggers"* |
+| **solofactory** | Installs SoloFactory as a folder's agentic function — local-first software factory, one project per run under `projects/` | *"Set up solofactory here"*, *"Make this folder a software factory"*, *"Start the factory"* |
 
 ### In-context vs. spawned execution
 
