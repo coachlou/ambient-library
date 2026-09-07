@@ -11,7 +11,9 @@
 #
 # Writes (owned, never overwritten if present):   <target>/.aai/*.md   (distros only)
 # Writes (vendored, always re-synced):            <target>/.ailib/<cap>/ + dependency closure + manifest.yaml
-# Appends a discovery anchor to <target>/CLAUDE.md and AGENTS.md.
+# Appends a discovery anchor to <target>/CLAUDE.md and AGENTS.md, and to any other
+# agent-adapter instruction file already present (GEMINI.md, .cursorrules,
+# .github/copilot-instructions.md, .windsurfrules, .clinerules, CONVENTIONS.md, QWEN.md).
 # Re-running is the update path: .ailib/ refreshed, .aai/ untouched.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -59,7 +61,13 @@ if [ $DISTRO = 1 ]; then
 fi
 for c in $CAPS; do plan sync ".ailib/$c/ ($(ver "$LIB/$c")$( [ -f "$LIB/$c/app/VERSION" ] && printf ', %s' "$(head -1 "$LIB/$c/app/VERSION")"))"; done
 plan write ".ailib/manifest.yaml"
-for f in CLAUDE.md AGENTS.md; do
+# CLAUDE.md and AGENTS.md are always written; other adapters only if the folder
+# already uses them — the installer does not decide which agents you run.
+ANCHOR_FILES="CLAUDE.md AGENTS.md"
+for f in GEMINI.md QWEN.md CONVENTIONS.md .cursorrules .windsurfrules .clinerules .github/copilot-instructions.md; do
+  [ -f "$TARGET/$f" ] && ANCHOR_FILES="$ANCHOR_FILES $f"
+done
+for f in $ANCHOR_FILES; do
   if [ -f "$TARGET/$f" ] && grep -q 'ambient folder' "$TARGET/$f"; then plan keep "$f (anchor present)"; else plan anchor "$f"; fi
 done
 [ -f "$CAP_DIR/install.d/post.sh" ] && plan run "$CAP/install.d/post.sh"
@@ -99,7 +107,7 @@ open(path,"w").write(out)
 PY
 
 # ── anchors ──────────────────────────────────────────────────────────────────
-for f in CLAUDE.md AGENTS.md; do
+for f in $ANCHOR_FILES; do
   if ! { [ -f "$TARGET/$f" ] && grep -q 'ambient folder' "$TARGET/$f"; }; then
     [ -f "$TARGET/$f" ] && printf '\n' >> "$TARGET/$f"
     cat >> "$TARGET/$f" <<MD

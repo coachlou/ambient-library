@@ -197,10 +197,14 @@ fork keeps overriding the refreshed `.ailib/` copy via shadowing.
 ## Anchor — make the folder discoverable
 
 After any operation that creates `.aai/`: a cold agent finds it only through an
-anchor. Write one into the target's `AGENTS.md` (or `CLAUDE.md` for Claude
-Code) stating the folder is ambient and the agent should read
-`.aai/instructions.md` and follow it. If the file exists, append — never replace
-existing project instructions.
+anchor. `install.sh` always anchors `CLAUDE.md` and `AGENTS.md`, and also
+anchors any other adapter instruction file the folder *already* has — `GEMINI.md`,
+`QWEN.md`, `CONVENTIONS.md`, `.cursorrules`, `.windsurfrules`, `.clinerules`,
+`.github/copilot-instructions.md`. It never creates those, because the installer
+does not get to decide which agents you run. Doing this by hand: write an anchor
+stating the folder is ambient and the agent should read `.aai/instructions.md`
+and follow it, into every adapter file the folder uses. If the file exists,
+append — never replace existing project instructions.
 
 ## Rules
 

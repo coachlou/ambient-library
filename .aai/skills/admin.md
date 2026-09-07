@@ -242,13 +242,21 @@ folder — never hand-edit it.
 Install and update are one script for every capability, distro or not:
 `library/ambient-folder/install.sh <cap> [target]` (and the member one-liner,
 `library/ambient-folder/bootstrap.sh <cap> [target]` via curl). Distros stamp
-`.aai/` on first install; everything else only vendors into `.ailib/`.
+`.aai/` on first install — every `templates/aai/*.md` the capability ships, not
+just the three the audit requires; everything else only vendors into `.ailib/`.
+The installer also appends a discovery anchor to `CLAUDE.md` and `AGENTS.md`
+always, and to `GEMINI.md`, `QWEN.md`, `CONVENTIONS.md`, `.cursorrules`,
+`.windsurfrules`, `.clinerules` and `.github/copilot-instructions.md` only when
+the folder already has them — it never creates an adapter file the owner has not
+chosen.
 
 The loop after an app change: commit in the app repo → `scripts/sync-distro.sh
-<cap> <repo>` (lands in `library/<cap>/`, or `in-progress/<cap>/` the first
-time, then promote) → audit → commit here → RELEASE.yaml if new → build →
-push. The sync warns when the app repo is dirty, because `app/VERSION` records
-its HEAD sha.
+<cap> <repo> [src-dir]` (lands in `library/<cap>/`, or `in-progress/<cap>/` the
+first time, then promote) → audit → commit here → RELEASE.yaml if new → build →
+push. `src-dir` defaults to `distro`; pass it when the app repo already uses
+`distro/` for something else — `software-dev-factory` keeps its controller
+snapshot there and packages for the library from `ambient-distro/`. The sync
+warns when the app repo is dirty, because `app/VERSION` records its HEAD sha.
 
 ## Releasing
 

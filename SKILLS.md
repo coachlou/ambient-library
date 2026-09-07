@@ -78,6 +78,7 @@ until the router reads one. Optionally scope which a project uses via
 | **connector-bridge** | Resolves a folder's declared `.aai/connectors.md` needs against what the harness actually offers | *"Wire up this connector"*, *"What can reach X here"* |
 | **trigger-runner** | Runs a folder's declared `.aai/triggers.md` standing intentions, and can promote them to hooks/cron | *"Check triggers"*, *"Run due triggers"* |
 | **solofactory** | Installs SoloFactory as a folder's agentic function — local-first software factory, one project per run under `projects/` | *"Set up solofactory here"*, *"Make this folder a software factory"*, *"Start the factory"* |
+| **software-dev-factory** | Installs the governed SDLC factory as a folder's agentic function — approved spec → plan/red/green/review, driving your own Claude Code or Codex CLI, one git repo per product under `projects/` | *"Set up the software dev factory here"*, *"Approve this spec"*, *"Run the factory"* |
 
 ### In-context vs. spawned execution
 
