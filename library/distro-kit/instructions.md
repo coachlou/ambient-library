@@ -3,7 +3,14 @@
 One tool, three commands, one install standard. Every capability packaged with it installs
 the same way: the curl one-liner in `docs/CAPABILITY-INSTALL-STANDARD.md`.
 
-Runs only from the ambient-library dev workspace (it needs `scripts/` and `library/`):
+## Install
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/library/ambient-folder/bootstrap.sh \
+  | bash -s -- distro-kit [target-folder]
+```
+
+Re-run to update. Runs only from the ambient-library dev workspace (it needs `scripts/` and `library/`):
 
 ```sh
 python3 in-progress/distro-kit/distro_kit.py --help    # or library/distro-kit/ once promoted
