@@ -79,6 +79,8 @@ until the router reads one. Optionally scope which a project uses via
 | **trigger-runner** | Runs a folder's declared `.aai/triggers.md` standing intentions, and can promote them to hooks/cron | *"Check triggers"*, *"Run due triggers"* |
 | **solofactory** | Installs SoloFactory as a folder's agentic function — local-first software factory, one project per run under `projects/` | *"Set up solofactory here"*, *"Make this folder a software factory"*, *"Start the factory"* |
 | **software-dev-factory** | Installs the governed SDLC factory as a folder's agentic function — approved spec → plan/red/green/review, driving your own Claude Code or Codex CLI, one git repo per product under `projects/` | *"Set up the software dev factory here"*, *"Approve this spec"*, *"Run the factory"* |
+| **wbs-toolkit** | Installs and operates the outcome-driven WBS toolkit as a folder's agentic planning and verified execution function | *"Set up WBS here"*, *"Spec this project"*, *"Run the WBS"* |
+| **distro-kit** | Package any app repo as an ambient-library capability with one install standard (init/validate/publish) | *"Make a distro"*, *"Package this for ambient-library"*, *"Publish capability"* |
 
 ### In-context vs. spawned execution
 

@@ -92,6 +92,11 @@
       "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) — bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
     },
     {
+      "name": "distro-kit",
+      "source": "./library/distro-kit",
+      "description": "Package any app repo as an ambient-library capability with one install standard (init/validate/publish); use for \"make a distro\", \"package this for ambient-library\", \"publish capability\", \"distro-kit\""
+    },
+    {
       "name": "editor",
       "source": "./library/editor",
       "description": "Surgically edits an EXISTING draft; use for \"edit this draft\", \"polish this\", \"tighten this article\". Requires a draft to already exist."
@@ -285,6 +290,11 @@
       "name": "voice-profile-trainer",
       "source": "./library/voice-profile-trainer",
       "description": "Derives a reusable voice profile from authentic writing samples so AI output sounds like the user; use for \"doesn't sound like me\", \"write in my voice\", \"set up my voice profile\"."
+    },
+    {
+      "name": "wbs-toolkit",
+      "source": "./library/wbs-toolkit",
+      "description": "Installs and operates the outcome-driven WBS toolkit as a folder's agentic planning and verified execution function; use for \"set up WBS here\", \"spec this project\", \"run the WBS\", or \"update the WBS toolkit\"."
     },
     {
       "name": "wrap",
