@@ -23,7 +23,9 @@ rsync -a --delete --exclude='.DS_Store' --exclude='/app/' "$SRC/$SUB/" "$DEST/"
 if [ -f "$SRC/$SUB/APP_FILES" ]; then
   mkdir -p "$DEST/app"
   rsync -a --delete -r --files-from="$SRC/$SUB/APP_FILES" "$SRC/" "$DEST/app/"
-  VER=$(python3 -c "import json;print(json.load(open('$SRC/package.json'))['version'])" 2>/dev/null || echo unknown)
+  VER=$(python3 -c "import json;print(json.load(open('$SRC/package.json'))['version'])" 2>/dev/null \
+    || python3 -c "import json;print(json.load(open('$SRC/$SUB/.claude-plugin/plugin.json'))['version'])" 2>/dev/null \
+    || echo unknown)
   SHA=$(git -C "$SRC" rev-parse --short HEAD 2>/dev/null || echo unknown)
   [ -z "$(git -C "$SRC" status --porcelain 2>/dev/null)" ] || echo "warn: $SRC has uncommitted changes — sha $SHA is not what app/ contains" >&2
   printf '%s %s (%s) synced %s\n' "$CAP" "$VER" "$SHA" "$(date -u +%F)" > "$DEST/app/VERSION"

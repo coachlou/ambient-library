@@ -236,9 +236,14 @@ def cmd_publish(a):
         run("bash", "scripts/build-production.sh")
     print(
         f"published {cap} {pj['version']} -> library/{cap}"
-        + (" (released)" if a.release else " (not in RELEASE.yaml)")
+        + (" (released)" if a.release else released_note(root, cap))
     )
     print("still yours: review the diff, commit, push")
+
+
+def released_note(root, cap):
+    listed = re.search(rf"^  - {re.escape(cap)}$", read(os.path.join(root, "RELEASE.yaml")), re.M)
+    return " (in RELEASE.yaml; rebuild production after commit)" if listed else " (not in RELEASE.yaml)"
 
 
 def bump_root_version(root):
