@@ -24,14 +24,14 @@ library reachable.
 Without the library plugin (member one-liner, same result):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/library/solofactory/bootstrap.sh | bash -s -- <target>
+curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/library/ambient-folder/bootstrap.sh | bash -s -- solofactory <target>
 ```
 
 With the plugin installed:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" --check <target>   # plan only
-bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" <target>           # default: cwd
+bash "${CLAUDE_PLUGIN_ROOT}/library/ambient-folder/install.sh" solofactory --check <target>   # plan only
+bash "${CLAUDE_PLUGIN_ROOT}/library/ambient-folder/install.sh" solofactory <target>           # default: cwd
 ```
 
 1. Confirm the target path with the user; show the `--check` plan.
@@ -46,7 +46,8 @@ bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" <target>           #
 │   └── memory/solofactory/    #   interview log (created on first run)
 ├── .ailib/                    # VENDORED — re-synced on every install
 │   ├── manifest.yaml
-│   └── solofactory/           #   this capability: run.sh, app/, install.sh, templates/
+│   ├── ambient-folder/        #   generic install/update script (dependency)
+│   └── solofactory/           #   this capability: run.sh, app/, templates/
 ├── projects/                  # one folder per run id (YYYY-MM-DD-xxxxxxxx)
 ├── CLAUDE.md, AGENTS.md       # discovery anchors (appended, never replaced)
 ```
@@ -56,7 +57,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/install.sh" <target>           #
    <http://127.0.0.1:4173>, answer the guide, review the brief, start the
    factory. Runs land in `projects/<id>/`.
 
-Re-running the installer is the **update** path: `.ailib/` is refreshed,
+Re-running the installer (or `bash <target>/.ailib/ambient-folder/install.sh solofactory <target>`) is the **update** path: `.ailib/` is refreshed,
 `.aai/` and `projects/` are untouched.
 
 ## Operate — inside an installed folder
@@ -67,16 +68,18 @@ with `SOLOFACTORY_HOME=<folder>/.aai/memory/solofactory` and
 `SOLOFACTORY_JOBS_ROOT=<folder>/projects`; inspect a project by reading
 `projects/<id>/state.json`, `events.jsonl`, and `app/.factory/*.md`.
 
-## Maintain — refresh the vendored app (library maintainers)
+## Maintain — refresh the library copy (library maintainers)
+
+This capability is owned by the soloFactory repo (`distro/` + `APP_FILES`).
+`library/solofactory/` is a build output — never hand-edit it. After an app
+change is committed there:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/library/solofactory/sync-app.sh" [/path/to/soloFactory]
+scripts/sync-distro.sh solofactory /path/to/soloFactory   # in the ambient-library dev workspace
 ```
 
-Copies `src/`, `public/`, `skills/`, `package.json`, `README.md` from the
-source repo and rewrites `app/VERSION`. Bump this capability's
-`.claude-plugin/plugin.json` version afterwards so installed folders can see
-they are behind.
+Then audit, commit, and rebuild production. Bump `distro/.claude-plugin/plugin.json`
+when the install contract changes so installed folders can see they are behind.
 
 ## Rules
 
