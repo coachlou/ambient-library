@@ -229,6 +229,27 @@ refuses if the bundle exists; "update" overwrites.
 Same pattern: edit the file in the clone, bump wrapper versions. Be
 conservative — every installed copy inherits these on update.
 
+## Distros — capabilities owned by an app repo
+
+A **distro** is a capability whose packaging lives next to its code in another
+repo, under `<repo>/distro/`: `SKILL.md`, `.claude-plugin/plugin.json`,
+`instructions.md`, `templates/aai/{identity,instructions,context}.md` (with
+`{{NAME}}`), and optionally `DEPENDS` (capabilities to vendor alongside),
+`install.d/post.sh` (extra install steps), `run.sh`, and `APP_FILES` (repo
+paths copied into `app/`). `library/<cap>/` is a **build output** of that
+folder — never hand-edit it.
+
+Install and update are one script for every capability, distro or not:
+`library/ambient-folder/install.sh <cap> [target]` (and the member one-liner,
+`library/ambient-folder/bootstrap.sh <cap> [target]` via curl). Distros stamp
+`.aai/` on first install; everything else only vendors into `.ailib/`.
+
+The loop after an app change: commit in the app repo → `scripts/sync-distro.sh
+<cap> <repo>` (lands in `library/<cap>/`, or `in-progress/<cap>/` the first
+time, then promote) → audit → commit here → RELEASE.yaml if new → build →
+push. The sync warns when the app repo is dirty, because `app/VERSION` records
+its HEAD sha.
+
 ## Releasing
 
 After any change, offer to commit — stage the specific files touched, never

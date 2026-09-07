@@ -139,6 +139,13 @@ folder is local-first and the library is an upgrade path, never a prerequisite.
 
 ## Install — vendor a capability and its dependencies
 
+The mechanical steps below are implemented in `install.sh` next to this file
+(`bash install.sh <cap> [target]`, `--check` to plan). Prefer running it; the
+prose is the contract it follows. A capability that ships `templates/aai/` is a
+**distro**: the script also stamps `.aai/` from those templates on first
+install (never on re-run), lists its `DEPENDS` as the closure, and runs its
+`install.d/post.sh`.
+
 1. Resolve the capability in the library: `<library>/<cap>/`.
 2. Copy it pristine into `<target>/.ailib/<cap>/` — the **whole directory**.
    Scripts, `references/`, `templates/`, and assets are part of the capability
@@ -176,6 +183,9 @@ behavior internalizes as a constraint. Memory is where the folder notices;
 references are where it has learned.
 
 ## Update — re-sync vendored capabilities
+
+Re-run `install.sh <cap> <target>` — from the library, or from the folder's own
+`.ailib/ambient-folder/install.sh` when the library is not reachable.
 
 For each entry in `<target>/.ailib/manifest.yaml`, re-copy the pristine
 capability from the library and refresh its version. Re-run the closure check

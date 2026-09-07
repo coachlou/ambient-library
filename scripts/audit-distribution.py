@@ -167,6 +167,19 @@ def main():
                     f"{name}: plugin.json description does not match catalog.yaml"
                 )
 
+        # Distro contract: templates/aai/ must carry the three stamped files; DEPENDS must resolve.
+        tdir = os.path.join(skill_dir, "templates", "aai")
+        if os.path.isdir(tdir):
+            for t in ("identity.md", "instructions.md", "context.md"):
+                if not os.path.exists(os.path.join(tdir, t)):
+                    errors.append(f"{name}: distro templates/aai/ is missing {t}")
+        dep_file = os.path.join(skill_dir, "DEPENDS")
+        if os.path.exists(dep_file):
+            for line in open(dep_file, encoding="utf-8"):
+                dep = line.split("#", 1)[0].strip()
+                if dep and not os.path.isdir(os.path.join(ROOT, "library", dep)):
+                    errors.append(f"{name}: DEPENDS names {dep!r}, which is not in library/")
+
         if name not in mp_lib:
             errors.append(f"{name}: in catalog.yaml but has no marketplace.json entry")
         elif mp_lib[name] != desc:
