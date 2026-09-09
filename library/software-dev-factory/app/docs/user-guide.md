@@ -189,9 +189,12 @@ spec. An agent never edits the spec to pass a gate.
 
 ## 4. Writing a spec
 
-Do not hand-write one cold. The `factory-spec` skill
-(`.agents/skills/factory-spec/SKILL.md`) interviews you field by field and emits a file
-the parser accepts; its `references/spec-template.md` is the field-by-field contract.
+Do not hand-write one cold. Ask your agent to interview you field by field, one question
+at a time, against the contract below, and write the result to a `.md` file — that is
+what `.aai/instructions.md` in an installed factory folder already directs it to do. (If
+you are developing the factory itself in this repository, the `factory-spec` skill under
+`.agents/skills/factory-spec/` automates the same interview with sub-agent fan-out; it is
+not part of the installed bundle.)
 
 The gate that matters most is **intent fidelity**: a spec must build a *usable instance*
 of what you asked for. At least one acceptance criterion must exercise the
