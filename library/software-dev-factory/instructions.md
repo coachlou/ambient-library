@@ -14,10 +14,13 @@ reachable. One git repository per product, under `projects/<name>/`.
 
 ## Important
 
-- **macOS and Node 22.12.0+ are required.** Every project command and agent
-  invocation runs confined through `/usr/bin/sandbox-exec`, with no unconfined
-  fallback — elsewhere runs park at the baseline stage with no result. The
-  installer warns but still writes the scaffold.
+- **macOS and Node 22.12.0+ are required by default.** Every project command
+  and agent invocation runs confined through `/usr/bin/sandbox-exec`, with no
+  unconfined fallback — elsewhere runs park at the baseline stage with no
+  result. The installer warns but still writes the scaffold. On Windows
+  (inside WSL2) or Linux, add `FACTORY_CONFINEMENT=none` before the install
+  command to opt out of that sandbox — a reasonable trade only on a machine
+  the owner trusts, running specs they wrote themselves.
 - **A signed-in `claude` or `codex` CLI is required.** Without
   `FACTORY_ADAPTER` and `FACTORY_ADAPTER_EXECUTABLE` set, `run` refuses with
   exit 3 instead of pretending to work.

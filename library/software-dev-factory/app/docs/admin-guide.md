@@ -252,6 +252,11 @@ vendored copy until you re-stamp them from `current/install.sh --factory`. A fol
 `.ailib/manifest.yaml` `source` always names its own local `.ailib/software-dev-factory`
 path, never the library; `version` is what identifies which release was vendored.
 
+**Upgrading a factory folder created from the ambient library.** Re-run the same
+bootstrap one-liner (README, Installation) against the same folder. `.ailib/` is
+re-vendored from the library's current `software-dev-factory` capability; `.aai/`,
+`projects/` and the anchor sections in `CLAUDE.md`/`AGENTS.md` are left as they are.
+
 ## 4. Retention and pruning of runs
 
 Eligibility is pure and clock-free: `gcEligibility({ runs, policy, now })` in
@@ -672,8 +677,8 @@ recording of role version/digest is not yet wired (LIM-15).
 
 ## 10. Operations checklist
 
-1. Node >= 22.18, `pnpm install --frozen-lockfile`, then `pnpm test` green on the factory
-   checkout. Expect 65 files / 357 tests, 2 skipped (LIM-20 placeholders). `vitest.config.ts`
+1. Node >= 22.12, `pnpm install --frozen-lockfile`, then `pnpm test` green on the factory
+   checkout. Expect 99 files / 710 tests, 2 skipped at v0.3.0-alpha (LIM-20 placeholders). `vitest.config.ts`
    sets a 60 s `testTimeout` for every caller; without it `tests/adapters/` is flaky under
    load (LIM-16).
 2. `scaffold` preview, review conflicts, then apply.
@@ -694,9 +699,13 @@ recording of role version/digest is not yet wired (LIM-15).
 8. Set a retention policy and schedule `gc` preview reviews; apply deliberately.
 9. Before any upgrade: no nonterminal runs, clean tree, preview then apply, keep the
    rollback token until the upgrade commit lands.
-10. Treat `pnpm gauntlet` (`docs/gauntlet/README.md`) as the release gate. It runs 67 files /
-    363 tests — the default suite plus the two `tests/gauntlet/` fixtures — and writes a
-    report bound to the HEAD tree digest, so it reflects committed content only.
+10. Treat `pnpm gauntlet` (`docs/gauntlet/README.md`) as the release gate. It runs the
+    default suite plus the two `tests/gauntlet/` fixtures and writes a report bound to the
+    HEAD tree digest, so it reflects committed content only.
+11. If `abandon`, `verdict` or `run` fail with "Authority ref does not point to a controller
+    state commit", the ref was written by the old reconcile path with the wrong commit
+    message. `sh scripts/repair-snapshot-refs.sh` rewrites such refs in place with the
+    canonical message (same tree, same parents); read its header first.
 
 ## 11. Limitations that affect administrators
 

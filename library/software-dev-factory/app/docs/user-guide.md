@@ -33,6 +33,8 @@ own git repository with the factory installed; `./factory --project <name> <comm
 runs any CLI command inside that project. Each project still needs its own
 `.aai/policy/factory.yaml`. Install the bundle once with `install.sh --library`, then stamp
 each factory folder with `~/.ailib/software-dev-factory/current/install.sh --factory <dir>`.
+The shortest path is the ambient-library one-liner in the README, which creates the
+folder, vendors the controller and wires `CLAUDE.md`/`AGENTS.md` in one step.
 The README in the bundle has the full command reference.
 
 ### Step 1 — say what you want, in one or two sentences

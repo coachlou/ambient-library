@@ -7,10 +7,23 @@ where it stops and asks you.
 
 Zero dependencies. Node 22.12.0+ and git are the whole runtime.
 
-**macOS only.** Every project command and agent invocation runs confined through
-`/usr/bin/sandbox-exec`, and there is no unconfined fallback — on another platform the
-controller refuses to spawn anything and runs park at the baseline stage. The installer
-checks this up front.
+**macOS only, by default.** Every project command and agent invocation runs confined
+through `/usr/bin/sandbox-exec`, and there is no unconfined fallback — on another
+platform the controller refuses to spawn anything and runs park at the baseline stage.
+The installer checks this up front.
+
+**Windows or Linux?** Install inside WSL2 (Windows) or use Linux/Git Bash directly, and
+add `FACTORY_CONFINEMENT=none` before the install command, e.g.:
+
+```sh
+FACTORY_CONFINEMENT=none curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/library/ambient-folder/bootstrap.sh \
+  | bash -s -- software-dev-factory my-factory
+```
+
+This turns off the macOS sandbox that normally fences what a run can write to. It is
+safe on a machine you trust running specs you wrote yourself, which is the intended use
+here — it is not a general-purpose security boundary. Once installed, the setting lives
+in `.aai/factory.env` and does not need to be repeated for `./factory run`.
 
 ## Install
 

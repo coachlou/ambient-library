@@ -28,12 +28,16 @@ fi
 # 22.12.0, not 22, because the locked vite requires it; a major-only check waves
 # through a Node that fails much later with an error naming neither.
 NODE_FLOOR=22.12.0
-# macOS only, for now. Every project command and agent invocation runs confined
-# through /usr/bin/sandbox-exec, and the controller has no unconfined fallback --
-# on another platform runs park at the baseline stage with no result. Refuse here
-# rather than let that surface as a mysterious park on the first run.
-if [ "$(uname -s)" != "Darwin" ]; then
-  echo "install: macOS is required — the confinement backend is /usr/bin/sandbox-exec (found $(uname -s))" >&2
+# macOS only by default. Every project command and agent invocation runs confined
+# through /usr/bin/sandbox-exec; on another platform runs park at the baseline
+# stage with no result. Refuse here rather than let that surface as a mysterious
+# park on the first run. FACTORY_CONFINEMENT=none opts out explicitly (trusted
+# distribution only, e.g. WSL2/Git Bash) — never inferred, must be set by the
+# installing user, and it carries into the written .aai/factory.env so runs
+# stay unconfined without the flag being re-passed every time.
+if [ "$(uname -s)" != "Darwin" ] && [ "${FACTORY_CONFINEMENT:-}" != "none" ]; then
+  echo "install: macOS is required — the confinement backend is /usr/bin/sandbox-exec (found $(uname -s))." >&2
+  echo "  To install anyway on a trusted machine with no sandboxing, re-run with FACTORY_CONFINEMENT=none" >&2
   exit 1
 fi
 command -v node >/dev/null || { echo "install: node $NODE_FLOOR or newer is required" >&2; exit 1; }
@@ -124,6 +128,10 @@ write_env() {
   else
     : > "$1/.aai/factory.env"
   fi
+  if [ "${FACTORY_CONFINEMENT:-}" = "none" ]; then
+    echo "# Installed with FACTORY_CONFINEMENT=none: runs are unconfined, no sandbox-exec." >> "$1/.aai/factory.env"
+    echo "FACTORY_CONFINEMENT=none" >> "$1/.aai/factory.env"
+  fi
   cat >> "$1/.aai/factory.env" <<'ENV'
 # Sourced by ./factory. Uncomment and point at your coding agent's CLI.
 # FACTORY_ADAPTER=claude              # claude | codex
@@ -132,6 +140,7 @@ write_env() {
 # FACTORY_ADAPTER_MODEL=
 # FACTORY_ADAPTER_TIMEOUT_MS=120000
 # FACTORY_STAGE_TIMEOUT_MS=120000
+# FACTORY_CONFINEMENT=none            # opt out of sandbox-exec confinement (trusted machines only)
 ENV
   echo "wrote:
   .aai/factory.env"

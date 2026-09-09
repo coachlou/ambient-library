@@ -185,12 +185,23 @@ export interface ProjectCommandObservation {
 
 export type RunSuiteRequest = RunProjectCommandRequest;
 
+// ponytail: opt-in escape hatch for the ~dozen-member trusted distribution
+// running Windows/Linux via WSL2 or Git Bash, where sandbox-exec doesn't
+// exist. Set FACTORY_CONFINEMENT=none in .aai/factory.env to run commands
+// unconfined instead of refusing. Default (unset) behavior is unchanged.
+// Upgrade path: a real Linux confinement backend (LIM-23), if this trust
+// assumption ever stops holding.
+function confinementDisabled(): boolean {
+  return process.env.FACTORY_CONFINEMENT === "none";
+}
+
 // The sole v1 process boundary for untrusted repository commands. A missing
 // backend or malformed request returns null before the project command runs.
 export function runProjectCommand(
   request: RunProjectCommandRequest,
 ): ProjectCommandObservation | null {
   const repositoryPath = confinedRepositoryPath(request?.repositoryPath);
+  const unconfined = confinementDisabled();
   if (
     repositoryPath === null ||
     !Array.isArray(request?.command) ||
@@ -198,7 +209,7 @@ export function runProjectCommand(
     !request.command.every(isProcessString) ||
     !Number.isInteger(request?.timeoutMs) ||
     request.timeoutMs <= 0 ||
-    !darwinSandboxAvailable()
+    (!unconfined && !darwinSandboxAvailable())
   ) {
     return null;
   }
@@ -216,6 +227,17 @@ export function runProjectCommand(
       env: projectCommandEnvironment(controllerTempPath),
       timeout: request.timeoutMs,
     };
+    if (unconfined) {
+      const result = spawnSync(bin!, args, spawnOptions);
+      return {
+        exitCode: result.status,
+        ...(result.error !== undefined && "code" in result.error
+          ? { errorCode: String(result.error.code) }
+          : {}),
+        stdout: result.stdout ?? "",
+        stderr: result.stderr ?? "",
+      };
+    }
     let result = spawnSync(DARWIN_SANDBOX_EXECUTABLE, [
       "-p",
       darwinWriteConfinementProfile(repositoryPath, controllerTempPath),
