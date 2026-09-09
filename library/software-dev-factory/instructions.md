@@ -31,6 +31,12 @@ reachable. One git repository per product, under `projects/<name>/`.
 
 ## Install — make a folder a software development factory
 
+**Installing for a non-technical owner?** Read `INSTALL.md` next to this file and follow
+it instead of this section. It is a step-by-step runbook covering both macOS and Windows
+(WSL2), with dependency detection, copy/paste blocks written for a beginner, and
+remediation for every known failure. This section assumes the prerequisites are already
+in place; `INSTALL.md` does not.
+
 Without the library plugin (member one-liner, same result):
 
 ```bash
@@ -67,7 +73,9 @@ bash "${CLAUDE_PLUGIN_ROOT}/library/ambient-folder/install.sh" software-dev-fact
 ```
 
 3. Verify: `ls <target>/.aai <target>/.ailib/software-dev-factory <target>/projects`
-   and `<target>/factory init --help`.
+   and `<target>/factory` with no arguments, which prints the usage line. Do **not**
+   verify with `factory init --help` — `init` takes exactly one argument and parses no
+   flags, so that creates a project literally named `--help`.
 4. Tell the user: `cd <target> && ./factory init <name>` creates the first
    product repository; then set its `.aai/policy/factory.yaml` and
    `.aai/factory.env`, write a spec, approve it, and run.
