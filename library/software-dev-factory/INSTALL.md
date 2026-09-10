@@ -565,11 +565,24 @@ governs it, and `app/docs/user-guide.md` is the full walkthrough.
 Updating is the same command as installing. It refreshes the machinery and leaves all their
 work and settings untouched.
 
-First confirm what they have:
+First confirm what they have, and note the `app:` line — it is how you prove the update took:
 
 ```sh
 cd ~/factory && cat .ailib/manifest.yaml
 ```
+
+Then check for runs that are waiting on the owner:
+
+```sh
+cd ~/factory && find projects -mindepth 1 -maxdepth 1 -type d 2>/dev/null | while read -r p; do git -C "$p" for-each-ref --format='%(refname)' refs/factory/runs/ 2>/dev/null | while read -r r; do j=$(git -C "$p" show "${r}:run.json"); echo "$j" | grep -q '"disposition": *"needs_owner"' || continue; s=$(echo "$j" | sed -n 's/.*"spec_id": *"\([^"]*\)".*/\1/p' | head -1); i=$(git -C "$p" show "refs/factory/specs/${s}:spec.json" 2>/dev/null); [ -n "$i" ] && ! echo "$i" | grep -q "\"run_id\": *\"${r##*/}\"" && continue; echo "$p ${r##*/}"; done; done
+```
+
+If that prints anything, **stop and do not update yet.** Each line is a run parked at review, waiting for the owner's approve/reject.
+A run's verdict must come from the same factory version that parked it; after an update the
+verdict is refused with `controller drift`. Have the owner approve or reject those runs
+first, then update. (The refusal can be overridden with `FACTORY_ALLOW_CONTROLLER_DRIFT=1`,
+and the override is recorded in the run — use it only if the owner chooses to, never to get
+past the error yourself.)
 
 Then run the identical install command for their platform — **Mac:**
 
@@ -586,10 +599,29 @@ cd ~ && FACTORY_CONFINEMENT=none curl -fsSL https://raw.githubusercontent.com/co
 > This updates the factory to the latest version. Your projects and settings are left
 > exactly as they are.
 
+"Latest" means the latest version published to the ambient library, not the newest work in
+the factory's own development repository. Changes that have not been published yet will not
+arrive, however many times the command is re-run.
+
+Confirm it took — the `app:` line should differ from the one you noted (if it is identical,
+they were already current):
+
+```sh
+cd ~/factory && cat .ailib/manifest.yaml
+```
+
 What updates and what does not:
 
 - **Refreshed:** `.ailib/` — the vendored machinery.
 - **Never touched:** `.aai/` (their settings and memory) and `projects/` (all their work).
+
+Existing projects need nothing further — they use the refreshed factory automatically. Do
+**not** re-run project setup (`./factory init`) on a project that already exists: it refuses
+with `paths already exist with different contents`, because the project records which
+factory version set it up. That refusal is harmless and changes nothing.
+
+On Windows the update prints `warn  macOS is required` again. That is expected, as on the
+first install.
 
 Because `.aai/` is deliberately never overwritten, an update **cannot** repair a broken
 `factory.env`. If they are updating *because* runs were refusing with exit 3, fix the file
@@ -617,6 +649,8 @@ Work these yourself. Do not read this table out loud.
 | `rsync: command not found` | Ubuntu missing rsync | B2 |
 | `curl: command not found` | Ubuntu missing curl | B2 |
 | `git: command not found` | git missing | A3 / B2 |
+| `install: refused — these paths already exist with different contents` **on a project that was set up before an update** | Expected: the project was set up by the older version | Nothing to fix. The project already works with the updated factory; do not re-run setup on it |
+| Verdict refused with `controller drift` after an update | The run was parked by the previous version | Tell the owner. Either re-run that spec from the start, or — only if the owner chooses — record the verdict with `FACTORY_ALLOW_CONTROLLER_DRIFT=1` (the override is logged in the run) |
 | `install: refused — these paths already exist with different contents` | A previous half-install left conflicting files | Do **not** delete anything. Show the owner the listed paths and ask whether they installed here before. Only proceed once they confirm the folder is disposable. |
 | Runs refuse with **exit 3** | No adapter in `.aai/factory.env` | C1's `printf` fix. An update will not repair this. |
 | `no .aai/ above ...` | Running `./factory` from the wrong folder | `cd ~/factory` first |

@@ -514,6 +514,33 @@ node "$FACTORY/src/cli.ts" verdict .aai/runs/<run_name>/review-verdict.approval.
 which is `null` when no contest was recorded. Use it to read the
 minted decision *before* you sign, so you know whether `--contest` will be required.
 
+### The Control Room (monitor)
+
+A local page that shows your project's runs and lets you Approve or Reject a run waiting
+for you. Start it **from your project folder**; it refuses to start anywhere without
+`.aai/policy/factory.yaml`. `<bundle>` depends on how you installed:
+
+| Layout | Command, run inside the project |
+|---|---|
+| plain `install.sh <repo>` | `node --experimental-strip-types --no-warnings <bundle>/scripts/monitor.ts`, where `<bundle>` is the extracted bundle, or `<library>/software-dev-factory/current` for `--library` |
+| `install.sh --factory` | `node --experimental-strip-types --no-warnings <folder>/.ailib/software-dev-factory/scripts/monitor.ts` |
+| ambient | `node --experimental-strip-types --no-warnings <folder>/.ailib/software-dev-factory/app/scripts/monitor.ts` |
+| ambient fork | `node --experimental-strip-types --no-warnings <folder>/.aai/skills/software-dev-factory/app/scripts/monitor.ts` |
+
+Then open `http://127.0.0.1:4600`. Two monitors on one machine collide on port 4600: set
+`FACTORY_MONITOR_PORT=<port>` for the second.
+
+- A verdict runs the bundle's CLI with the folder's `.aai/factory.env` (factory-folder and
+  ambient layouts only), then the project's `.aai/factory.env` loaded, so the project wins.
+- When a verdict is accepted, the remaining stages run before the page answers, so the page
+  does not respond until that run finishes. A click made meanwhile is answered afterwards,
+  and refused unless the run is waiting for you again.
+- The monitor needs `pgrep`/`ps` (macOS/Linux). The factory install itself is macOS-only
+  unless `FACTORY_CONFINEMENT=none`.
+- Existing installs get the monitor by re-running the installer or the ambient bootstrap.
+- In a factory development checkout, starting it from the repository root still works, and
+  its verdicts now also load `<repo>/.aai/factory.env` if one exists.
+
 ### Programmatic entry: `start()`
 
 `start(request)` in `src/controller/sdlc/start.ts` is what `start --spec` calls. It is the

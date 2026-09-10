@@ -6,3 +6,6 @@ docs/user-guide.md
 docs/admin-guide.md
 scripts/distro/README.md
 scripts/distro/install.sh
+scripts/monitor.ts
+scripts/monitor.html
+scripts/park-currency.ts
