@@ -1,320 +1,330 @@
 {
-  "name": "ambient-library",
-  "description": "Coach Lou's ambient skill library for Claude Code: project setup, skill selection, management, and code review through natural language.",
-  "owner": {
-    "name": "Coach Lou",
-    "url": "https://github.com/coachlou"
+ "name": "ambient-library",
+ "description": "Coach Lou's ambient skill library for Claude Code: project setup, skill selection, management, and code review through natural language.",
+ "owner": {
+  "name": "Coach Lou",
+  "url": "https://github.com/coachlou"
+ },
+ "plugins": [
+  {
+   "name": "ambient",
+   "source": "./",
+   "description": "Ambient skill library \u2014 project setup, skill selection, management, and code review, all through natural language."
   },
-  "plugins": [
-    {
-      "name": "ambient",
-      "source": "./",
-      "description": "Ambient skill library — project setup, skill selection, management, and code review, all through natural language."
-    },
-    {
-      "name": "aimm-commands",
-      "source": "./library/aimm-commands",
-      "description": "Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for \"/aimm:<name>\", \"run the skeptic\", or any request naming an AIMM command."
-    },
-    {
-      "name": "aimm-newsletter",
-      "source": "./library/aimm-newsletter",
-      "description": "Sends a newsletter email to all members of a named Google Contacts group; use for \"send this to [group]\", \"send the newsletter\", \"email the group\". Previews recipients and content before sending."
-    },
-    {
-      "name": "aimm-writing-team",
-      "source": "./library/aimm-writing-team",
-      "description": "Autonomous multi-role team (Researcher, Strategist, Writer, Editor, Publisher) for thought-leadership articles; use for explicit role commands like \"Use Strategist mode\" or a full AIMM article run."
-    },
-    {
-      "name": "ambient-folder",
-      "source": "./library/ambient-folder",
-      "description": "Makes a folder ambiently intelligent and maintains it — interviews for purpose when it's unclear, writes the .aai/ scaffold, vendors canonical capabilities into .ailib/, forks them, re-syncs; use for \"make this folder ambient\", \"set up an agentic folder for X\", \"stamp .aai here\", \"interview me about this folder\", \"add a capability to this folder\", \"re-sync my vendored skills\"."
-    },
-    {
-      "name": "audit-fix",
-      "source": "./library/audit-fix",
-      "description": "Adversarial six-lens audit (errors, omissions, oversights, blind spots, conflicts, duplications) of a plan or change, then root-cause fixes; use for \"audit this\", \"pressure test\", \"poke holes\", \"what did we miss\"."
-    },
-    {
-      "name": "audit-mcp",
-      "source": "./library/audit-mcp",
-      "description": "Security-audits a third-party MCP server repo before installation; use for \"audit this MCP\", \"is this MCP safe\", \"check this repo before I install it\"."
-    },
-    {
-      "name": "brand-writing-team",
-      "source": "./library/brand-writing-team",
-      "description": "Multi-role team for brand-building long-form content with structured intake, end to end; use for \"help me write a post about X\", \"turn this idea into a piece\" when the goal is personal/company brand."
-    },
-    {
-      "name": "cognitive-mirror",
-      "source": "./library/cognitive-mirror",
-      "description": "Live extractor for the user's cognitive profile — observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for \"/loms\", \"look over my shoulder\", \"mine my conversations\", \"update my cognitive profile\", \"harvest my decisions\", \"how do I typically approach X\", \"what's my pattern when\". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/."
-    },
-    {
-      "name": "cognitive-operations",
-      "source": "./library/cognitive-operations",
-      "description": "Applies the Lenses/Operations/Recipes structured-thinking system to complex problems and decisions; use for \"think through\", \"what am I missing\", \"run a pre-mortem\", \"use mental models\"."
-    },
-    {
-      "name": "connector-bridge",
-      "source": "./library/connector-bridge",
-      "description": "Resolves a folder's declared .aai/connectors.md needs against whatever the current harness actually offers (MCP tools, CLIs, or nothing), caching successful matches in .aai/memory/; use for \"wire up this connector\", \"resolve connectors.md\", \"what can reach X here\"."
-    },
-    {
-      "name": "context-mgr",
-      "source": "./library/context-mgr",
-      "description": "Installs the multi-agent .context/ continuity system into a project; use for \"install context-mgr\", \"set up multi-agent context here\", \"scaffold .context/\", \"add the shared brain to this project\"."
-    },
-    {
-      "name": "conversation-consolidation-system",
-      "source": "./library/conversation-consolidation-system",
-      "description": "Builds a four-stage pipeline turning scattered Claude chat history into a searchable Obsidian external brain; use for \"I can't find what I discussed with Claude\", \"second brain for my AI work\"."
-    },
-    {
-      "name": "conversation-ip-extractor",
-      "source": "./library/conversation-ip-extractor",
-      "description": "Extracts named frameworks, methodologies, and publishable IP from a long conversation or session transcript; use for \"what did I figure out here\", \"find the framework in this\"."
-    },
-    {
-      "name": "deep-comprehension-assessment",
-      "source": "./library/deep-comprehension-assessment",
-      "description": "Builds rigorous text-comprehension assessments with detailed feedback; use for \"test my understanding of this text\", \"comprehension quiz\"."
-    },
-    {
-      "name": "deep-field",
-      "source": "./library/deep-field",
-      "description": "Integrated insight system combining Eigenthinking, latent-space cartography, and wisdom-of-crowds validation; use for \"run deep field\", frontier-quality insight beyond default reasoning."
-    },
-    {
-      "name": "deep-mirror",
-      "source": "./library/deep-mirror",
-      "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) — bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
-    },
-    {
-      "name": "distro-kit",
-      "source": "./library/distro-kit",
-      "description": "Package any app repo as an ambient-library capability with one install standard (init/validate/publish); use for \"make a distro\", \"package this for ambient-library\", \"publish capability\", \"distro-kit\""
-    },
-    {
-      "name": "editor",
-      "source": "./library/editor",
-      "description": "Surgically edits an EXISTING draft; use for \"edit this draft\", \"polish this\", \"tighten this article\". Requires a draft to already exist."
-    },
-    {
-      "name": "editorial-desk",
-      "source": "./library/editorial-desk",
-      "description": "Senior-editor orchestrator running specialist contributors (strategist, angle, drafter, adversary, headline) over a shared blackboard; use for \"run the editorial desk\", a critiqued-and-revised opinion/POV essay, or a sharp argument piece with editorial review."
-    },
-    {
-      "name": "eigenthinking",
-      "source": "./library/eigenthinking",
-      "description": "Nine-step framework turning tacit expertise into branded, publishable IP (UP to IP); use for \"turn how I think into a framework\", \"package my methodology\", \"make my process teachable\"."
-    },
-    {
-      "name": "enrich-prompt",
-      "source": "./library/enrich-prompt",
-      "description": "Rewrites and augments a prompt to surface implicit constraints and blind spots, then answers the enriched version; use for \"make this prompt better\", \"I keep getting shallow answers\"."
-    },
-    {
-      "name": "extract-codify-patterns",
-      "source": "./library/extract-codify-patterns",
-      "description": "Packages a working session into a shareable look-over-my-shoulder artifact bundle; use for \"package this session\", \"codify this session\", \"turn this conversation into a teaching resource\"."
-    },
-    {
-      "name": "fresh-eyes",
-      "source": "./library/fresh-eyes",
-      "description": "Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for \"fresh eyes\", \"does the onboarding work\", \"test the docs\"."
-    },
-    {
-      "name": "gauntlet",
-      "source": "./library/gauntlet",
-      "description": "Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops."
-    },
-    {
-      "name": "gears-broadcast",
-      "source": "./library/gears-broadcast",
-      "description": "Sends any email to GEARS licensees (gears_owners) via Resend, drafting subject/body with the user if not already given, straight from raw HTML/text with no dashboard-editor round trip; use for \"send a gears broadcast\", \"email the licensees\", \"notify gears owners\", \"send this to gears_owners\"."
-    },
-    {
-      "name": "geo-authority-architect",
-      "source": "./library/geo-authority-architect",
-      "description": "Builds a GEO/AI-citation authority strategy and Canon/Frameworks/Diagnostics content architecture; use for \"GEO strategy\", \"get cited by AI\", \"GEARS\"."
-    },
-    {
-      "name": "gmail-manager",
-      "source": "./library/gmail-manager",
-      "description": "General Gmail management across accounts via the gmail MCP (search, read, send, label, archive, drafts); use for \"send an email\", \"find that thread\", or mailbox actions beyond triage."
-    },
-    {
-      "name": "gmail-triage",
-      "source": "./library/gmail-triage",
-      "description": "Two-phase Gmail inbox sweep via the gmail MCP — batch-archive junk, then triage real emails one at a time; use for \"check my email\", \"clean up my inbox\"."
-    },
-    {
-      "name": "graphify",
-      "source": "./library/graphify",
-      "description": "Turns any folder of files into a persistent, queryable knowledge graph with community detection; use for codebase/architecture questions, \"graphify this\", or any content query when graphify-out/ exists."
-    },
-    {
-      "name": "grill",
-      "source": "./library/grill",
-      "description": "Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for \"grill me\", \"interview me\", \"ask me questions one at a time\"."
-    },
-    {
-      "name": "harness-prd",
-      "source": "./library/harness-prd",
-      "description": "Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for \"build an agent process for X\", \"spec out an agent pipeline\". NOT for code work-breakdowns (wbs-prd)."
-    },
-    {
-      "name": "hot-take-forge",
-      "source": "./library/hot-take-forge",
-      "description": "Hardens a contrarian claim by forcing it to survive repeated self-attack until it is simultaneously novel AND true; use for \"give me a hot take on X\", \"pressure test this take\", \"is this angle actually original\"."
-    },
-    {
-      "name": "ireport",
-      "source": "./library/ireport",
-      "description": "Generates styled, interactive HTML research reports from a topic or notes; use for \"interactive report\", \"HTML report on X\", \"deep research document\"."
-    },
-    {
-      "name": "irreplaceable-edge",
-      "source": "./library/irreplaceable-edge",
-      "description": "Guided live discovery of a professional's irreplaceable competitive edge against AI-first competition; use for \"find my edge\", \"what's my moat\", \"how do I compete with AI\"."
-    },
-    {
-      "name": "knowledge-base-architect",
-      "source": "./library/knowledge-base-architect",
-      "description": "Guides design and deployment of a personal AI knowledge base from accumulated expertise assets; use for \"talk to my own knowledge\", \"build a private ChatGPT on my material\"."
-    },
-    {
-      "name": "latent-cartographer",
-      "source": "./library/latent-cartographer",
-      "description": "Multi-phase latent-space traversal that maps the probability landscape before answering; use for \"/lsc\", \"run the cartographer\", \"don't give me the median answer\"."
-    },
-    {
-      "name": "leaderize-storytelling-framework",
-      "source": "./library/leaderize-storytelling-framework",
-      "description": "Selects and applies storytelling frameworks for Leaderize's mid-level-leader audience across content stages and live sessions; use for Leaderize content or session design."
-    },
-    {
-      "name": "meeting-nuggets",
-      "source": "./library/meeting-nuggets",
-      "description": "Turns meeting transcripts into newsletter-style topic recaps with research add-ons and optional Notion publishing; use for \"recap this meeting\", \"session report\", or any pasted VTT/call transcript."
-    },
-    {
-      "name": "multi-model-debate-live",
-      "source": "./library/multi-model-debate-live",
-      "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" — the live workflow, not the prompt protocol."
-    },
-    {
-      "name": "paradigm-collision-engine",
-      "source": "./library/paradigm-collision-engine",
-      "description": "Generates non-obvious insight by colliding 400+ disciplinary paradigms via parallel sub-agents and an elimination tournament; use for \"fresh angle on X\", \"non-obvious take\", \"multiple lenses\"."
-    },
-    {
-      "name": "polyglot-language-coach",
-      "source": "./library/polyglot-language-coach",
-      "description": "Gently coaches when the user writes in a non-English language mid-conversation — corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
-    },
-    {
-      "name": "project-brief",
-      "source": "./library/project-brief",
-      "description": "Creates a one-page project overview; use for \"write a brief\", \"summarize this project\", \"project overview\", \"what is this project\"."
-    },
-    {
-      "name": "project-index",
-      "source": "./library/project-index",
-      "description": "Scans one or more directories (no recursion) and produces a project inventory — markdown table plus a searchable, filterable HTML page — with an inferred one-line description and status per folder; use for \"what have I been working on\", \"index my projects folder\", \"status of everything in this directory\", \"catalog these folders\"."
-    },
-    {
-      "name": "researcher",
-      "source": "./library/researcher",
-      "description": "Gathers sources into a structured research dossier; use for \"research this topic\", \"find sources on X\", \"compile background\". NOT for writing or editing the piece."
-    },
-    {
-      "name": "session",
-      "source": "./library/session",
-      "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
-    },
-    {
-      "name": "skill-auditor",
-      "source": "./library/skill-auditor",
-      "description": "Audits a skill's SKILL.md frontmatter, catalog.yaml projection, references, and evals shape against the library schema, reporting ordered actionable findings; use for \"audit this skill\", \"does X follow the schema\", \"lint X against the catalog\", \"check X before I publish it\"."
-    },
-    {
-      "name": "skill-evals",
-      "source": "./library/skill-evals",
-      "description": "Runs one skill's existing evals/evals.json — triggering cases against a fresh subagent, quality cases judged against prose pass criteria — and reports a PASS/FAIL table, no scores; use for \"run the evals for X\", \"test this skill's evals\", \"does X still trigger right\"."
-    },
-    {
-      "name": "software-dev-factory",
-      "source": "./library/software-dev-factory",
-      "description": "Installs and operates the software development factory, a governed SDLC controller that drives your own Claude Code or Codex CLI through plan, red, green and review against an approved spec, as a folder's agentic function with one git repository per product under projects/; use for \"set up the software dev factory here\", \"make this folder a software factory\", \"approve a spec\", \"run the factory\", \"update my software-dev-factory\"."
-    },
-    {
-      "name": "solofactory",
-      "source": "./library/solofactory",
-      "description": "Installs and operates SoloFactory, a local-first software factory (interview → PRD → subscription-backed build → gates → local deploy) as a folder's agentic function with each project a git repo under projects/ or the root; use for \"set up solofactory here\", \"make this folder a software factory\", \"start the factory\", \"update my solofactory\"."
-    },
-    {
-      "name": "teaching-block-synthesized",
-      "source": "./library/teaching-block-synthesized",
-      "description": "Writes one publishable teaching-block article from a working session — real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for \"write this up as a teaching block\", \"field guide this\", \"debrief this session\", \"turn this session into an article\". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead."
-    },
-    {
-      "name": "to-issues",
-      "source": "./library/to-issues",
-      "description": "Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for \"turn this plan into issues\", \"break this PRD into tickets\"."
-    },
-    {
-      "name": "transcript-to-content-pipeline",
-      "source": "./library/transcript-to-content-pipeline",
-      "description": "Turns a raw transcript or session notes into a full content package (article, LinkedIn variants, summary, audio script); use for \"turn this into content\", \"write something from this transcript\"."
-    },
-    {
-      "name": "trello-pipeline",
-      "source": "./library/trello-pipeline",
-      "description": "Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for \"run the Trello pipeline\", \"idea to PRD on my board\", \"set up the TrelloAgents board\"."
-    },
-    {
-      "name": "trigger-runner",
-      "source": "./library/trigger-runner",
-      "description": "Runs a folder's declared .aai/triggers.md standing intentions — compares each to last-run stamps in .aai/memory/, runs what's due, and can offer promotion to native hooks/cron on a capable harness; use for \"check triggers\", \"run due triggers\", \"session-start due-check\"."
-    },
-    {
-      "name": "voice-crm-pipeline",
-      "source": "./library/voice-crm-pipeline",
-      "description": "Builds a hands-free voice-to-database capture chain (Siri to Shortcut to GPT to Sheets); use for \"I never update my CRM\", \"talk to my database\", \"voice-to-sheet workflow\"."
-    },
-    {
-      "name": "voice-profile-trainer",
-      "source": "./library/voice-profile-trainer",
-      "description": "Derives a reusable voice profile from authentic writing samples so AI output sounds like the user; use for \"doesn't sound like me\", \"write in my voice\", \"set up my voice profile\"."
-    },
-    {
-      "name": "wbs-toolkit",
-      "source": "./library/wbs-toolkit",
-      "description": "Installs and operates the outcome-driven WBS toolkit as a folder's agentic planning and verified execution function; use for \"set up WBS here\", \"spec this project\", \"run the WBS\", or \"update the WBS toolkit\"."
-    },
-    {
-      "name": "wrap",
-      "source": "./library/wrap",
-      "description": "Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
-    },
-    {
-      "name": "writer",
-      "source": "./library/writer",
-      "description": "Drafts a piece from a brief (and optional dossier) — drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
-    },
-    {
-      "name": "writing-suite",
-      "source": "./bundles/writing-suite",
-      "description": "Bundle: the complete writing toolkit — researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
-    },
-    {
-      "name": "writing-team",
-      "source": "./library/writing-team",
-      "description": "Full research -> draft -> edit pipeline to a publish-ready piece; use for \"write me an article on X end to end\", \"take this from idea to finished post\". Use this when the user wants the whole pipeline, not a single stage."
-    }
-  ]
+  {
+   "name": "aimm-commands",
+   "source": "./library/aimm-commands",
+   "description": "Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for \"/aimm:<name>\", \"run the skeptic\", or any request naming an AIMM command."
+  },
+  {
+   "name": "aimm-newsletter",
+   "source": "./library/aimm-newsletter",
+   "description": "Sends a newsletter email to all members of a named Google Contacts group; use for \"send this to [group]\", \"send the newsletter\", \"email the group\". Previews recipients and content before sending."
+  },
+  {
+   "name": "aimm-writing-team",
+   "source": "./library/aimm-writing-team",
+   "description": "Autonomous multi-role team (Researcher, Strategist, Writer, Editor, Publisher) for thought-leadership articles; use for explicit role commands like \"Use Strategist mode\" or a full AIMM article run."
+  },
+  {
+   "name": "ambient-folder",
+   "source": "./library/ambient-folder",
+   "description": "Makes a folder ambiently intelligent and maintains it \u2014 interviews for purpose when it's unclear, writes the .aai/ scaffold, vendors canonical capabilities into .ailib/, forks them, re-syncs; use for \"make this folder ambient\", \"set up an agentic folder for X\", \"stamp .aai here\", \"interview me about this folder\", \"add a capability to this folder\", \"re-sync my vendored skills\"."
+  },
+  {
+   "name": "audit-fix",
+   "source": "./library/audit-fix",
+   "description": "Adversarial six-lens audit (errors, omissions, oversights, blind spots, conflicts, duplications) of a plan or change, then root-cause fixes; use for \"audit this\", \"pressure test\", \"poke holes\", \"what did we miss\"."
+  },
+  {
+   "name": "audit-mcp",
+   "source": "./library/audit-mcp",
+   "description": "Security-audits a third-party MCP server repo before installation; use for \"audit this MCP\", \"is this MCP safe\", \"check this repo before I install it\"."
+  },
+  {
+   "name": "brand-writing-team",
+   "source": "./library/brand-writing-team",
+   "description": "Multi-role team for brand-building long-form content with structured intake, end to end; use for \"help me write a post about X\", \"turn this idea into a piece\" when the goal is personal/company brand."
+  },
+  {
+   "name": "capture-chat",
+   "source": "./library/capture-chat",
+   "description": "Exports and archives a chat conversation or session as portable markdown \u2014 conversation only, or with the artifacts the session produced; use for \"export this conversation\", \"capture this chat\", \"save this session\", \"export with artifacts\". Defaults to the cross-harness .aai session archive; redirectable to any path."
+  },
+  {
+   "name": "checkpoint",
+   "source": "./library/checkpoint",
+   "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows \u2014 distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\"."
+  },
+  {
+   "name": "cognitive-mirror",
+   "source": "./library/cognitive-mirror",
+   "description": "Live extractor for the user's cognitive profile \u2014 observes the current or recent conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat), Mine (recent chats), Diff, Query, Harvest (decision instances for DSPy); use for \"/loms\", \"look over my shoulder\", \"mine my conversations\", \"update my cognitive profile\", \"harvest my decisions\", \"how do I typically approach X\", \"what's my pattern when\". Prefer deep-mirror for bulk raw-log mining, scheduling, or auditing. Data lives in ~/.aai/."
+  },
+  {
+   "name": "cognitive-operations",
+   "source": "./library/cognitive-operations",
+   "description": "Applies the Lenses/Operations/Recipes structured-thinking system to complex problems and decisions; use for \"think through\", \"what am I missing\", \"run a pre-mortem\", \"use mental models\"."
+  },
+  {
+   "name": "connector-bridge",
+   "source": "./library/connector-bridge",
+   "description": "Resolves a folder's declared .aai/connectors.md needs against whatever the current harness actually offers (MCP tools, CLIs, or nothing), caching successful matches in .aai/memory/; use for \"wire up this connector\", \"resolve connectors.md\", \"what can reach X here\"."
+  },
+  {
+   "name": "context-mgr",
+   "source": "./library/context-mgr",
+   "description": "Installs the multi-agent .context/ continuity system into a project; use for \"install context-mgr\", \"set up multi-agent context here\", \"scaffold .context/\", \"add the shared brain to this project\"."
+  },
+  {
+   "name": "conversation-consolidation-system",
+   "source": "./library/conversation-consolidation-system",
+   "description": "Builds a four-stage pipeline turning scattered Claude chat history into a searchable Obsidian external brain; use for \"I can't find what I discussed with Claude\", \"second brain for my AI work\"."
+  },
+  {
+   "name": "conversation-ip-extractor",
+   "source": "./library/conversation-ip-extractor",
+   "description": "Extracts named frameworks, methodologies, and publishable IP from a long conversation or session transcript; use for \"what did I figure out here\", \"find the framework in this\"."
+  },
+  {
+   "name": "deep-comprehension-assessment",
+   "source": "./library/deep-comprehension-assessment",
+   "description": "Builds rigorous text-comprehension assessments with detailed feedback; use for \"test my understanding of this text\", \"comprehension quiz\"."
+  },
+  {
+   "name": "deep-field",
+   "source": "./library/deep-field",
+   "description": "Integrated insight system combining Eigenthinking, latent-space cartography, and wisdom-of-crowds validation; use for \"run deep field\", frontier-quality insight beyond default reasoning."
+  },
+  {
+   "name": "deep-mirror",
+   "source": "./library/deep-mirror",
+   "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) \u2014 bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
+  },
+  {
+   "name": "distro-kit",
+   "source": "./library/distro-kit",
+   "description": "Package any app repo as an ambient-library capability with one install standard (init/validate/publish); use for \"make a distro\", \"package this for ambient-library\", \"publish capability\", \"distro-kit\""
+  },
+  {
+   "name": "editor",
+   "source": "./library/editor",
+   "description": "Surgically edits an EXISTING draft; use for \"edit this draft\", \"polish this\", \"tighten this article\". Requires a draft to already exist."
+  },
+  {
+   "name": "editorial-desk",
+   "source": "./library/editorial-desk",
+   "description": "Senior-editor orchestrator running specialist contributors (strategist, angle, drafter, adversary, headline) over a shared blackboard; use for \"run the editorial desk\", a critiqued-and-revised opinion/POV essay, or a sharp argument piece with editorial review."
+  },
+  {
+   "name": "eigenthinking",
+   "source": "./library/eigenthinking",
+   "description": "Nine-step framework turning tacit expertise into branded, publishable IP (UP to IP); use for \"turn how I think into a framework\", \"package my methodology\", \"make my process teachable\"."
+  },
+  {
+   "name": "enrich-prompt",
+   "source": "./library/enrich-prompt",
+   "description": "Rewrites and augments a prompt to surface implicit constraints and blind spots, then answers the enriched version; use for \"make this prompt better\", \"I keep getting shallow answers\"."
+  },
+  {
+   "name": "extract-codify-patterns",
+   "source": "./library/extract-codify-patterns",
+   "description": "Packages a working session into a shareable look-over-my-shoulder artifact bundle; use for \"package this session\", \"codify this session\", \"turn this conversation into a teaching resource\"."
+  },
+  {
+   "name": "fresh-eyes",
+   "source": "./library/fresh-eyes",
+   "description": "Validates docs/onboarding/workflows by spawning a zero-context agent to walk through them cold, then fix-and-respawn; use for \"fresh eyes\", \"does the onboarding work\", \"test the docs\"."
+  },
+  {
+   "name": "gauntlet",
+   "source": "./library/gauntlet",
+   "description": "Runs ambitious work through explicit criteria, independent critique, and evidence-based revision loops."
+  },
+  {
+   "name": "gears-broadcast",
+   "source": "./library/gears-broadcast",
+   "description": "Sends any email to GEARS licensees (gears_owners) via Resend, drafting subject/body with the user if not already given, straight from raw HTML/text with no dashboard-editor round trip; use for \"send a gears broadcast\", \"email the licensees\", \"notify gears owners\", \"send this to gears_owners\"."
+  },
+  {
+   "name": "geo-authority-architect",
+   "source": "./library/geo-authority-architect",
+   "description": "Builds a GEO/AI-citation authority strategy and Canon/Frameworks/Diagnostics content architecture; use for \"GEO strategy\", \"get cited by AI\", \"GEARS\"."
+  },
+  {
+   "name": "gmail-manager",
+   "source": "./library/gmail-manager",
+   "description": "General Gmail management across accounts via the gmail MCP (search, read, send, label, archive, drafts); use for \"send an email\", \"find that thread\", or mailbox actions beyond triage."
+  },
+  {
+   "name": "gmail-triage",
+   "source": "./library/gmail-triage",
+   "description": "Two-phase Gmail inbox sweep via the gmail MCP \u2014 batch-archive junk, then triage real emails one at a time; use for \"check my email\", \"clean up my inbox\"."
+  },
+  {
+   "name": "graphify",
+   "source": "./library/graphify",
+   "description": "Turns any folder of files into a persistent, queryable knowledge graph with community detection; use for codebase/architecture questions, \"graphify this\", or any content query when graphify-out/ exists."
+  },
+  {
+   "name": "grill",
+   "source": "./library/grill",
+   "description": "Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for \"grill me\", \"interview me\", \"ask me questions one at a time\"."
+  },
+  {
+   "name": "harness-prd",
+   "source": "./library/harness-prd",
+   "description": "Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for \"build an agent process for X\", \"spec out an agent pipeline\". NOT for code work-breakdowns (wbs-prd)."
+  },
+  {
+   "name": "hot-take-forge",
+   "source": "./library/hot-take-forge",
+   "description": "Hardens a contrarian claim by forcing it to survive repeated self-attack until it is simultaneously novel AND true; use for \"give me a hot take on X\", \"pressure test this take\", \"is this angle actually original\"."
+  },
+  {
+   "name": "ireport",
+   "source": "./library/ireport",
+   "description": "Generates styled, interactive HTML research reports from a topic or notes; use for \"interactive report\", \"HTML report on X\", \"deep research document\"."
+  },
+  {
+   "name": "irreplaceable-edge",
+   "source": "./library/irreplaceable-edge",
+   "description": "Guided live discovery of a professional's irreplaceable competitive edge against AI-first competition; use for \"find my edge\", \"what's my moat\", \"how do I compete with AI\"."
+  },
+  {
+   "name": "knowledge-base-architect",
+   "source": "./library/knowledge-base-architect",
+   "description": "Guides design and deployment of a personal AI knowledge base from accumulated expertise assets; use for \"talk to my own knowledge\", \"build a private ChatGPT on my material\"."
+  },
+  {
+   "name": "latent-cartographer",
+   "source": "./library/latent-cartographer",
+   "description": "Multi-phase latent-space traversal that maps the probability landscape before answering; use for \"/lsc\", \"run the cartographer\", \"don't give me the median answer\"."
+  },
+  {
+   "name": "leaderize-storytelling-framework",
+   "source": "./library/leaderize-storytelling-framework",
+   "description": "Selects and applies storytelling frameworks for Leaderize's mid-level-leader audience across content stages and live sessions; use for Leaderize content or session design."
+  },
+  {
+   "name": "meeting-nuggets",
+   "source": "./library/meeting-nuggets",
+   "description": "Turns meeting transcripts into newsletter-style topic recaps with research add-ons and optional Notion publishing; use for \"recap this meeting\", \"session report\", or any pasted VTT/call transcript."
+  },
+  {
+   "name": "multi-model-debate-live",
+   "source": "./library/multi-model-debate-live",
+   "description": "Orchestrates a live human-steered Claude/Gemini/Codex debate against one shared markdown file; use for \"three-pane terminal\", \"run the models against each other\" \u2014 the live workflow, not the prompt protocol."
+  },
+  {
+   "name": "paradigm-collision-engine",
+   "source": "./library/paradigm-collision-engine",
+   "description": "Generates non-obvious insight by colliding 400+ disciplinary paradigms via parallel sub-agents and an elimination tournament; use for \"fresh angle on X\", \"non-obvious take\", \"multiple lenses\"."
+  },
+  {
+   "name": "polyglot-language-coach",
+   "source": "./library/polyglot-language-coach",
+   "description": "Gently coaches when the user writes in a non-English language mid-conversation \u2014 corrects, teaches, logs, returns to task; applies whenever the user code-switches as practice."
+  },
+  {
+   "name": "project-brief",
+   "source": "./library/project-brief",
+   "description": "Creates a one-page project overview; use for \"write a brief\", \"summarize this project\", \"project overview\", \"what is this project\"."
+  },
+  {
+   "name": "project-index",
+   "source": "./library/project-index",
+   "description": "Scans one or more directories (no recursion) and produces a project inventory \u2014 markdown table plus a searchable, filterable HTML page \u2014 with an inferred one-line description and status per folder; use for \"what have I been working on\", \"index my projects folder\", \"status of everything in this directory\", \"catalog these folders\"."
+  },
+  {
+   "name": "researcher",
+   "source": "./library/researcher",
+   "description": "Gathers sources into a structured research dossier; use for \"research this topic\", \"find sources on X\", \"compile background\". NOT for writing or editing the piece."
+  },
+  {
+   "name": "session",
+   "source": "./library/session",
+   "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
+  },
+  {
+   "name": "skill-auditor",
+   "source": "./library/skill-auditor",
+   "description": "Audits a skill's SKILL.md frontmatter, catalog.yaml projection, references, and evals shape against the library schema, reporting ordered actionable findings; use for \"audit this skill\", \"does X follow the schema\", \"lint X against the catalog\", \"check X before I publish it\"."
+  },
+  {
+   "name": "skill-evals",
+   "source": "./library/skill-evals",
+   "description": "Runs one skill's existing evals/evals.json \u2014 triggering cases against a fresh subagent, quality cases judged against prose pass criteria \u2014 and reports a PASS/FAIL table, no scores; use for \"run the evals for X\", \"test this skill's evals\", \"does X still trigger right\"."
+  },
+  {
+   "name": "software-dev-factory",
+   "source": "./library/software-dev-factory",
+   "description": "Installs and operates the software development factory, a governed SDLC controller that drives your own Claude Code or Codex CLI through plan, red, green and review against an approved spec, as a folder's agentic function with one git repository per product under projects/; use for \"set up the software dev factory here\", \"make this folder a software factory\", \"approve a spec\", \"run the factory\", \"update my software-dev-factory\"."
+  },
+  {
+   "name": "solofactory",
+   "source": "./library/solofactory",
+   "description": "Installs and operates SoloFactory, a local-first software factory (interview \u2192 PRD \u2192 subscription-backed build \u2192 gates \u2192 local deploy) as a folder's agentic function with each project a git repo under projects/ or the root; use for \"set up solofactory here\", \"make this folder a software factory\", \"start the factory\", \"update my solofactory\"."
+  },
+  {
+   "name": "teaching-block-synthesized",
+   "source": "./library/teaching-block-synthesized",
+   "description": "Writes one publishable teaching-block article from a working session \u2014 real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for \"write this up as a teaching block\", \"field guide this\", \"debrief this session\", \"turn this session into an article\". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead."
+  },
+  {
+   "name": "to-issues",
+   "source": "./library/to-issues",
+   "description": "Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for \"turn this plan into issues\", \"break this PRD into tickets\"."
+  },
+  {
+   "name": "transcript-to-content-pipeline",
+   "source": "./library/transcript-to-content-pipeline",
+   "description": "Turns a raw transcript or session notes into a full content package (article, LinkedIn variants, summary, audio script); use for \"turn this into content\", \"write something from this transcript\"."
+  },
+  {
+   "name": "trello-pipeline",
+   "source": "./library/trello-pipeline",
+   "description": "Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for \"run the Trello pipeline\", \"idea to PRD on my board\", \"set up the TrelloAgents board\"."
+  },
+  {
+   "name": "trigger-runner",
+   "source": "./library/trigger-runner",
+   "description": "Runs a folder's declared .aai/triggers.md standing intentions \u2014 compares each to last-run stamps in .aai/memory/, runs what's due, and can offer promotion to native hooks/cron on a capable harness; use for \"check triggers\", \"run due triggers\", \"session-start due-check\"."
+  },
+  {
+   "name": "voice-crm-pipeline",
+   "source": "./library/voice-crm-pipeline",
+   "description": "Builds a hands-free voice-to-database capture chain (Siri to Shortcut to GPT to Sheets); use for \"I never update my CRM\", \"talk to my database\", \"voice-to-sheet workflow\"."
+  },
+  {
+   "name": "voice-profile-trainer",
+   "source": "./library/voice-profile-trainer",
+   "description": "Derives a reusable voice profile from authentic writing samples so AI output sounds like the user; use for \"doesn't sound like me\", \"write in my voice\", \"set up my voice profile\"."
+  },
+  {
+   "name": "wbs-toolkit",
+   "source": "./library/wbs-toolkit",
+   "description": "Installs and operates the outcome-driven WBS toolkit as a folder's agentic planning and verified execution function; use for \"set up WBS here\", \"spec this project\", \"run the WBS\", or \"update the WBS toolkit\"."
+  },
+  {
+   "name": "wrap",
+   "source": "./library/wrap",
+   "description": "Full session close-out ritual \u2014 commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session."
+  },
+  {
+   "name": "writer",
+   "source": "./library/writer",
+   "description": "Drafts a piece from a brief (and optional dossier) \u2014 drafting ONLY, no research or editing pass; use for \"draft this\", \"write a first draft from these notes\", \"turn this brief into a post\"."
+  },
+  {
+   "name": "writing-suite",
+   "source": "./bundles/writing-suite",
+   "description": "Bundle: the complete writing toolkit \u2014 researcher, writer, editor, project-brief, voice-profile-trainer, and the writing-team orchestrator."
+  },
+  {
+   "name": "writing-team",
+   "source": "./library/writing-team",
+   "description": "Full research -> draft -> edit pipeline to a publish-ready piece; use for \"write me an article on X end to end\", \"take this from idea to finished post\". Use this when the user wants the whole pipeline, not a single stage."
+  }
+ ]
 }

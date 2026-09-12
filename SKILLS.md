@@ -30,6 +30,8 @@ until the router reads one. Optionally scope which a project uses via
 | **writing-team** | Full research → draft → edit pipeline to a publish-ready piece | *"Write me an article on X end to end"* |
 | **context-mgr** | Installs the multi-agent `.context/` continuity system into a project | *"Install context-mgr"*, *"Set up multi-agent context here"* |
 | **session** | Session check-in/check-out against a project's `.context/` store | *"What should I work on"*, *"Checkpoint"* |
+| **checkpoint** | Preserves conversation context across compaction — distills state into the project's `.aai/checkpoint.md` before `/compact`, or runs the `.context/` handoff protocol | *"Checkpoint"*, *"Before I compact"*, *"Save context before clearing"* |
+| **capture-chat** | Exports a chat conversation/session as portable markdown — conversation only or with artifacts — into the `.aai` session archive | *"Export this conversation"*, *"Capture this chat"*, *"Save this session"* |
 | **aimm-newsletter** | Sends a newsletter email to a named Google Contacts group | *"Send this to [group]"*, *"Send the newsletter"* |
 | **aimm-writing-team** | Autonomous multi-role AIMM article team (Researcher → Publisher) | *"Use Strategist mode"*, full AIMM article run |
 | **audit-fix** | Six-lens adversarial audit of a plan or change, then root-cause fixes | *"Audit this"*, *"Pressure test"*, *"Poke holes"* |
