@@ -80,6 +80,12 @@ export class JobStore {
     return true;
   }
 
+  // Discards every commit and file after `hash`. Only ever pointed at a factory-made commit.
+  async reset(hash) {
+    await this.git("reset", "-q", "--hard", hash);
+    await this.git("clean", "-qfd");
+  }
+
   async create({ brief, transcript, provider, sdlc = "single" }) {
     const id = `${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`;
     const now = new Date().toISOString();
@@ -177,7 +183,7 @@ export class JobStore {
   async recoverInterrupted() {
     const jobs = await this.list();
     // Queued jobs never started, so a restart leaves them queued for the scheduler to pick up.
-    const settled = new Set(["completed", "failed", "cancelled", "interrupted", "queued"]);
+    const settled = new Set(["completed", "failed", "cancelled", "interrupted", "paused", "queued"]);
     for (const job of jobs) {
       if (!settled.has(job.state)) {
         job.failedState = job.state;

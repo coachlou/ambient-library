@@ -16,7 +16,7 @@ import { createFixtureProvider } from "./fixture-provider.mjs";
 import { REPORTABLE_STATES, buildDiagnostics, issuesConfig, renderReport, validateFeedback } from "./feedback.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const PARKED = new Set(["failed", "interrupted", "cancelled"]);
+const PARKED = new Set(["failed", "interrupted", "cancelled", "paused"]);
 const projectRoot = path.dirname(here);
 const publicRoot = path.join(projectRoot, "public");
 
@@ -43,7 +43,7 @@ export async function createSoloFactoryServer(options = {}) {
   // Scheduler (docs/run-queue-spec.md): one active run per project, at most maxActiveRuns overall, FIFO otherwise.
   const maxActiveRuns = Math.max(1, Number(options.maxActiveRuns ?? process.env.SOLOFACTORY_MAX_ACTIVE_RUNS) || 1);
   const runs = new Map(); // projectId -> { jobId, factory, promise }
-  const queue = []; // { projectId, jobId, mode: "start" | "resume" }
+  const queue = []; // { projectId, jobId, mode: "start" | "resume" | "restart", fromSlice? }
   const jobProject = new Map(); // jobId -> projectId, for jobs the scheduler has touched
   const queuedJobs = [];
   {
@@ -87,7 +87,8 @@ export async function createSoloFactoryServer(options = {}) {
       factories.set(job.id, factory);
       const run = { jobId: job.id, factory };
       runs.set(entry.projectId, run);
-      run.promise = (entry.mode === "resume" ? factory.resume(job.id) : factory.start(job.id))
+      const launch = entry.mode === "resume" ? factory.resume(job.id) : entry.mode === "restart" ? factory.restartFromSlice(job.id, entry.fromSlice) : factory.start(job.id);
+      run.promise = launch
         .catch((error) => console.error(`run ${job.id}: ${error.message}`))
         .finally(() => {
           runs.delete(entry.projectId);
@@ -99,9 +100,9 @@ export async function createSoloFactoryServer(options = {}) {
   let draining = Promise.resolve();
   const drain = () => (draining = draining.then(drainOnce).catch((error) => console.error(`scheduler: ${error.message}`)));
 
-  function enqueue(projectId, jobId, mode = "start", { front = false } = {}) {
+  function enqueue(projectId, jobId, mode = "start", { front = false, ...extra } = {}) {
     jobProject.set(jobId, projectId);
-    queue[front ? "unshift" : "push"]({ projectId, jobId, mode });
+    queue[front ? "unshift" : "push"]({ projectId, jobId, mode, ...extra });
     return drain();
   }
   for (const { projectId, job } of queuedJobs.sort((a, b) => a.job.createdAt.localeCompare(b.job.createdAt))) enqueue(projectId, job.id);
@@ -127,6 +128,44 @@ export async function createSoloFactoryServer(options = {}) {
     }));
   }
 
+  // Board (docs/run-board-and-controls-spec.md): every project's jobs bucketed by state.
+  // ponytail: re-lists each project's jobs per poll on top of discoverProjects; cache if it shows.
+  const BOARD_COLUMN = { repairing: "building", failed: "parked", interrupted: "parked", cancelled: "parked", paused: "parked" };
+  async function board() {
+    const columns = { queued: [], specifying: [], building: [], reviewing: [], deploying: [], parked: [], completed: [] };
+    for (const project of await discoverProjects(root)) {
+      const jobs = await annotateJobs(project.id, await storeFor(project.id).list());
+      let completed = 0;
+      for (const job of jobs) {
+        const column = BOARD_COLUMN[job.state] ?? job.state;
+        if (!columns[column] || (column === "completed" && completed++ >= 5)) continue;
+        const card = {
+          jobId: job.id,
+          project: project.name,
+          projectId: project.id,
+          promise: job.brief?.promise ?? null,
+          state: job.state,
+          stage: job.stage ?? null,
+          startedAt: job.startedAt ?? null,
+          elapsedMs: job.startedAt ? new Date(job.stageHistory?.at(-1)?.endedAt ?? Date.now()) - new Date(job.startedAt) : null,
+        };
+        if (job.sdlc === "slices") {
+          const total = (job.slicePlanIds ?? []).length;
+          const done = (job.sliceDone ?? []).length;
+          card.slices = {
+            done,
+            total,
+            current: job.slicePlanIds?.[job.sliceIndex] ?? null,
+            repairs: Object.values(job.sliceStats ?? {}).reduce((sum, s) => sum + (s.repairs ?? 0), 0),
+          };
+        }
+        if (job.blockedBy) card.blockedBy = job.blockedBy;
+        columns[column].push(card);
+      }
+    }
+    return { columns, maxActiveRuns, active: runs.size };
+  }
+
   // Switching only changes what the owner is viewing; runs in other projects keep going.
   async function selectProject(response, id) {
     if (!(await discoverProjects(root)).some((p) => p.id === id)) return json(response, 404, { error: `Unknown project: ${id}.` });
@@ -143,6 +182,9 @@ export async function createSoloFactoryServer(options = {}) {
       const url = new URL(request.url, "http://127.0.0.1");
       if (request.method === "GET" && url.pathname === "/api/health") {
         return json(response, 200, { ok: true, project: active.id, ...schedulerStatus() });
+      }
+      if (request.method === "GET" && url.pathname === "/api/board") {
+        return json(response, 200, await board());
       }
       if (request.method === "GET" && url.pathname === "/api/projects") {
         return json(response, 200, { projects: await listProjects(), active: active.id, ...schedulerStatus() });
@@ -276,12 +318,19 @@ export async function createSoloFactoryServer(options = {}) {
         await run.factory.cancel(id);
         return json(response, 202, { ok: true });
       }
+      const pauseMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/pause$/);
+      if (request.method === "POST" && pauseMatch) {
+        const run = [...runs.values()].find((item) => item.jobId === pauseMatch[1]);
+        if (!run) return json(response, 409, { error: "That run is not active." });
+        await run.factory.pause(pauseMatch[1]);
+        return json(response, 202, { ok: true, pausing: true });
+      }
       const dismissMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/dismiss$/);
       if (request.method === "POST" && dismissMatch) {
         // Owner accepts a parked run as-is, which releases its project's queue.
         const jobStore = storeOfJob(dismissMatch[1]);
         const job = await jobStore.read(dismissMatch[1]);
-        if (!PARKED.has(job.state)) return json(response, 409, { error: "Only a failed, interrupted, or cancelled run can be dismissed." });
+        if (!PARKED.has(job.state)) return json(response, 409, { error: "Only a parked run can be dismissed." });
         job.dismissed = true;
         await jobStore.writeState(job);
         await jobStore.appendEvent(job.id, { type: "job.dismissed", state: job.state, message: "Dismissed by owner; queued runs may proceed" });
@@ -293,12 +342,23 @@ export async function createSoloFactoryServer(options = {}) {
         const projectId = jobProject.get(resumeMatch[1]) ?? active.id;
         const jobStore = storeFor(projectId);
         const job = await ensureRecovery(await jobStore.read(resumeMatch[1]), jobStore);
-        if (!job.recovery?.canResume || !["failed", "interrupted"].includes(job.state) || queue.some((entry) => entry.jobId === job.id)) {
+        if (!job.recovery?.canResume || !["failed", "interrupted", "paused"].includes(job.state) || queue.some((entry) => entry.jobId === job.id)) {
           return json(response, 409, { error: "That run cannot be resumed from its current state." });
         }
         // Front of the queue: resolving a parked run is what unblocks everything behind it.
         await enqueue(projectId, job.id, "resume", { front: true });
         return json(response, 202, { job, resumed: true, queued: queue.some((entry) => entry.jobId === job.id) });
+      }
+      const restartMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/restart$/);
+      if (request.method === "POST" && restartMatch) {
+        const projectId = jobProject.get(restartMatch[1]) ?? active.id;
+        const job = await storeFor(projectId).read(restartMatch[1]);
+        const { fromSlice } = await readJson(request);
+        if (!PARKED.has(job.state) || queue.some((entry) => entry.jobId === job.id)) return json(response, 409, { error: "Only a parked run can be restarted from a slice." });
+        const index = (job.sliceDone ?? []).indexOf(fromSlice);
+        if (index < 1) return json(response, 400, { error: index === 0 ? "Restarting from the first slice is a fresh run; use start over." : `Slice ${fromSlice} has not completed in this run.` });
+        await enqueue(projectId, job.id, "restart", { front: true, fromSlice });
+        return json(response, 202, { job, restartedFrom: fromSlice });
       }
       const recoveryMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/recovery-packet$/);
       if (request.method === "GET" && recoveryMatch) {
