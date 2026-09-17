@@ -150,25 +150,31 @@ includes writing-team).
 
 ## Overlays (local customization without forking)
 
-A canonical skill can be adjusted per-project or per-user **without copying it**,
-so it keeps receiving upstream updates. `load.md` resolves a skill body through
-three layers, most specific first:
+A canonical skill can be adjusted per project **without copying it**, so it
+keeps receiving upstream updates. Everything you customize lives in the
+project's owned `.aai/skills/<skill>/`; canonical copies stay pristine in
+`.ailib/` (pinned here) or `~/.ailib` (installed), which updates replace
+wholesale. One folder per owner — nothing an update writes is ever yours.
 
-| Layer | Path | Scope |
-|-------|------|-------|
-| project | `<project>/.ambient/<skill>/` | this repo only |
-| user | `~/.aai/library/<skill>/` | you, everywhere |
-| canonical | `library/<skill>/` (in the plugin) | everyone |
+Three tiers, cheapest first:
 
-Two filenames, two very different costs:
+| Tier | File in `.aai/skills/<skill>/` | Keeps upstream updates? |
+|------|-------------------------------|-------------------------|
+| values | `project.yaml`, `environment.yaml` | yes |
+| extra rules | `overrides.md` | yes |
+| fork | `instructions.md` (the whole skill) | no — you own it |
 
-**`overrides.md` — appended to the canonical body. Keeps upstream updates.**
+**Values** exist only for skills that ship a `contract.yaml`. The skill's own
+`scripts/resolve.py` asks for them once and saves them in the right file; don't
+hand-place them. Design: `docs/PLAN-personalization-layer.md`.
+
+**`overrides.md` — appended to whichever body resolved. Keeps upstream updates.**
 This is the case worth reaching for. Adding a few project rules no longer
 requires owning the whole skill:
 
 ```bash
-mkdir -p .ambient/writing-team
-cat > .ambient/writing-team/overrides.md <<'EOF'
+mkdir -p .aai/skills/writing-team
+cat > .aai/skills/writing-team/overrides.md <<'EOF'
 # Project rules
 - Drafts land in `content/drafts/`, never the repo root.
 - House style: no em-dashes in headings.
@@ -176,16 +182,19 @@ EOF
 ```
 
 **`instructions.md` — full replacement. You own it; no more updates.**
-Only when the canonical skill is genuinely wrong for you.
+Only when the canonical skill is genuinely wrong for you (`lifecycle.md` →
+Personalize).
 
-Both overlay roots live **outside** the installed plugin, so a plugin update
-overwrites `library/` and leaves overlays untouched. That's the whole mechanism
-— no merge logic, no versioning, no protected paths.
+`.aai/` lives **outside** the installed library, so an update overwrites
+`library/` and `.ailib/` and leaves your files untouched. That's the whole
+mechanism — no merge logic, no versioning, no protected paths. The earlier
+overlay folders (`<project>/.ambient/<skill>/`, `~/.aai/library/<skill>/`) are
+retired; the loader no longer reads them.
 
-Overlays override **by canonical name**; they don't add catalog entries.
+All three tiers apply **by canonical name**; they don't add catalog entries.
 Authoring a genuinely new skill is still propose → stage → promote above.
 
-When an overlay supplies the body, the agent says so. A silent override is what
+When a fork or `overrides.md` is in play, the agent says so. A silent override is what
 makes a skill's behavior impossible to explain later.
 
 ---
