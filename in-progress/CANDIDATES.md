@@ -20,7 +20,7 @@ and its app-side copy is never touched. Everything else is authored here.
 | aai-setup / library-admin commands | in-progress/aai-library-rescue/commands/ | old distro slash commands |
 | test-validation-skill | in-progress/aai-library-rescue/_staging/ | old staged proposal |
 | nugget-mining | all-ai-chats-archives/nugget-mining/.aai/skills/nugget-mining/ | owned pilot skill with evals and scripts; portable across topics per its own README |
-| okf-management (two forks) | ~/Documents/OKF/.aai/skills/ vs aimm-shared-repo/AAI-Folders/okf/.aai/skills/ | diverged both ways (Documents: newer references; aimm-shared: eval_retrieval.py, fixtures, newer instructions). Diff saved in the 2026-09-16 dogfood scratch log. Reconcile by diff before promoting |
+| okf-management | ~/Documents/OKF/.aai/skills/okf-management/ | source of truth (reconciled 2026-09-16; aimm-shared-repo/AAI-Folders/okf mirrors it). Promote from here |
 
 ## Follow-ups outside this repo
 
