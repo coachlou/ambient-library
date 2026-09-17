@@ -19,8 +19,11 @@ A canonical skill library lives at `{{LIBRARY_ROOT}}`.
 
 For any request about setting up or configuring project skills, updating or
 managing skills, code review, **making this folder ambiently intelligent /
-stamping `.aai/` here**, or a task covered by a domain skill (skill names and
-one-line descriptions are in `{{LIBRARY_ROOT}}/library/catalog.yaml`):
+stamping `.aai/` here**, a library skill the user names, or a task covered by a
+domain skill **enabled** here — listed in `~/.aai/skills-manifest.yaml` or this
+project's `skills-manifest.yaml`, or vendored into its `.ailib/` (one-line
+descriptions are in `{{LIBRARY_ROOT}}/library/catalog.yaml`; other catalog
+skills are not candidates):
 
 **Read `{{LIBRARY_ROOT}}/.aai/instructions.md` and follow it before acting.**
 

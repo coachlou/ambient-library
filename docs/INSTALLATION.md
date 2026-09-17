@@ -33,7 +33,8 @@ dotfile edits.
 **Without the plugin:** Claude Code can also use the library the same way other
 harnesses do — add a block to `~/.claude/CLAUDE.md` telling it to read
 `~/.ailib/.aai/instructions.md` for skill setup, skill management, code review,
-or any task a skill in `~/.ailib/library/catalog.yaml` covers. It applies in
+a named library skill, or a task an [enabled](#enabling-skills) skill covers
+(the canonical block in `templates/AGENTS-pointer.md`). It applies in
 every project, but carries the pointer tradeoff described under
 [Other harnesses](#other-harnesses-pointer-adapter).
 
@@ -60,7 +61,8 @@ Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
 a standalone install registers that skill's description in standing context
 (reliable direct triggering, small per-skill cost), while the `ambient` plugin
 keeps all 38 at zero standing cost behind the router. Installing both is
-harmless — the standalone skill simply wins direct triggers.
+harmless — the standalone skill simply wins direct triggers. A standalone
+install is always live in every project; it ignores the skill manifests below.
 
 ## Installation scopes
 
@@ -124,23 +126,51 @@ more often than the registered skill does, especially in long sessions. If a
 request that should route doesn't, name it: *"use the ambient library for
 this."*
 
+### Global pointer (all projects)
+
+Every supported harness has a user-level instruction file it loads in every
+session. Put the canonical block from `templates/AGENTS-pointer.md` (with
+`{{LIBRARY_ROOT}}` set to `~/.ailib`) directly in that file to route requests
+everywhere without per-project setup:
+
+| Harness | Global file |
+|---|---|
+| Claude Code | `~/.claude/CLAUDE.md` (or use the plugin) |
+| Codex | `~/.codex/AGENTS.md` (`AGENTS.override.md` there wins if non-empty) |
+| Gemini CLI | `~/.gemini/GEMINI.md` |
+
+Paste the block itself, not a line saying "read some other file" — each extra
+hop is one more instruction the model can skip. In Gemini, `/memory show`
+confirms what loaded.
+
 ## Verify
 
 Say *"set up ambient-library in this project"* — if your agent walks you through
 project setup, the wrapper is working.
 
-## Project setup (optional)
+## Enabling skills
 
-In any project, say *"set up ambient-library in this project"*. Claude writes an
-optional `skills-manifest.yaml` that scopes which domain skills the project uses:
+Installing the library makes only the core capabilities (install, select,
+manage, review) active. Domain skills are opt-in: one runs on its own only where
+it is enabled, and any skill still runs when you name it (*"use the grill
+skill"*).
+
+| Scope | Say | Written to |
+|---|---|---|
+| Every project | *"enable grill everywhere"* | `~/.aai/skills-manifest.yaml` |
+| This project | *"set up ambient-library in this project"* or *"add grill to this project"* | `<project>/skills-manifest.yaml` |
+
+Both files use the same format:
 
 ```yaml
 domain_skills:
   - project-brief
 ```
 
-Core capabilities (install, select, manage, review) work with or without this
-file. The manifest only scopes domain skills.
+The scopes add up: a project gets its own skills plus your user-scope ones.
+Enabling records a name, so the skill still resolves from `~/.ailib` and picks
+up updates. To pin a fixed copy instead, ask to vendor it into the project's
+`.ailib/` — a vendored skill counts as enabled there.
 
 ## Updating
 

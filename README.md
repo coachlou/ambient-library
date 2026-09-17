@@ -73,7 +73,9 @@ Just talk:
 | "Set up ambient-library in this project" | Scopes the project's skills |
 | "Configure my skills" | Picks the right skills via a quick chat |
 | "Review this code" | Code review with project standards |
-| "Add a skill to this project" | Updates the project's skill list |
+| "Add a skill to this project" | Enables it in this project's manifest |
+| "Enable grill everywhere" | Enables it in your user-scope manifest |
+| "Use the grill skill" | Runs a library skill once, enabled or not |
 | "Update my skills" | Reminds you to run `/plugin update ambient` |
 
 ## How It Works
@@ -103,8 +105,11 @@ ambient-library/                  (the canonical library + runtime wrappers)
     └── ambient/SKILL.md          # Claude Code adapter skill
 ```
 
-A project's only artifact is an optional `skills-manifest.yaml` scoping which
-domain skills it uses.
+Domain skills are opt-in. One runs on its own only where it is enabled: in
+`~/.aai/skills-manifest.yaml` (every project), in a project's
+`skills-manifest.yaml`, or by being vendored into the project's `.ailib/`. The
+scopes add up. Enabling records a name — nothing is copied. Any skill still runs
+when you name it.
 
 The library also grows from real work: after a task no skill covered, *"save this
 as a skill"* drafts one from the session trace into `in-progress/`, where a
