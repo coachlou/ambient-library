@@ -6,3 +6,8 @@ library/test-validation-skill/
 library/_staging/test-validation-skill/
 in-progress/*/references/data/
 /distro/
+# in-progress candidates with client/production data — local only (see in-progress/CANDIDATES.md)
+in-progress/gears-content/
+in-progress/gears-init/
+in-progress/gears-onboard/
+in-progress/gic-leap/

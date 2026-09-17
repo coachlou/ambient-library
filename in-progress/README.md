@@ -5,6 +5,10 @@ Work lives here while it is being figured out. Nothing here is in
 it. That is the point: a half-built capability should be impossible to invoke
 by accident.
 
+Nothing here ships: `scripts/release_filter.py` builds production from an
+allowlist that does not include `in-progress/`. This repo is public, though, so
+anything committed here is visible.
+
 ## The three stages
 
 | Stage | Where | Reachable by | Ships to production |

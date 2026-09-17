@@ -22,6 +22,43 @@ and its app-side copy is never touched. Everything else is authored here.
 | nugget-mining | all-ai-chats-archives/nugget-mining/.aai/skills/nugget-mining/ | owned pilot skill with evals and scripts; portable across topics per its own README |
 | okf-management | /Volumes/Extreme Pro/users/loudalo/GitHub/OKF/.aai/skills/okf-management/ | source of truth (reconciled 2026-09-16; aimm-shared-repo/AAI-Folders/okf mirrors it). Promote from here |
 
+## Own skills imported from user scope (2026-09-16)
+
+Copied, not moved, from user-scope skill folders; the originals stay installed
+until each one is released. Review, then
+`scripts/promote.sh <name>` and add it to `RELEASE.yaml`, or delete the folder.
+Before promoting, strip anything private — the library is public.
+
+| Candidate | Copied from | Review notes |
+|---|---|---|
+| ea | ~/.claude/skills | /ea persona (Claudio); slash-invoked |
+| ed | ~/.claude/skills | /ed persona (editor-in-chief); slash-invoked |
+| evaluate-article | ~/.claude/skills | needs the `article-evaluator` agent from ~/.claude/agents |
+| fixedness-audit | ~/.claude/skills | |
+| context-hygiene-sweep | ~/.claude/skills | |
+| gears-content | ~/.claude/skills | local only (gitignored): production Supabase project and client data throughout |
+| gears-init | ~/.claude/skills | local only (gitignored): same as gears-content |
+| gears-onboard | ~/.claude/skills | local only (gitignored): same as gears-content |
+| okf | ~/.claude/skills | check against the okf-management candidate above |
+| skunny | ~/.claude/skills | personal trading method |
+| create-skill | ~/.claude/skills | modified from Anthropic's skill-creator; keep `LICENSE.txt` (Apache 2.0) and note the changes |
+| compile-skill | /Volumes/.../.claude/skills | overlaps create-skill and admin.md |
+| deep-research | ~/.agents/skills | newer than the /Volumes copy |
+| design-course | ~/.agents/skills | newer than the /Volumes copy |
+| dynamic-writing-team | /Volumes/.../.claude/skills | `evolution/` holds run logs — drop before promoting |
+| gic-leap | /Volumes/.../.claude/skills | local only (gitignored): personal portfolio app |
+| haiku-article | /Volumes/.../.claude/skills | same in ~/.agents/skills |
+| ideal-client-generator | /Volumes/.../.claude/skills | same in ~/.agents/skills |
+| sakana-writing-team | /Volumes/.../.claude/skills | `.skill` zips left out |
+| skillify | ~/.agents/skills | newer than the /Volumes copy |
+| strategic-compass | /Volumes/.../.claude/skills | |
+| teaching-block | ~/.agents/skills | newer; `teaching-block-workspace` (eval runs) not copied |
+| topic-aar-controller | /Volumes/.../.claude/skills | pairs with topic-aar-worker |
+| topic-aar-worker | /Volumes/.../.claude/skills | |
+| weekly-intelligence-briefing | /Volumes/.../.claude/skills | reads your own sessions |
+| zoom-mastermind-recap | ~/Downloads/zoom-recap-sandbox (via symlink) | AIMM-specific |
+| angela | ~/Documents/Codex/2026-08-12/... (via ~/.codex/skills symlink) | |
+
 ## Follow-ups outside this repo
 
 - solofactory and software-dev-factory `distro/templates/aai/` should emit GEMINI.md and
