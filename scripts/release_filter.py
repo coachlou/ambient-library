@@ -53,7 +53,7 @@ if uncatalogued:
     )
 
 # --- what production needs to install and vend ---------------------------
-KEEP_FILES = ["README.md", "SKILLS.md", "ARCHITECTURE.md", "AGENTS.md", "CLAUDE.md"]
+KEEP_FILES = ["README.md", "SKILLS.md", "ARCHITECTURE.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md"]
 KEEP_DIRS = [
     ".claude-plugin",
     ".codex-plugin",
