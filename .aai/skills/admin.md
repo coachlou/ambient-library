@@ -174,6 +174,15 @@ re-sync — vendored copies are theirs, by design.
 `in-progress/*/PROPOSAL.md` and show the proposed description and source
 trace.
 
+Installed copies send proposals here through `propose-upstream.md`, which
+falls back to a GitHub issue when it can't reach this workspace. On "import
+proposals" or "what's in flight": run
+`gh issue list -R coachlou/ambient-library --search "[proposal] in:title" --state open`,
+and for each one write `in-progress/<name>/PROPOSAL.md` and `instructions.md`
+from the issue body (the name is the title after `[proposal] `), then close
+the issue with a comment naming the in-progress path. An existing
+`in-progress/<name>/` gets the issue appended to its Evidence, not overwritten.
+
 To promote `<name>`:
 
 1. Read `in-progress/<name>/instructions.md` and its `PROPOSAL.md`. Sanity-
