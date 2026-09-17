@@ -60,10 +60,12 @@ python3 scripts/release_filter.py "$SRC" "$STAGE" "$SHA" "$REPO" || exit 3
 
 # --- ship -----------------------------------------------------------------
 EXCL=(--exclude '.git' --exclude '/LICENSE')   # the destination repo's own root LICENSE only — nested ones ship
-RSYNC=(rsync -a --delete "${EXCL[@]}" "$STAGE/" "$DEST/")
+# --checksum: a same-size edit (2.1.0 -> 2.2.0) whose mtime happens to match the
+# clone's is otherwise skipped, and the release ships the old file.
+RSYNC=(rsync -a --checksum --delete "${EXCL[@]}" "$STAGE/" "$DEST/")
 if $DRY; then
   echo; echo "--- dry run: changes that would land in $DEST ---"
-  rsync -a --delete --itemize-changes --dry-run "${EXCL[@]}" "$STAGE/" "$DEST/" | grep -v '^\.d\.\.t' || echo "(no changes)"
+  rsync -a --checksum --delete --itemize-changes --dry-run "${EXCL[@]}" "$STAGE/" "$DEST/" | grep -v '^\.d\.\.t' || echo "(no changes)"
   echo; echo "nothing written."
 else
   mkdir -p "$DEST"
