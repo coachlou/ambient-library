@@ -43,7 +43,8 @@ repo root (the agentic folder)
 ├── codex-skills/ambient/SKILL.md   ← Codex adapter (thin shim)
 └── templates/AGENTS-pointer.md     ← pointer adapter for non-plugin harnesses
 
-your-project/skills-manifest.yaml   ← optional; scopes domain skills
+~/.aai/skills-manifest.yaml         ← domain skills enabled in every project
+your-project/skills-manifest.yaml   ← domain skills enabled in this project
 ```
 
 The same shape recurs at every level: a folder is agentic when it carries its
@@ -134,9 +135,13 @@ router regardless of where it sits. Sitting outside `library/` entirely is secon
 Promotion runs through `admin.md`, reusing the same create-a-skill steps, so a
 proposal enters the catalog only after a human review.
 
-**Why keep `skills-manifest.yaml` at all?**
-It's optional now. It scopes which domain skills the router considers for a
-project — useful for focus and for applying project-specific skills consistently.
+**Why are domain skills opt-in?**
+Installing the library globally shouldn't make every skill a routing candidate
+in every folder — that trades focus for noise and grows with the catalog. So a
+domain skill is routable only where it's enabled: the union of
+`~/.aai/skills-manifest.yaml`, the project's `skills-manifest.yaml`, and skills
+vendored or forked into the project (`load.md` defines it). Enabling records a
+name rather than a copy, so updates still flow; naming a skill runs it anywhere.
 
 **Why a routing table for per-user data instead of symlinks or hardcoded paths?**
 Skills that persist data (like `cognitive-mirror`) need a stable home separate

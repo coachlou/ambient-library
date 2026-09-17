@@ -8,13 +8,16 @@ Once installed, just use natural language. The runtime wrapper exposes one
 ### Set up a new project
 > "Set up ambient-library in this project"
 
-Scopes the project's domain skills and writes an optional `skills-manifest.yaml`.
+Enables the project's domain skills by writing `skills-manifest.yaml`.
 
 ### Configure skills
 > "Configure my skills"
 > "Which skills do I need for this project?"
+> "Which skills should I have everywhere?"
 
-Walks through a short conversation about your project and writes `skills-manifest.yaml`.
+Walks through a short conversation and writes the manifest for that scope —
+the project's `skills-manifest.yaml`, or `~/.aai/skills-manifest.yaml` for every
+project.
 
 ### Code review
 > "Review this code"
@@ -32,10 +35,13 @@ Points you to the runtime's plugin update flow. In Claude Code, that is
 
 ### Manage skills
 > "Add project-brief to this project"
+> "Enable project-brief everywhere"
 > "Remove project-brief from this project"
 > "What skills are available?"
 
-Adds or removes domain skills from the project's manifest and confirms.
+Enables or disables domain skills in the project's manifest, or in your
+user-scope manifest when you say "everywhere" / "globally". Status shows what's
+enabled at each scope and what's available but not enabled.
 
 ### Writing pipeline
 
@@ -60,7 +66,7 @@ default.
 > "Run project-brief from the ambient library"
 
 Applies a named library skill to the current request only — even if it isn't
-in the project's manifest. Nothing is written to the project; the skill is
+enabled at any scope. Nothing is written to the project; the skill is
 active for this conversation, not persisted. To keep a skill permanently, say
 *"add <name> to this project"* instead.
 
@@ -88,15 +94,24 @@ has no real trace to draft from, it declines rather than inventing one.
 ## How Skills Activate
 
 The `ambient` skill is always available (one description in context per
-runtime). When a request matches a domain skill, the router reads that skill's
-instructions on demand — nothing else loads until it's needed. Core capabilities
-(install, select, manage, review) are always available regardless of the
-manifest.
+runtime). Core capabilities (install, select, manage, review) are always
+available. Domain skills are opt-in: when a request matches a skill **enabled**
+at some scope, the router reads that skill's instructions on demand — nothing
+else loads until it's needed. A skill that isn't enabled runs only when you name
+it.
 
 ## The Manifest
 
-`skills-manifest.yaml` lives in your project root. It's optional and scopes which
-domain skills the router considers:
+A skill is enabled if it's listed in either manifest, or vendored into the
+project's `.ailib/`. The scopes add up — a project gets its own skills plus your
+user-scope ones.
+
+| Scope | File |
+|---|---|
+| Every project | `~/.aai/skills-manifest.yaml` |
+| This project | `skills-manifest.yaml` in the project root |
+
+Both use the same format:
 
 ```yaml
 domain_skills:
@@ -104,7 +119,9 @@ domain_skills:
   - researcher
 ```
 
-Edit it directly or say *"configure my skills"* to update it conversationally.
+Edit either file directly or say *"configure my skills"* to update it
+conversationally. Enabling records a name — the skill still comes from the
+library and picks up updates.
 
 ## Project-Specific Rules
 

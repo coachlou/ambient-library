@@ -38,9 +38,13 @@ Open Claude Code or Codex in any project and say:
 
 > "Set up ambient-library in this project"
 
-Claude asks what your project does and writes an optional `skills-manifest.yaml`
-scoping which domain skills the project uses. (Core capabilities work with or
-without it.)
+Claude asks what your project does and writes a `skills-manifest.yaml`
+enabling the domain skills the project uses. Domain skills are opt-in: only
+enabled ones run on their own, though any skill runs when you name it. Core
+capabilities (install, select, manage, review) always work.
+
+For skills you want in every project, say *"enable <skill> everywhere"* — that
+writes `~/.aai/skills-manifest.yaml` instead.
 
 ## Day-to-day
 
@@ -48,7 +52,8 @@ Just talk:
 
 - *"Review this code"*
 - *"Configure my skills"*
-- *"Add project-brief to this project"*
+- *"Add project-brief to this project"* / *"Enable project-brief everywhere"*
+- *"Use the grill skill"* → runs a library skill once, enabled or not
 - *"Update my skills"* → points to the runtime's plugin update flow
 - *"Save this as a skill"* → drafts a proposal from your work into staging (see [USAGE.md](USAGE.md))
 

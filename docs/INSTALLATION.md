@@ -60,7 +60,7 @@ writing-team).
 Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
 a standalone install registers that skill's description in standing context
 (reliable direct triggering, small per-skill cost), while the `ambient` plugin
-keeps all 38 at zero standing cost behind the router. Installing both is
+keeps every library skill at zero standing cost behind the router. Installing both is
 harmless — the standalone skill simply wins direct triggers. A standalone
 install is always live in every project; it ignores the skill manifests below.
 
