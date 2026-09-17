@@ -11,7 +11,10 @@ checked it. This does — deterministic set arithmetic, no judgment calls.
   library/<n>/.claude-plugin/*.json  -> standalone plugin manifest + version
   .claude-plugin/marketplace.json    -> installable plugin catalog
 
-Usage:  scripts/audit-distribution.py [--quiet]
+A skill that opted in to project values (contract.yaml) is also held to its
+contract: see check_contract.
+
+Usage:  scripts/audit-distribution.py [--quiet | --self-test]
 
 Exit codes:
   0  no drift (warnings may still be printed)
@@ -96,7 +99,73 @@ def read_plugin_json(path):
         return {}
 
 
+PLACEHOLDER = re.compile(r"\{\{(env|project)\.([A-Za-z0-9_]+)\}\}")
+SECTION = {"env": "environment", "project": "project"}
+
+
+def check_contract(skill_dir):
+    """-> [problems] for a skill that opted in with contract.yaml
+    (docs/PLAN-personalization-layer.md §6)."""
+    sys.dont_write_bytecode = True  # no scripts/__pycache__ left in the repo
+    from resolve import parse_yaml  # same folder; one parser for one format
+
+    contract = parse_yaml(open(os.path.join(skill_dir, "contract.yaml")).read())
+    problems = []
+    for sec in SECTION.values():
+        filled = [k for k, v in (contract.get(sec) or {}).items() if v]
+        if filled:
+            problems.append(f"contract.yaml ships values for {', '.join(filled)} — canonical stays empty")
+
+    body = next(
+        (f for f in ("instructions.md", "SKILL.md") if os.path.exists(os.path.join(skill_dir, f))),
+        None,
+    )
+    if not body or "scripts/resolve.py --start" not in open(os.path.join(skill_dir, body)).read():
+        problems.append(f"{body or 'body file'} does not open with the Project block (no `scripts/resolve.py --start`)")
+
+    copy = os.path.join(skill_dir, "scripts", "resolve.py")
+    source = os.path.join(ROOT, "scripts", "resolve.py")
+    if os.path.exists(copy) and open(copy).read() != open(source).read():
+        problems.append("scripts/resolve.py differs from the repo's scripts/resolve.py — the build copies it; delete the hand copy")
+
+    for dirpath, _, files in os.walk(skill_dir):
+        for f in files:
+            path = os.path.join(dirpath, f)
+            rel = os.path.relpath(path, skill_dir)
+            if rel == os.path.join("scripts", "resolve.py"):
+                continue
+            try:
+                text = open(path, encoding="utf-8").read()
+            except (UnicodeDecodeError, OSError):
+                continue
+            for cls, key in set(PLACEHOLDER.findall(text)):
+                if key not in (contract.get(SECTION[cls]) or {}):
+                    problems.append(f"{rel}: {{{{{cls}.{key}}}}} is not a key in contract.yaml")
+            for m in sorted(set(re.findall(r"YOUR_[A-Z_]+", text))):
+                problems.append(f"{rel}: hand-edit placeholder {m} — use a contract key")
+    return problems
+
+
+def self_test():
+    """The one runnable check for check_contract. Run: audit-distribution.py --self-test"""
+    import tempfile
+
+    d = tempfile.mkdtemp()
+    put = lambda name, text: open(os.path.join(d, name), "w").write(text)
+    put("contract.yaml", "environment:   # inherited\n  alias:  # hint\nproject:\n  group:\n")
+    put("instructions.md", "run `scripts/resolve.py --start .`\n{{project.group}} via {{env.alias}}, then {{BODY_HTML}}\n")
+    assert check_contract(d) == [], check_contract(d)
+    put("contract.yaml", "environment:\n  alias: lou\nproject:\n  group:\n")
+    put("instructions.md", "{{project.groop}} {{env.group}} YOUR_GROUP_NAME\n")
+    got = check_contract(d)
+    assert len(got) == 5, got  # value shipped, no block, two bad keys, one YOUR_
+    print("self-test passed")
+
+
 def main():
+    if "--self-test" in sys.argv:
+        self_test()
+        return 0
     quiet = "--quiet" in sys.argv
     if "--help" in sys.argv or "-h" in sys.argv:
         print(__doc__)
@@ -179,6 +248,9 @@ def main():
                 dep = line.split("#", 1)[0].strip()
                 if dep and not os.path.isdir(os.path.join(ROOT, "library", dep)):
                     errors.append(f"{name}: DEPENDS names {dep!r}, which is not in library/")
+
+        if os.path.exists(os.path.join(skill_dir, "contract.yaml")):
+            errors += [f"{name}: {p}" for p in check_contract(skill_dir)]
 
         if name not in mp_lib:
             errors.append(f"{name}: in catalog.yaml but has no marketplace.json entry")

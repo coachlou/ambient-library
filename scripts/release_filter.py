@@ -107,6 +107,14 @@ for s in released:
         os.path.join(stage, "library", s),
         symlinks=True,
     )
+    # opted-in skills (contract.yaml) carry the resolver their block calls; one
+    # source in scripts/, copied here so vendored and standalone installs have it
+    if os.path.exists(os.path.join(stage, "library", s, "contract.yaml")):
+        os.makedirs(os.path.join(stage, "library", s, "scripts"), exist_ok=True)
+        shutil.copy2(
+            os.path.join(src, "scripts", "resolve.py"),
+            os.path.join(stage, "library", s, "scripts", "resolve.py"),
+        )
 
 # --- rewrite the derived indexes to match what actually shipped ----------
 with open(os.path.join(stage, "library", "catalog.yaml"), "w") as fh:
