@@ -1,29 +1,36 @@
 # Checkpoint — ambient-library
 
 ## Current state
-**Next objective:** release 2.2.0 and move Lou's live AIMM newsletter onto it.
-Each step is outward-facing and needs Lou's go: push `main`; build and publish
-the distribution (`scripts/build-production.sh`, `scripts/publish-distro.sh`);
-pull `~/.ailib`; in the AIMM folder run the skill's `scripts/resolve.py --init`
-then `--set` with the live values (group `aimm_member`, account `aimm_support`,
-prefix `[AIMM]`, `send_mode` individual, header "AI Leaders Mastermind", footer
-"Successpod, Inc.", unsubscribe `none`); repoint `aimm-send` (location unknown
-— ask Lou); send a two-member test; then archive the branded copy in
-`/Volumes/…/.claude/skills/aimm-newsletter/`.
+**Next objective:** none queued — the personalization layer is built and
+released (2.2.1). The AIMM newsletter migration is **parked as work in
+progress**: Lou is not using aimm-newsletter right now (sends go through the
+resend skill), so the live test was skipped on purpose.
+
+**Parked: AIMM migration (2026-09-17).** Done: project home stamped at
+`/Volumes/Extreme Pro/users/loudalo/GitHub/aimm-newsletter` with the live
+values (environment in `~/.aai/skills/aimm-newsletter/`); the filled template
+matches the branded one; `~/.claude/commands/aimm-send.md` trimmed to point at
+the library skill and that folder. Not done: no test send — `advanced-gmail-mcp`
+is configured only in Claude Desktop (as `gmail`), not in Claude Code, so
+`/aimm-send` cannot send from Code until it is added (`claude mcp add`). The
+branded copy in `/Volumes/…/.claude/skills/aimm-newsletter/` stays installed
+until a test passes. To resume: add the MCP to Code (or run the skill in
+Desktop), send to two of Lou's own addresses, then archive the branded copy.
 
 **Where things stand (2026-09-17):**
-- The personalization layer is designed and built. Design:
-  `docs/PLAN-personalization-layer.md` (v4.5). 1:n is an opt-in evolution of the
-  standard skill — default stays cwd = workspace; an opted-in skill ships
-  `contract.yaml`, and `scripts/resolve.py` decides which project folder it is
-  working in and where values are saved. No existing skill migrates unless picked.
-- Rollout steps 1–4 are done: shared rules (`load.md`, `.aai/instructions.md`,
-  `ambient-folder`, `docs/MANAGEMENT.md`), the resolver + 14 tests
+- Design: `docs/PLAN-personalization-layer.md` (v4.5). 1:n is an opt-in
+  evolution of the standard skill — default stays cwd = workspace; an opted-in
+  skill ships `contract.yaml`, and `scripts/resolve.py` decides which project
+  folder it is working in and where values are saved. No existing skill
+  migrates unless picked.
+- Rollout steps 1–4 are done: shared rules, the resolver + 14 tests
   (`python3 scripts/test_resolve.py`), aimm-newsletter converted (v1.1.0), the
   build copies the resolver into opted-in skills, and the audit enforces the
   contract (`python3 scripts/audit-distribution.py --self-test`).
-- Versions are bumped to 2.2.0 but nothing is pushed or published, and
-  `~/.ailib` still holds 2.1.0.
+- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.1.
+  `v2.2.0` exists but carries 2.1.0 manifests (rsync skipped same-size files;
+  the build now uses `--checksum`) — use `v2.2.1`. The build also now drops
+  this file from the distribution.
 
 **Open, Lou's call:**
 - Rollout steps 5–6 (gears-*, gears-broadcast) — only if Lou picks them.
