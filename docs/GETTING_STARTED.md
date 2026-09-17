@@ -3,8 +3,16 @@
 ## Install (once)
 
 ambient-library has one canonical library with separate runtime wrappers.
+Always install from the distribution repo `coachlou/aai-library`, never the dev
+repo `coachlou/ambient-library`.
 
-Claude Code:
+Every harness reads the library from a user-scope clone:
+
+```bash
+git clone https://github.com/coachlou/aai-library ~/.ailib
+```
+
+Claude Code, on top of that:
 
 ```
 /plugin marketplace add coachlou/aai-library
@@ -17,9 +25,12 @@ for a specific project or team instead, see [INSTALLATION.md](INSTALLATION.md).
 
 Codex:
 
-Install this repository as a Codex plugin from the plugin root. The Codex
-manifest is `.codex-plugin/plugin.json`, and it registers the adapter skill in
+Install `~/.ailib` as a Codex plugin. Its manifest is
+`.codex-plugin/plugin.json`, which registers the adapter skill in
 `codex-skills/`.
+
+Other harnesses (Gemini CLI, etc.) need no plugin — see
+[INSTALLATION.md](INSTALLATION.md#other-harnesses-pointer-adapter).
 
 ## First use
 
@@ -43,9 +54,9 @@ Just talk:
 
 ## Updating
 
-Claude Code uses `/plugin update ambient`. Codex uses the Codex plugin update
-flow for the installed plugin. Both pull the latest wrappers and canonical
-library.
+Run `git pull` in `~/.ailib` to update the library itself. Then update the
+wrapper: `/plugin update ambient` in Claude Code, or the Codex plugin update
+flow.
 
 ## Next Steps
 

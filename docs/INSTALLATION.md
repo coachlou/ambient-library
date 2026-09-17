@@ -30,6 +30,13 @@ Claude Code fetches the plugin and stores it under `~/.claude/plugins/`. The
 skill is then available in every session — no per-project setup, no scripts, no
 dotfile edits.
 
+**Without the plugin:** Claude Code can also use the library the same way other
+harnesses do — add a block to `~/.claude/CLAUDE.md` telling it to read
+`~/.ailib/.aai/instructions.md` for skill setup, skill management, code review,
+or any task a skill in `~/.ailib/library/catalog.yaml` covers. It applies in
+every project, but carries the pointer tradeoff described under
+[Other harnesses](#other-harnesses-pointer-adapter).
+
 ## À-la-carte skill installs
 
 Every domain skill in the library is also published as its own single-skill
@@ -86,9 +93,9 @@ The Codex wrapper is defined by:
 codex-skills/ambient/SKILL.md
 ```
 
-Install this repository as a Codex plugin through your Codex plugin workflow.
-The Codex plugin registers one `ambient` skill and delegates to the canonical
-router and `library/` at the repository root.
+Install the `~/.ailib` clone as a Codex plugin through your Codex plugin
+workflow. The Codex plugin registers one `ambient` skill and delegates to the
+canonical router and `library/` at the clone's root.
 
 ## Other harnesses (pointer adapter)
 
@@ -137,14 +144,20 @@ file. The manifest only scopes domain skills.
 
 ## Updating
 
-Claude Code:
+The library and the wrappers update separately. First the library:
+
+```bash
+git -C ~/.ailib pull
+```
+
+Then the wrapper — Claude Code:
 
 ```
 /plugin update ambient
 ```
 
-Codex updates follow the Codex plugin update flow for the installed plugin.
-Either way, the update pulls the latest wrapper plus the canonical `library/`.
+Codex follows the Codex plugin update flow for the installed plugin.
+Pointer-adapter installs need only the `git pull`.
 
 ## Uninstalling
 
@@ -168,4 +181,4 @@ also add by full URL (`/plugin marketplace add https://github.com/coachlou/aai-l
 or from the local clone (`/plugin marketplace add ~/.ailib`).
 
 ### Changes to a skill aren't showing
-Run `/plugin update ambient`, then `/reload-plugins` (or start a fresh session).
+Run `git -C ~/.ailib pull` and `/plugin update ambient`, then `/reload-plugins` (or start a fresh session).

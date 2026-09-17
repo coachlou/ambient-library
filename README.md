@@ -48,21 +48,21 @@ Claude Code, on top of that:
 
 Codex:
 
-The Codex wrapper lives in `.codex-plugin/plugin.json` and exposes one Codex
-skill from `codex-skills/`. Install it through your Codex plugin workflow from
-this plugin root, or add it to a Codex marketplace when publishing.
+Install `~/.ailib` (the clone above) as a Codex plugin through your Codex
+plugin workflow. Its `.codex-plugin/plugin.json` exposes one Codex skill from
+`codex-skills/`.
 
 Other harnesses (Gemini CLI, etc.):
 
-No plugin needed. Clone this repo to a fixed location, then in your project
-tell the agent: *"Read `<clone>/.aai/instructions.md` and set up
-ambient-library in this project."* The install flow writes a pointer block
+No plugin needed. Using the `~/.ailib` clone above, tell the agent in your
+project: *"Read `~/.ailib/.aai/instructions.md` and set up ambient-library in
+this project."* The install flow writes a pointer block
 into the project's `AGENTS.md` so future requests route automatically. See
 [docs/INSTALLATION.md](docs/INSTALLATION.md#other-harnesses-pointer-adapter).
 
-Claude updates are `/plugin update ambient`. Codex updates follow the Codex
-plugin update flow for the installed plugin. Pointer-adapter installs update
-with `git pull` in the clone.
+Updating is two steps: `git pull` in `~/.ailib` (the library every harness
+reads), then the harness wrapper — `/plugin update ambient` in Claude Code, or
+the Codex plugin update flow. Pointer-adapter installs need only the `git pull`.
 
 ## Use
 
