@@ -6,8 +6,11 @@
 # reach production by being committed, only by being released.
 #
 # Usage:
-#   build-production.sh [dest]        default dest: ~/GitHub/ambient-library
+#   build-production.sh [dest]        default dest: ./distro (gitignored staging)
 #   build-production.sh --dry-run     show what would change, write nothing
+#
+# The only git repo accepted as dest is a clone of coachlou/aai-library, the
+# distribution repo — scripts/publish-distro.sh uses that path.
 #
 # Exit codes: 0 ok · 1 validation failed · 2 bad dest · 3 manifest error
 set -euo pipefail
@@ -15,7 +18,7 @@ cd "$(dirname "$0")/.."
 REPO="$PWD"
 
 DRY=false
-DEST="${HOME}/GitHub/ambient-library"
+DEST="$REPO/distro"
 for a in "$@"; do
   case "$a" in
     --dry-run) DRY=true ;;
@@ -32,10 +35,12 @@ if [ -f .aai/PRODUCTION ]; then
   exit 2
 fi
 if [ -e "$DEST/.git" ]; then
-  echo "refusing: $DEST is a git repo." >&2
-  echo "Production is a build output now, not a clone. Move it aside first:" >&2
-  echo "  mv '$DEST/.git' '$DEST/.git.was-a-clone'" >&2
-  exit 2
+  case "$(git -C "$DEST" remote get-url origin 2>/dev/null || true)" in
+    *coachlou/aai-library*) ;;   # the distribution repo: build into it, keep its .git and LICENSE
+    *) echo "refusing: $DEST is a git repo that is not the coachlou/aai-library clone." >&2
+       echo "Production is a build output, not a clone. Use scripts/publish-distro.sh to release." >&2
+       exit 2 ;;
+  esac
 fi
 
 # --- validate before shipping --------------------------------------------
@@ -54,10 +59,11 @@ STAGE=$(mktemp -d); trap 'rm -rf "$SRC" "$STAGE"' EXIT
 python3 scripts/release_filter.py "$SRC" "$STAGE" "$SHA" "$REPO" || exit 3
 
 # --- ship -----------------------------------------------------------------
-RSYNC=(rsync -a --delete --exclude '.git.was-a-clone' "$STAGE/" "$DEST/")
+EXCL=(--exclude '.git' --exclude 'LICENSE')   # belong to the destination repo, not the build
+RSYNC=(rsync -a --delete "${EXCL[@]}" "$STAGE/" "$DEST/")
 if $DRY; then
   echo; echo "--- dry run: changes that would land in $DEST ---"
-  rsync -a --delete --itemize-changes --dry-run --exclude '.git.was-a-clone' "$STAGE/" "$DEST/" | grep -v '^\.d\.\.t' || echo "(no changes)"
+  rsync -a --delete --itemize-changes --dry-run "${EXCL[@]}" "$STAGE/" "$DEST/" | grep -v '^\.d\.\.t' || echo "(no changes)"
   echo; echo "nothing written."
 else
   mkdir -p "$DEST"

@@ -115,6 +115,9 @@ with open(os.path.join(stage, "library", "catalog.yaml"), "w") as fh:
 mp = os.path.join(stage, ".claude-plugin", "marketplace.json")
 if os.path.exists(mp):
     m = json.load(open(mp))
+    m["name"] = (
+        "aai-library"  # the distribution's marketplace name; dev keeps ambient-library
+    )
     m["plugins"] = [
         p for p in m["plugins"] if p["name"] == "ambient" or p["name"] in released
     ]
@@ -162,14 +165,12 @@ open(os.path.join(stage, ".aai", "PRODUCTION"), "w").write(f"""\
 Built from ambient-library@{sha} by scripts/build-production.sh.
 Contents are whatever RELEASE.yaml named at that commit: {len(released)} skills.
 
-This folder is a build output, not a git clone. Editing it changes nothing
-upstream and is overwritten by the next build. admin.md and propose.md are not
-present — authoring happens in the dev workspace:
+Editing it changes nothing upstream and is overwritten by the next release.
+admin.md and propose.md are not present — authoring happens in the dev
+workspace of https://github.com/coachlou/ambient-library, and this copy is
+distributed from https://github.com/coachlou/aai-library.
 
-  {dev_root}
-
-To release a skill: add its name to RELEASE.yaml there, then re-run
-scripts/build-production.sh.
+To propose a new or revised skill from here: .aai/skills/propose-upstream.md.
 """)
 
 print(f"staged {len(released)} skills")
