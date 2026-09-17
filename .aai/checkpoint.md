@@ -1,9 +1,17 @@
 # Checkpoint — ambient-library
 
 ## Current state
-**Next objective:** design the personalization override layer. The work was
-interrupted before any design was written. Start from the "Library-wide
-follow-up" section in `in-progress/CANDIDATES.md`.
+**Next objective:** Lou reviews `docs/PLAN-personalization-layer.md` (design
+v4.3, nothing built) and answers its "Decisions that are Lou's" section. Then
+build rollout step 1, then step 2 (the stub-skill runtime check) before
+anything live. The design: 1:n is an opt-in evolution of the standard skill —
+default stays cwd = workspace; an opted-in skill ships `contract.yaml`, keeps
+project data in the project folder (`project.yaml`, `.aai/memory/<n>/`,
+deliverables in the root) and inherits `environment.yaml` from the receiving
+folder or `~`. No existing skill migrates unless picked. Six independent
+reviews in total (three on v1–v3.1, three on v4); the last one's blockers are
+folded in but v4.3 itself was not re-reviewed. The open questions below are
+superseded by that plan.
 
 **Where things stand (2026-09-16):**
 - v2.1.0 is released: domain skills are opt-in per scope. The dev repo
