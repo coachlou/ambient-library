@@ -11,9 +11,9 @@ else:
 
 | What they want | Command to give them |
 |----------------|----------------------|
-| Available to me in all projects (default) | `claude plugin install ambient@ambient-library` |
-| Shared with the team via the repo | `claude plugin install ambient@ambient-library --scope project` |
-| This project only, not committed to git | `claude plugin install ambient@ambient-library --scope local` |
+| Available to me in all projects (default) | `claude plugin install ambient@aai-library` |
+| Shared with the team via the repo | `claude plugin install ambient@aai-library --scope project` |
+| This project only, not committed to git | `claude plugin install ambient@aai-library --scope local` |
 
 **Gotchas to mention:**
 - `--scope project` writes to `.claude/settings.json` — commit that file so teammates get it.

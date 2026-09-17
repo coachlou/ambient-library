@@ -1,16 +1,29 @@
 # Installation
 
 ambient-library ships runtime-specific plugin wrappers around one canonical
-library. Install the wrapper for the runtime you use.
+library. Every install starts from the distribution repo,
+`coachlou/aai-library` — never from the dev repo `coachlou/ambient-library`.
+
+## User scope (all harnesses)
+
+```bash
+git clone https://github.com/coachlou/aai-library ~/.ailib
+```
+
+`~/.ailib` is the user-scope library: read-only, updated with `git pull`. A
+project's `.aai/skills/` fork shadows a project `.ailib/`, which shadows
+`~/.ailib`. To propose a new or revised skill from an installed copy, ask
+for it — `.aai/skills/propose-upstream.md` routes it back to the dev repo.
 
 ## Claude Code
 
 ```
-/plugin marketplace add coachlou/ambient-library
-/plugin install ambient@ambient-library
+/plugin marketplace add coachlou/aai-library
+/plugin install ambient@aai-library
 ```
 
-- The first command adds this GitHub repo as a plugin marketplace.
+- The first command adds the distribution repo as a plugin marketplace
+  (`/plugin marketplace add ~/.ailib` works too, using the clone above).
 - The second installs the `ambient` plugin from it.
 
 Claude Code fetches the plugin and stores it under `~/.claude/plugins/`. The
@@ -23,8 +36,8 @@ Every domain skill in the library is also published as its own single-skill
 plugin in the same marketplace:
 
 ```
-/plugin install grill@ambient-library
-/plugin install audit-mcp@ambient-library
+/plugin install grill@aai-library
+/plugin install audit-mcp@aai-library
 ```
 
 Installing `aimm-commands` additionally registers all 54 AIMM prompts as real
@@ -32,7 +45,7 @@ slash commands (`/aimm-commands:skeptic`, `/aimm-commands:canon-lock`, ...) —
 user-triggered, so they add no standing context.
 
 Bundles install a themed set in one command — e.g.
-`/plugin install writing-suite@ambient-library` registers the whole writing
+`/plugin install writing-suite@aai-library` registers the whole writing
 toolkit (researcher, writer, editor, project-brief, voice-profile-trainer,
 writing-team).
 
@@ -44,13 +57,13 @@ harmless — the standalone skill simply wins direct triggers.
 
 ## Installation scopes
 
-The default install (`/plugin install ambient@ambient-library`) installs at **user scope** — available to you in every project on this machine. Two other scopes are available:
+The default install (`/plugin install ambient@aai-library`) installs at **user scope** — available to you in every project on this machine. Two other scopes are available:
 
 | Scope | Command | Settings file | Who gets it |
 |-------|---------|---------------|-------------|
-| `user` (default) | `claude plugin install ambient@ambient-library` | `~/.claude/settings.json` | You, in all projects |
-| `project` | `claude plugin install ambient@ambient-library --scope project` | `.claude/settings.json` | Anyone who clones this repo |
-| `local` | `claude plugin install ambient@ambient-library --scope local` | `.claude/settings.local.json` | You, this project only (gitignored) |
+| `user` (default) | `claude plugin install ambient@aai-library` | `~/.claude/settings.json` | You, in all projects |
+| `project` | `claude plugin install ambient@aai-library --scope project` | `.claude/settings.json` | Anyone who clones this repo |
+| `local` | `claude plugin install ambient@aai-library --scope local` | `.claude/settings.local.json` | You, this project only (gitignored) |
 
 You can install at multiple scopes simultaneously — the plugin is active as long as it's enabled at any one of them.
 
@@ -83,14 +96,10 @@ For agents without a plugin system (Gemini CLI and others), use the pointer
 adapter: a short block in the project's instruction file that routes matching
 requests to the canonical library.
 
-1. Clone this repo to a fixed location (one clone per machine):
-
-   ```bash
-   git clone https://github.com/coachlou/ambient-library ~/ambient-library
-   ```
+1. Use the user-scope clone at `~/.ailib` (see above).
 
 2. In your project, tell the agent:
-   *"Read ~/ambient-library/.aai/instructions.md and set up
+   *"Read ~/.ailib/.aai/instructions.md and set up
    ambient-library in this project."*
 
 The install flow copies [templates/AGENTS-pointer.md](../templates/AGENTS-pointer.md)
@@ -154,9 +163,9 @@ that, the plugin isn't active. Re-run the install commands and start a fresh
 session.
 
 ### Marketplace add fails
-Check the repo is reachable: `coachlou/ambient-library` must be a public GitHub
-repo (or you must have access). You can also add by full URL:
-`/plugin marketplace add https://github.com/coachlou/ambient-library`.
+Check the repo is reachable: you need access to `coachlou/aai-library`. You can
+also add by full URL (`/plugin marketplace add https://github.com/coachlou/aai-library`)
+or from the local clone (`/plugin marketplace add ~/.ailib`).
 
 ### Changes to a skill aren't showing
 Run `/plugin update ambient`, then `/reload-plugins` (or start a fresh session).

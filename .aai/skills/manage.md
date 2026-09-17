@@ -20,9 +20,9 @@ The plugin can be installed at one or more scopes simultaneously:
 
 | Scope | Command | Settings file | Who gets it |
 |-------|---------|---------------|-------------|
-| `user` (default) | `claude plugin install ambient@ambient-library` | `~/.claude/settings.json` | You, in all projects |
-| `project` | `claude plugin install ambient@ambient-library --scope project` | `.claude/settings.json` | Anyone who clones this repo |
-| `local` | `claude plugin install ambient@ambient-library --scope local` | `.claude/settings.local.json` | You, in this project only (gitignored) |
+| `user` (default) | `claude plugin install ambient@aai-library` | `~/.claude/settings.json` | You, in all projects |
+| `project` | `claude plugin install ambient@aai-library --scope project` | `.claude/settings.json` | Anyone who clones this repo |
+| `local` | `claude plugin install ambient@aai-library --scope local` | `.claude/settings.local.json` | You, in this project only (gitignored) |
 
 Running the install command at a scope that already has it is safe — it's a no-op.
 

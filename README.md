@@ -31,11 +31,19 @@ selection, management, and code review all work through natural language.
 
 ## Install
 
-Claude Code:
+The library is distributed from `coachlou/aai-library` (development happens
+in `coachlou/ambient-library`; don't install from there). The user-scope
+install every harness reads is a clone at `~/.ailib`:
+
+```bash
+git clone https://github.com/coachlou/aai-library ~/.ailib
+```
+
+Claude Code, on top of that:
 
 ```
-/plugin marketplace add coachlou/ambient-library
-/plugin install ambient@ambient-library
+/plugin marketplace add coachlou/aai-library
+/plugin install ambient@aai-library
 ```
 
 Codex:

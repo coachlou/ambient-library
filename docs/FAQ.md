@@ -7,8 +7,8 @@
 About a minute in Claude Code:
 
 ```
-/plugin marketplace add coachlou/ambient-library
-/plugin install ambient@ambient-library
+/plugin marketplace add coachlou/aai-library
+/plugin install ambient@aai-library
 ```
 
 Then say *"set up ambient-library in this project"* in any project.
@@ -106,8 +106,8 @@ manifest just narrows the set.
 
 The plugin may not be installed. Run:
 ```
-/plugin marketplace add coachlou/ambient-library
-/plugin install ambient@ambient-library
+/plugin marketplace add coachlou/aai-library
+/plugin install ambient@aai-library
 ```
 Then start a fresh session.
 

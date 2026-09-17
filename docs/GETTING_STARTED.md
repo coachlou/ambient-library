@@ -7,8 +7,8 @@ ambient-library has one canonical library with separate runtime wrappers.
 Claude Code:
 
 ```
-/plugin marketplace add coachlou/ambient-library
-/plugin install ambient@ambient-library
+/plugin marketplace add coachlou/aai-library
+/plugin install ambient@aai-library
 ```
 
 The first command registers the marketplace; the second installs the `ambient`
