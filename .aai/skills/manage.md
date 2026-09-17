@@ -49,25 +49,43 @@ Updates are handled by Claude Code's plugin system. Tell the user to run:
 
 (Or `/plugin` → manage → update.) This pulls the latest skills, subskills, and
 library. Confirm: "Once you run /plugin update ambient, you'll have the latest."
+Pointer installs (no plugin) update with `git -C ~/.ailib pull` instead.
 
-### Add a domain skill to this project
+### Enable a domain skill
+
+Domain skills are opt-in: a skill runs on its own only where it is enabled (the
+enabled set is defined in `load.md`). Pick the manifest by scope:
+
+| User says | Manifest |
+|-----------|----------|
+| "for this project", "here", or no scope named | `<project root>/skills-manifest.yaml` |
+| "everywhere", "globally", "for me", "user scope", "all projects" | `~/.aai/skills-manifest.yaml` |
 
 1. Verify it exists: `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`.
-2. Add its name to `domain_skills` in the project's `skills-manifest.yaml`.
+2. Add its name to `domain_skills` in that manifest, creating the file as
+   `domain_skills: []` first if it is missing.
 
-Confirm: "Added [skill-name] for this project."
+Enabling writes a name, never a copy — the skill still resolves from the
+library, so updates reach it. Pinning a copy into the project's `.ailib/` is
+`lifecycle.md`'s vendor operation, only when the user asks for it.
 
-### Remove a domain skill from this project
+Confirm: "Enabled [skill-name] for this project." / "…in every project."
 
-Remove it from `skills-manifest.yaml`. Confirm: "Removed [skill-name]."
+### Disable a domain skill
+
+Remove it from the manifest for the scope the user named. Scopes are a union,
+so a skill enabled in the other manifest (or vendored into the project) keeps
+running — say so, and offer to remove it there too. Confirm: "Disabled [skill-name]."
 
 ### Status
 
-Show: the project's `skills-manifest.yaml` contents (if any) and the domain
-skills available in `${CLAUDE_PLUGIN_ROOT}/library/`.
+Show, labeled by scope: `~/.aai/skills-manifest.yaml`, the project's
+`skills-manifest.yaml`, and any skills vendored or forked into the project's
+`.ailib/` / `.aai/skills/`. List the rest of `catalog.yaml` separately as
+available but not enabled.
 
 ## Rules
 
 - Plugin updates go through `/plugin update`, not git or curl.
-- Confirm briefly before editing the manifest.
+- Confirm briefly before editing either manifest.
 - Report outcomes in plain language.

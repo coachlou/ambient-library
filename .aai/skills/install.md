@@ -51,10 +51,11 @@ paste the canonical block into `AGENTS.md`, and the one-line redirect into
 If the project root has a `skills-manifest.yaml`, skip to select and offer to
 review it.
 
-### 3. Create a project manifest (optional but recommended)
+### 3. Create a project manifest
 
-Write `skills-manifest.yaml` to the project root to scope which domain skills
-this project uses:
+Domain skills are opt-in: without a manifest entry (here or in
+`~/.aai/skills-manifest.yaml`), a skill runs only when the user names it. Write
+`skills-manifest.yaml` to the project root:
 
 ```yaml
 domain_skills: []
@@ -62,7 +63,7 @@ domain_skills: []
 ```
 
 Core capabilities (install, select, manage, review) always work without a
-manifest. The manifest only scopes domain skills.
+manifest. The manifest only enables domain skills.
 
 ### 4. Hand off to select
 
@@ -70,7 +71,7 @@ Read and execute `select.md` to choose domain skills for the project.
 
 ## Rules
 
-- Project artifacts are `skills-manifest.yaml` (optional) and, on pointer
+- Project artifacts are `skills-manifest.yaml` and, on pointer
   harnesses only, the AGENTS.md pointer block.
 - On plugin harnesses: no clone, no submodule, no scripts, no dotfile edits.
   The plugin is the install.
