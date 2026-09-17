@@ -95,6 +95,10 @@ for f in DROP_SUBSKILLS:
     p = os.path.join(stage, ".aai", "skills", f)
     if os.path.exists(p):
         os.remove(p)
+# the dev workspace's own session notes are not part of the library
+cp = os.path.join(stage, ".aai", "checkpoint.md")
+if os.path.exists(cp):
+    os.remove(cp)
 
 # released skills only
 os.makedirs(os.path.join(stage, "library"))
