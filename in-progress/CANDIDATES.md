@@ -58,6 +58,27 @@ Before promoting, strip anything private — the library is public.
 | weekly-intelligence-briefing | /Volumes/.../.claude/skills | reads your own sessions |
 | zoom-mastermind-recap | ~/Downloads/zoom-recap-sandbox (via symlink) | AIMM-specific |
 | angela | ~/Documents/Codex/2026-08-12/... (via ~/.codex/skills symlink) | |
+| aimm-newsletter | /Volumes/.../.claude/skills (still installed there) | Rework of the released skill: this copy carries your branding (AI Leaders Mastermind, Successpod), which the library version replaced with placeholders. Don't switch to the library version until the personalization split below exists; then move the branding into the personal layer. |
+
+## Library-wide follow-up: separate canonical structure from personalization
+
+Canonical skills should ship generic logic and defaults only. Personal data
+(branding, email templates, account and contact-group names, voice, client
+settings) belongs in a personal layer that the skill reads when present, so
+updating from the library never overwrites it and the public library never
+carries it. Today the only option is forking the whole skill
+(`.aai/skills/<name>/`), which stops it picking up library updates.
+
+Direction to design (not built):
+- a fixed override location per skill at user and project scope (for example
+  `~/.aai/skills/<name>/` and `<project>/.aai/skills/<name>/`, holding only
+  the overridden files), checked before the skill's own `assets/`
+- a documented list in each skill of which files are overridable
+- the placeholder convention the library already uses in
+  `aimm-newsletter/assets/template.html` as the default
+
+First users: aimm-newsletter (branded template), gears-broadcast, and the
+GEARS and gic-leap candidates, whose private data is why they are gitignored.
 
 ## Follow-ups outside this repo
 
