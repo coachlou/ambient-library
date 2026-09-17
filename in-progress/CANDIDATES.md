@@ -29,8 +29,9 @@ and its app-side copy is never touched. Everything else is authored here.
 - software-dev-factory `scripts/build-distro.mjs` bundles (`distro/dev`, `distro/v0.x`) vendor
   `.ailib/factory/` without a manifest.yaml; the SDF project generator writes an app-test
   launcher that hardcodes a deleted absolute path (see dev-factory/projects/app-test-1).
-- dynamic-company-builder uses `.ailib/manifest.json`, not `manifest.yaml`, and exists twice
-  (`dynamic-company-builder`, `-agent-organization`, same HEAD c8c02a2, no remote) — pick one.
+- dynamic-company-builder uses `.ailib/manifest.json`, not `manifest.yaml`. The duplicate
+  `-agent-organization` folder was archived 2026-09-16 (its one unique file, the requirements
+  doc, was copied into the kept folder first).
 - Worktrees on other branches (`~/.grok/worktrees/github-software-dev-factory/*`,
   `all-ai-chats-archives/.worktrees/editorial-studio`) inherit compliance when their
   branches rebase onto main; not edited directly.
