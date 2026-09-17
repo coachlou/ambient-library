@@ -201,13 +201,13 @@ where files get saved. The agent never decides where a file goes.
 
 The block each opted-in skill opens with (literal skill name; audit-checked):
 
-> **Project.** Before acting, and again before any write or send, run
-> `scripts/resolve.py --start <path or name the request gives, else .>`
-> (add `--current <dir>` once a project is open). Use only its output for
-> `{{env.*}}` / `{{project.*}}` values and paths; write only under
-> `project_dir`. It returns `ask` → ask that; `needs` → ask those keys, save
-> with `--set`. State `project_dir` before any write or send. No shell
-> available → ask the `project:` keys and work in the current folder.
+> **Project.** Before acting, and again before any write or send, run this
+> skill's `scripts/resolve.py --start <path or name the request gives, else .>`
+> (add `--current <last project_dir>` after the first run). Use only its output
+> for `{{env.*}}` / `{{project.*}}` values; every path in the steps below is
+> relative to `project_dir`; write nowhere else. If it returns `ask` or `needs`,
+> follow its `do` line. Tell the user `project_dir` before any write or send.
+> No shell available → ask the `project:` keys and work in the current folder.
 
 ~95 tokens, half the prose version, and it no longer has to be *correct as
 prose* — only to get the script called.
