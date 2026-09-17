@@ -1,36 +1,36 @@
 # Checkpoint — ambient-library
 
 ## Current state
-**Next objective:** Lou reviews `docs/PLAN-personalization-layer.md` (design
-v4.3, nothing built) and answers its "Decisions that are Lou's" section. Then
-build rollout step 1, then step 2 (the stub-skill runtime check) before
-anything live. The design: 1:n is an opt-in evolution of the standard skill —
-default stays cwd = workspace; an opted-in skill ships `contract.yaml`, keeps
-project data in the project folder (`project.yaml`, `.aai/memory/<n>/`,
-deliverables in the root) and inherits `environment.yaml` from the receiving
-folder or `~`. No existing skill migrates unless picked. Six independent
-reviews in total (three on v1–v3.1, three on v4); the last one's blockers are
-folded in but v4.3 itself was not re-reviewed. The open questions below are
-superseded by that plan.
+**Next objective:** release 2.2.0 and move Lou's live AIMM newsletter onto it.
+Each step is outward-facing and needs Lou's go: push `main`; build and publish
+the distribution (`scripts/build-production.sh`, `scripts/publish-distro.sh`);
+pull `~/.ailib`; in the AIMM folder run the skill's `scripts/resolve.py --init`
+then `--set` with the live values (group `aimm_member`, account `aimm_support`,
+prefix `[AIMM]`, `send_mode` individual, header "AI Leaders Mastermind", footer
+"Successpod, Inc.", unsubscribe `none`); repoint `aimm-send` (location unknown
+— ask Lou); send a two-member test; then archive the branded copy in
+`/Volumes/…/.claude/skills/aimm-newsletter/`.
 
-**Where things stand (2026-09-16):**
-- v2.1.0 is released: domain skills are opt-in per scope. The dev repo
-  (`ambient-library`) and the distribution repo (`aai-library`) are pushed, and
-  `~/.ailib` has been pulled.
-- User-scope skill cleanup is finished. Your own skills are waiting in
-  `in-progress/`; the originals stay installed until each one is released.
-- The working tree is clean and everything is pushed (last commit `eb37efc`).
+**Where things stand (2026-09-17):**
+- The personalization layer is designed and built. Design:
+  `docs/PLAN-personalization-layer.md` (v4.5). 1:n is an opt-in evolution of the
+  standard skill — default stays cwd = workspace; an opted-in skill ships
+  `contract.yaml`, and `scripts/resolve.py` decides which project folder it is
+  working in and where values are saved. No existing skill migrates unless picked.
+- Rollout steps 1–4 are done: shared rules (`load.md`, `.aai/instructions.md`,
+  `ambient-folder`, `docs/MANAGEMENT.md`), the resolver + 14 tests
+  (`python3 scripts/test_resolve.py`), aimm-newsletter converted (v1.1.0), the
+  build copies the resolver into opted-in skills, and the audit enforces the
+  contract (`python3 scripts/audit-distribution.py --self-test`).
+- Versions are bumped to 2.2.0 but nothing is pushed or published, and
+  `~/.ailib` still holds 2.1.0.
 
-**Open questions for the design:**
-- Where do overrides live? The draft is `~/.aai/skills/<name>/` for all
-  projects and `<project>/.aai/skills/<name>/` for one project, but
-  `.aai/skills/<name>/` is already used for whole-skill forks.
-- How does a skill say which of its files can be overridden?
-- How do placeholders get their values: whole-file replacement, or
-  placeholders plus a values file?
-- Which lookup files and scripts need to change? Probably
-  `.aai/skills/load.md`, `.aai/skills/lifecycle.md`, and
-  `scripts/audit-distribution.py`.
+**Open, Lou's call:**
+- Rollout steps 5–6 (gears-*, gears-broadcast) — only if Lou picks them.
+- gears-broadcast's segment ID and sender are in public git history: scrub or leave?
+- Collapse gears-* into one capability and delete the DB "active org" selector?
+- For a new project the resolver lists only project keys as `needs`; env keys
+  surface after the first `--set`. Works, but it is two rounds of questions.
 
 ---
 

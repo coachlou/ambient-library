@@ -235,9 +235,10 @@ operating constraint:
   `YOUR_`; a hit blocks the action.
 - **`scripts/audit-distribution.py`:** for skills with a `contract.yaml` —
   every placeholder key exists in it; the block is present in the body file
-  (`instructions.md` where `SKILL.md` is a redirect) and names the
-  skill's directory; the bracketed sentence is present iff `multi: true`;
-  canonical values are empty; no `YOUR_[A-Z_]+`.
+  (`instructions.md` where `SKILL.md` is a redirect); canonical values are
+  empty; no `YOUR_[A-Z_]+`; a committed `scripts/resolve.py` copy matches the
+  source. (Built. The block no longer carries a skill name or a multi-only
+  sentence — the resolver handles both — so those two checks were dropped.)
 
 ## Contradictions with what exists
 
