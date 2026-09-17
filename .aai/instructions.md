@@ -108,3 +108,10 @@ production until its name is added to `RELEASE.yaml` and the build is re-run.
   unless the user asks how the system works.
 - Merge rules from the project's `CLAUDE.md` before executing.
 - If nothing matches, handle the request with general Claude capabilities.
+
+## Capabilities
+
+Capabilities resolve in this order: `.aai/skills/<name>/` (this folder's fork)
+→ `.ailib/<name>/` (vendored, pinned) → `~/.ailib/library/<name>/` (the user's
+canonical library). Installed copies are read-only: to change one, fork it into
+`.aai/skills/` or propose it upstream (`~/.ailib/.aai/skills/propose-upstream.md`).
