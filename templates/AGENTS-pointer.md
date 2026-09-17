@@ -7,10 +7,11 @@
        - Claude Code  → CLAUDE.md   (it auto-loads CLAUDE.md, NOT AGENTS.md)
        - Gemini       → GEMINI.md
 
-     To avoid duplicating the block: put the full "## Ambient Library" block in
-     AGENTS.md, and make CLAUDE.md / GEMINI.md one-line redirects to it (the
-     second block below). Replace {{LIBRARY_ROOT}} with the absolute path to
-     your ambient-library clone. -->
+     All three files are required outputs of an install: the full "## Ambient
+     Library" block goes in AGENTS.md, and CLAUDE.md and GEMINI.md each get the
+     one-line redirect (second block below) — a missing one means that harness
+     never finds .aai/. Replace {{LIBRARY_ROOT}} with the library path; the
+     user-scope default is ~/.ailib. -->
 
 ## Ambient Library   <!-- the canonical block — paste into AGENTS.md -->
 
@@ -31,8 +32,8 @@ router directs you to one.
 
 ---
 
-<!-- The redirect — put in CLAUDE.md (Claude Code) and/or GEMINI.md, so the
-     canonical block lives in exactly one place (AGENTS.md). -->
+<!-- The redirect — written to BOTH CLAUDE.md (Claude Code) and GEMINI.md
+     (Gemini CLI), so the canonical block lives in exactly one place (AGENTS.md). -->
 
 **Read `AGENTS.md` in this folder and follow it before doing anything.** Do not
 improvise, scaffold, or run `npm init` first — "ambient folder" here means a

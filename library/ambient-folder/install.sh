@@ -11,8 +11,8 @@
 #
 # Writes (owned, never overwritten if present):   <target>/.aai/*.md   (distros only)
 # Writes (vendored, always re-synced):            <target>/.ailib/<cap>/ + dependency closure + manifest.yaml
-# Appends a discovery anchor to <target>/CLAUDE.md and AGENTS.md, and to any other
-# agent-adapter instruction file already present (GEMINI.md, .cursorrules,
+# Appends a discovery anchor to <target>/CLAUDE.md, AGENTS.md and GEMINI.md, and to
+# any other agent-adapter instruction file already present (.cursorrules,
 # .github/copilot-instructions.md, .windsurfrules, .clinerules, CONVENTIONS.md, QWEN.md).
 # Re-running is the update path: .ailib/ refreshed, .aai/ untouched.
 set -euo pipefail
@@ -61,10 +61,10 @@ if [ $DISTRO = 1 ]; then
 fi
 for c in $CAPS; do plan sync ".ailib/$c/ ($(ver "$LIB/$c")$( [ -f "$LIB/$c/app/VERSION" ] && printf ', %s' "$(head -1 "$LIB/$c/app/VERSION")"))"; done
 plan write ".ailib/manifest.yaml"
-# CLAUDE.md and AGENTS.md are always written; other adapters only if the folder
-# already uses them — the installer does not decide which agents you run.
-ANCHOR_FILES="CLAUDE.md AGENTS.md"
-for f in GEMINI.md QWEN.md CONVENTIONS.md .cursorrules .windsurfrules .clinerules .github/copilot-instructions.md; do
+# CLAUDE.md, AGENTS.md and GEMINI.md are always written (each harness auto-loads
+# only its own); other adapters only if the folder already uses them.
+ANCHOR_FILES="CLAUDE.md AGENTS.md GEMINI.md"
+for f in QWEN.md CONVENTIONS.md .cursorrules .windsurfrules .clinerules .github/copilot-instructions.md; do
   [ -f "$TARGET/$f" ] && ANCHOR_FILES="$ANCHOR_FILES $f"
 done
 for f in $ANCHOR_FILES; do

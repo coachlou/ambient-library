@@ -18,6 +18,13 @@
 | .ailib/<capability>/ | vendored — resolve .aai/skills/<capability> first (shadowing) | when that capability applies |
 | <working-file> | working — process as input | per run |
 
+## Capabilities
+
+Capabilities resolve in this order: `.aai/skills/<name>/` (this folder's fork)
+→ `.ailib/<name>/` (vendored, pinned) → `~/.ailib/library/<name>/` (the user's
+canonical library). Installed copies are read-only: to change one, fork it into
+`.aai/skills/` or propose it upstream (`~/.ailib/.aai/skills/propose-upstream.md`).
+
 ## Process
 
 <!-- The steps. Deterministic steps go to scripts; inference only where
