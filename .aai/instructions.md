@@ -114,5 +114,8 @@ production until its name is added to `RELEASE.yaml` and the build is re-run.
 
 Capabilities resolve in this order: `.aai/skills/<name>/` (this folder's fork)
 → `.ailib/<name>/` (vendored, pinned) → `~/.ailib/library/<name>/` (the user's
-canonical library). Installed copies are read-only: to change one, fork it into
+canonical library) — the first that holds an `instructions.md`. An
+`.aai/skills/<name>/` holding only data (`project.yaml`, `environment.yaml`,
+`overrides.md`) is a project's settings for that capability, not a fork: keep
+resolving, then apply its `overrides.md` after the body. Installed copies are read-only: to change one, fork it into
 `.aai/skills/` or propose it upstream (`~/.ailib/.aai/skills/propose-upstream.md`).

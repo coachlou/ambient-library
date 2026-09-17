@@ -11,7 +11,10 @@ appears in at least one of these (union — no scope removes another's skills):
 - `~/.aai/skills-manifest.yaml` → `domain_skills` (user scope, every folder)
 - `<project root>/skills-manifest.yaml` → `domain_skills` (this project)
 - `<project root>/.ailib/<name>/` or `<project root>/.aai/skills/<name>/`
-  (vendored or forked here — installing it is enabling it)
+  (vendored or forked here — installing it is enabling it). An
+  `.aai/skills/<name>/` counts only if it holds `instructions.md`,
+  `project.yaml`, or `overrides.md` — one holding only `environment.yaml`
+  (notably under `~`) is inherited settings and enables nothing.
 
 Missing files contribute nothing. An empty set means no domain skill is picked
 unless the user names one — say nothing about it and let the router fall back
@@ -38,15 +41,17 @@ skip the selection steps entirely:
    enabled names' one-line descriptions — do not open any skill's
    `instructions.md` yet. Choose the single best match on those descriptions.
    If nothing matches, stop and let the router handle the request normally.
-3. Resolve the skill body through the overlay cascade, most specific first:
-   a. `<project root>/.ambient/<skill-name>/instructions.md`
-   b. `~/.aai/library/<skill-name>/instructions.md`
+3. Resolve the skill body, most specific first:
+   a. `<project root>/.aai/skills/<skill-name>/instructions.md` (this folder's fork)
+   b. `<project root>/.ailib/<skill-name>/instructions.md` (vendored, pinned)
    c. `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`
 
-   Read the **first** one that exists — that is the skill body. Then append any
-   `overrides.md` present at (b), then at (a), and treat them as additional
-   rules that follow the body. Skip the cascade entirely when no overlay
-   directory exists; (c) is the normal case.
+   Read the **first** one that exists — that is the skill body. For a skill
+   that ships a `contract.yaml`, also look for (b) in each folder above the
+   project root, so a parent's vendored copy serves its project subfolders.
+   Then, if `<project root>/.aai/skills/<skill-name>/overrides.md` exists,
+   append it as additional rules that follow the body — whichever layer
+   supplied it. (c) is the normal case.
 4. The skill may reference its own sibling files (e.g.
    `library/<skill-name>/references/...`). Resolve those relative to the layer
    that supplied the body, and read them only as the skill directs.
@@ -58,8 +63,9 @@ skip the selection steps entirely:
   enabled set. Execution reads exactly one skill body.
 - Never load more than one domain skill per request. Never load the whole library.
 - Never mention `library/`, the catalog, manifests, or paths unless the user asks.
-- Overlays override by canonical name — they never add new catalog entries.
-  Selection still reads only `catalog.yaml`, so an overlay for a skill absent
-  from the catalog is unreachable (that's `propose.md`'s job, not an overlay's).
-- Say which layer supplied the body **only** when it wasn't (c) — a silent
+- Forks and `overrides.md` apply by canonical name — they never add new
+  catalog entries. Selection still reads only `catalog.yaml`, so one for a
+  skill absent from the catalog is unreachable (that's `propose.md`'s job).
+- Say which layer supplied the body, and that `overrides.md` was applied,
+  **only** when it wasn't plain (c) — a silent
   override is the one thing that makes a skill's behavior inexplicable.

@@ -49,7 +49,10 @@ A capability is referred to by **name**, never by a fixed location — a path
 baked into one skill breaks the moment that skill is vendored somewhere else.
 To resolve `<cap>`, take the first of these that exists:
 
-1. `<folder>/.aai/skills/<cap>/` — the folder's own or forked version
+1. `<folder>/.aai/skills/<cap>/` — the folder's own or forked version, if it
+   holds an `instructions.md`. Without one it is that project's *data* for
+   `<cap>` (`project.yaml`, `environment.yaml`, `overrides.md`), not a fork —
+   keep resolving.
 2. `<folder>/.ailib/<cap>/` — vendored canonical
 3. `${CLAUDE_PLUGIN_ROOT}/library/<cap>/` — the canonical library, if reachable
 
@@ -173,6 +176,15 @@ against library changes. Say which you're doing and why, in one line.
 1. Copy `<target>/.ailib/<cap>/` → `<target>/.aai/skills/<cap>/`.
 2. Edit the copy. The folder now resolves `<cap>` to the fork; the pristine
    canonical stays in `.ailib/` for comparison and re-sync.
+
+### Lighter than a fork
+
+Forking cuts the capability off from upstream updates, so reach for it last.
+A capability that ships a `contract.yaml` takes its per-project values from
+`.aai/skills/<cap>/project.yaml` and inherited ones from `environment.yaml`
+(its own `scripts/resolve.py` reads and writes both — never hand-place them).
+For one small extra rule, write it in `<target>/.aai/skills/<cap>/overrides.md`;
+it is applied after the body and survives updates.
 
 ## Learn — promote memory into a reference
 
