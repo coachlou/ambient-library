@@ -121,5 +121,11 @@ MD
 done
 
 # ── capability hook ──────────────────────────────────────────────────────────
-[ -f "$CAP_DIR/install.d/post.sh" ] && TARGET="$TARGET" CAP_DIR="$TARGET/.ailib/$CAP" bash "$CAP_DIR/install.d/post.sh"
+if [ -f "$CAP_DIR/install.d/post.sh" ]; then
+  TARGET="$TARGET" CAP_DIR="$TARGET/.ailib/$CAP" bash "$CAP_DIR/install.d/post.sh"
+  # post.sh may rewrite vendored files (SDF relocates app/install.sh, restamps app/VERSION).
+  # List them so audit-compliance.py can tell hook output from hand edits.
+  (cd "$TARGET/.ailib/$CAP" && find . -type f ! -name .post-install | sort | while read -r f; do
+    cmp -s "$f" "$CAP_DIR/$f" || echo "${f#./}"; done) > "$TARGET/.ailib/$CAP/.post-install"
+fi
 say "installed $CAP $(ver "$CAP_DIR") into $TARGET"

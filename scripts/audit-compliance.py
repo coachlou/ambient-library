@@ -56,7 +56,10 @@ def file_hashes(root):
 
 def compare(local, lib):
     a, b = file_hashes(local), file_hashes(lib)
-    differing = sorted(k for k in a if k not in b or a[k] != b[k])
+    # files the capability's install.d/post.sh rewrote, listed by the installer
+    hook = set(read(os.path.join(local, ".post-install")).split())
+    a.pop(".post-install", None)
+    differing = sorted(k for k in a if k not in hook and (k not in b or a[k] != b[k]))
     if differing:
         return "diverged", differing
     return ("identical" if a.keys() == b.keys() else "library-superset"), []
