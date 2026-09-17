@@ -59,7 +59,7 @@ STAGE=$(mktemp -d); trap 'rm -rf "$SRC" "$STAGE"' EXIT
 python3 scripts/release_filter.py "$SRC" "$STAGE" "$SHA" "$REPO" || exit 3
 
 # --- ship -----------------------------------------------------------------
-EXCL=(--exclude '.git' --exclude 'LICENSE')   # belong to the destination repo, not the build
+EXCL=(--exclude '.git' --exclude '/LICENSE')   # the destination repo's own root LICENSE only — nested ones ship
 RSYNC=(rsync -a --delete "${EXCL[@]}" "$STAGE/" "$DEST/")
 if $DRY; then
   echo; echo "--- dry run: changes that would land in $DEST ---"
