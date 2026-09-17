@@ -12,7 +12,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Configure / choose which skills this project uses | `.aai/skills/select.md` |
 | Update / refresh / add / remove skills | `.aai/skills/manage.md` |
 | Review code / check for bugs or security issues | `.aai/skills/review.md` |
-| A task a domain skill in `library/` covers | `.aai/skills/load.md` |
+| A task covered by a domain skill **enabled** at user or project scope (see `load.md`) | `.aai/skills/load.md` |
 | Explicitly named skill, one-off ("use the <name> skill") | `.aai/skills/load.md` |
 | Maintain the library — create, edit, or delete a library skill; edit the catalog | `.aai/skills/admin.md` |  *(not present in a production build)*
 | Build something new, or promote it — "start a new skill", "I want to build X", "this is ready", "promote it", "move it into the library", "I'm reworking X" | `.aai/skills/admin.md` |  *(not present in a production build)*
@@ -61,11 +61,12 @@ plain files — not registered skills — so they cost nothing in context until 
 
 **To avoid context bloat, choosing a skill and loading a skill are separate steps:**
 
-1. To find a match, read **only** `library/catalog.yaml` — a cheap list of skill
-   names and one-line descriptions. Never read skill `instructions.md` files to
-   decide relevance.
-2. Pick the single best match. If the project has a `skills-manifest.yaml`,
-   restrict to the skills it lists.
+1. Domain skills are opt-in: only those enabled in `~/.aai/skills-manifest.yaml`,
+   the project's `skills-manifest.yaml`, or vendored/forked into the project are
+   candidates (union; `load.md` defines it). A skill the user names runs
+   regardless. Nothing enabled → no domain skill is picked.
+2. To find a match among the enabled skills, read **only** `library/catalog.yaml`
+   descriptions. Never read skill `instructions.md` files to decide relevance.
 3. Read **only that one** skill's `instructions.md` and follow it.
 
 Never load more than one domain skill body per request, and never load the whole

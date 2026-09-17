@@ -1,7 +1,21 @@
 # load
 
 Reads and applies a domain skill on demand. Invoked by the router when a request
-matches a skill in `library/`, or when the user names one explicitly.
+matches a skill **enabled** at some scope, or when the user names one explicitly.
+
+## The enabled set
+
+Domain skills are opt-in. A skill may be picked for an unnamed task only if it
+appears in at least one of these (union — no scope removes another's skills):
+
+- `~/.aai/skills-manifest.yaml` → `domain_skills` (user scope, every folder)
+- `<project root>/skills-manifest.yaml` → `domain_skills` (this project)
+- `<project root>/.ailib/<name>/` or `<project root>/.aai/skills/<name>/`
+  (vendored or forked here — installing it is enabling it)
+
+Missing files contribute nothing. An empty set means no domain skill is picked
+unless the user names one — say nothing about it and let the router fall back
+to general capabilities. Don't create a manifest to fill the gap.
 
 ## Explicit one-off invocation
 
@@ -11,7 +25,7 @@ skip the selection steps entirely:
 
 - Read `${CLAUDE_PLUGIN_ROOT}/library/<name>/instructions.md` directly and
   carry it out (steps 4–5 below still apply).
-- Ignore `skills-manifest.yaml` scoping — an explicit request overrides it.
+- Ignore the enabled set — an explicit request overrides it.
 - Do **not** add the skill to the manifest or change any project file. The
   invocation lives only in this conversation. If the user wants it permanently,
   they'll say so (that's `manage.md`'s job).
@@ -19,13 +33,11 @@ skip the selection steps entirely:
 
 ## Steps
 
-1. Read **only** `${CLAUDE_PLUGIN_ROOT}/library/catalog.yaml` to see the available
-   skills and their one-line descriptions. This is the cheap selection step — do
-   not open any skill's `instructions.md` yet.
-2. Choose the single best match on the descriptions alone. If the project has
-   a `skills-manifest.yaml`, restrict to the skills listed under
-   `domain_skills`. If nothing matches, stop and let the router handle the
-   request normally.
+1. Build the enabled set (above). If it is empty, stop.
+2. Read `${CLAUDE_PLUGIN_ROOT}/library/catalog.yaml` and consider **only** the
+   enabled names' one-line descriptions — do not open any skill's
+   `instructions.md` yet. Choose the single best match on those descriptions.
+   If nothing matches, stop and let the router handle the request normally.
 3. Resolve the skill body through the overlay cascade, most specific first:
    a. `<project root>/.ambient/<skill-name>/instructions.md`
    b. `~/.aai/library/<skill-name>/instructions.md`
@@ -42,7 +54,8 @@ skip the selection steps entirely:
 
 ## Rules
 
-- Selection reads the catalog only. Execution reads exactly one skill body.
+- Selection reads the manifests and the catalog only, and picks only from the
+  enabled set. Execution reads exactly one skill body.
 - Never load more than one domain skill per request. Never load the whole library.
 - Never mention `library/`, the catalog, manifests, or paths unless the user asks.
 - Overlays override by canonical name — they never add new catalog entries.
