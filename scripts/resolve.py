@@ -35,6 +35,8 @@ def die(msg):
 # multi-line strings need a real parser: PEP 723 inline deps + `uv run`.
 def scalar(v):
     v = v.strip()
+    if v.startswith("#"):
+        return ""
     if v.startswith('"'):
         return json.loads(v[: v.rindex('"') + 1])
     v = v.split(" #")[0].strip()

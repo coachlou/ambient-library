@@ -10,7 +10,7 @@ import tempfile
 RESOLVE = os.path.join(os.path.dirname(os.path.realpath(__file__)), "resolve.py")
 
 MULTI = "multi: true\nenvironment:\n  operator_name:\nproject:\n  org_id:\nstate:\n  - .aai/memory/gears/\n  - output/\n"
-SINGLE = "environment:\n  from_address:  # who sends\nproject:\n  list_name:\n"
+SINGLE = "environment:   # inherited\n  from_address:  # who sends\nproject:\n  list_name:\n"
 
 
 class Tree:
