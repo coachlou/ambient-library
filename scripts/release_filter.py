@@ -77,6 +77,10 @@ for d in KEEP_DIRS:
     if os.path.isdir(p):
         shutil.copytree(p, os.path.join(stage, d), symlinks=True)
 
+# the one script a user of an installed library runs: is my folder compliant?
+os.makedirs(os.path.join(stage, "scripts"))
+shutil.copy2(os.path.join(src, "scripts", "audit-compliance.py"), os.path.join(stage, "scripts", "audit-compliance.py"))
+
 # docs/ — consumer guides only
 os.makedirs(os.path.join(stage, "docs"))
 for f in sorted(os.listdir(os.path.join(src, "docs"))):
