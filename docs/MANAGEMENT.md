@@ -151,42 +151,16 @@ includes writing-team).
 ## Overlays (local customization without forking)
 
 A canonical skill can be adjusted per project **without copying it**, so it
-keeps receiving upstream updates. Everything you customize lives in the
+keeps receiving upstream updates. Everything a user customizes lives in the
 project's owned `.aai/skills/<skill>/`; canonical copies stay pristine in
-`.ailib/` (pinned here) or `~/.ailib` (installed), which updates replace
-wholesale. One folder per owner — nothing an update writes is ever yours.
-
-Three tiers, cheapest first:
-
-| Tier | File in `.aai/skills/<skill>/` | Keeps upstream updates? |
-|------|-------------------------------|-------------------------|
-| values | `project.yaml`, `environment.yaml` | yes |
-| extra rules | `overrides.md` | yes |
-| fork | `instructions.md` (the whole skill) | no — you own it |
-
-**Values** exist only for skills that ship a `contract.yaml`. The skill's own
-`scripts/resolve.py` asks for them once and saves them in the right file; don't
-hand-place them. Design: `docs/PLAN-personalization-layer.md`.
-
-**`overrides.md` — appended to whichever body resolved. Keeps upstream updates.**
-This is the case worth reaching for. Adding a few project rules no longer
-requires owning the whole skill:
-
-```bash
-mkdir -p .aai/skills/writing-team
-cat > .aai/skills/writing-team/overrides.md <<'EOF'
-# Project rules
-- Drafts land in `content/drafts/`, never the repo root.
-- House style: no em-dashes in headings.
-EOF
-```
-
-**`instructions.md` — full replacement. You own it; no more updates.**
-Only when the canonical skill is genuinely wrong for you (`lifecycle.md` →
-Personalize).
+`.ailib/` (pinned) or `~/.ailib` (installed), which updates replace wholesale.
+Three tiers — values (`project.yaml`, `environment.yaml`), `overrides.md`, and
+a full `instructions.md` fork — only the last of which gives up updates. The
+user-facing walkthrough is [USAGE.md](USAGE.md#personalizing-a-skill); the rest
+of this section is what an author has to do.
 
 `.aai/` lives **outside** the installed library, so an update overwrites
-`library/` and `.ailib/` and leaves your files untouched. That's the whole
+`library/` and `.ailib/` and leaves those files untouched. That's the whole
 mechanism — no merge logic, no versioning, no protected paths. The earlier
 overlay folders (`<project>/.ambient/<skill>/`, `~/.aai/library/<skill>/`) are
 retired; the loader no longer reads them.
@@ -194,8 +168,56 @@ retired; the loader no longer reads them.
 All three tiers apply **by canonical name**; they don't add catalog entries.
 Authoring a genuinely new skill is still propose → stage → promote above.
 
-When a fork or `overrides.md` is in play, the agent says so. A silent override is what
-makes a skill's behavior impossible to explain later.
+---
+
+## Giving a Skill a Contract (opting in to values)
+
+Only needed when a skill can't do its job without something it can't know: a
+sender address, a group name, a brand. Without a contract the skill either
+hardcodes one user's details or ships `YOUR_GROUP_NAME` placeholders users
+hand-edit — and an update overwrites the edit. A skill that needs nothing from
+the user should not have a contract.
+
+Four things, all audited by `scripts/audit-distribution.py`:
+
+**1. `library/<name>/contract.yaml`, values left empty.** Canonical ships the
+keys and their hints, never a value — a filled value brands every user's copy.
+
+```yaml
+environment:        # this machine or account; inherited by projects beneath it
+  from_address:     # who the mail comes from
+project:            # travels with the project folder
+  list_name:        # the audience this folder writes to
+state:
+  - .aai/memory/<name>/   # paths the skill writes, relative to the project
+```
+
+Which class a key belongs in has one test: copy the project folder to another
+operator's machine — a value that must travel is `project:`, one that would be
+wrong there is `environment:`. In doubt, `project:`. Add `multi: true` only if
+one parent folder holds several projects of this skill.
+
+**No secrets.** A value may *name* a credential (which account alias to send
+as); the credential itself stays in the environment or the MCP server's config.
+
+**2. Open `instructions.md` with the Project block**, which tells the agent to
+run the resolver before acting and again before any write or send, to treat
+`{{env.*}}` / `{{project.*}}` as lookups in its output rather than one-time
+substitutions, and to state the resolved folder to the user. Copy
+`library/aimm-newsletter/instructions.md`'s opening block verbatim and change
+nothing but the skill's own steps — the audit requires the literal string
+`scripts/resolve.py --start` in the body.
+
+**3. Every placeholder is a contract key.** `{{project.foo}}` with no `foo` in
+`contract.yaml` is silently never asked for, so the audit fails the build on it.
+Runtime placeholders the skill fills itself (`{{BODY_HTML}}`) are unaffected —
+only the `env.`/`project.` namespaces are checked.
+
+**4. Don't commit a copy of `resolve.py`.** There is one source,
+`scripts/resolve.py`; the release filter copies it into every skill whose folder
+has a `contract.yaml`. A hand copy drifts, and the audit compares them.
+
+Design and rationale: `docs/PLAN-personalization-layer.md`.
 
 ---
 

@@ -121,7 +121,32 @@ it. Never overwrite on a create/save request.
    Entries sort by name after the leading `ambient` entry.
 7. Add a human-readable entry to `SKILLS.md`.
 8. Bump `version` in `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`.
-9. Run `python3 scripts/audit-distribution.py` and confirm it exits 0.
+9. If the skill needs values from the user, add a contract — see below.
+10. Run `python3 scripts/audit-distribution.py` and confirm it exits 0.
+
+### Give a skill a contract (values the user supplies)
+
+Only when the skill cannot work without something it can't know — a sender
+address, a group name, a brand. Never ship a `YOUR_THING` placeholder for the
+user to hand-edit: an update overwrites the edit, which is the failure this
+replaces. A skill that needs nothing from the user gets no contract.
+
+1. Write `library/<name>/contract.yaml` with the keys **empty** — a filled
+   value brands every user's copy. Split them by one test: copy the project
+   folder to another operator's machine; a value that must travel is
+   `project:`, one that would be wrong there is `environment:`. In doubt,
+   `project:`. `state:` lists project-relative paths the skill writes.
+   **No secrets** — a value may name a credential, never hold one.
+2. Open `instructions.md` with the Project block, copied verbatim from
+   `library/aimm-newsletter/instructions.md`. It must contain the literal
+   `scripts/resolve.py --start`.
+3. Every `{{env.X}}` / `{{project.X}}` anywhere in the skill must be a key in
+   the contract, or it is never asked for and silently resolves empty.
+4. Do **not** commit a copy of `resolve.py` into the skill — the release filter
+   copies the one in `scripts/` into every skill that has a `contract.yaml`.
+
+`python3 scripts/audit-distribution.py` enforces all four. Fuller rationale:
+docs/MANAGEMENT.md "Giving a Skill a Contract".
 
 ### Promote from in-progress into the library
 
