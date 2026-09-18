@@ -49,7 +49,16 @@ Desktop), send to two of Lou's own addresses, then archive the branded copy.
   above; `USAGE.md` tells users to hand-write `overrides.md`; shipped `.aai/`
   files cite `admin.md`, `propose.md`, `build-production.sh` and `in-progress/`,
   none of which ship; `AGENTS.md` says 56 domain skills, the build stages 61.
-- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.3.
+- Install channel settled (2.3.0): `aai-library` stays **private** — its audience
+  is the dozen AIMM members plus Lou, not the public. `bootstrap.sh` is still
+  served from the public dev repo (so the documented one-liner is unchanged) but
+  now pulls the library tarball from the private release through `gh api`, or
+  `GITHUB_TOKEN`/`GH_TOKEN` if `gh` is absent, and exits 2 with instructions when
+  neither is there. Two gotchas it encodes: the API tarball's top folder is
+  `<owner>-<repo>-<sha>`, not `<repo>-<branch>`, so it is globbed; and a token
+  must never be interpolated into the URL or command line. Onboarding a member
+  is now: invite to `coachlou/aai-library`, then `gh auth login`.
+- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.3.0.
   `v2.2.0` exists but carries 2.1.0 manifests (rsync skipped same-size files;
   the build now uses `--checksum`) — use `v2.2.1`. The build also now drops
   this file from the distribution.
