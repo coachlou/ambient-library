@@ -73,9 +73,13 @@
                 <form id="message-form" class="composer">
                   <label class="sr-only" for="message-input">Your answer</label>
                   <textarea id="message-input" rows="3" placeholder="Answer in your own words…" required></textarea>
+                  <div id="attachments" class="attachments"></div>
                   <div class="composer-row">
                     <small>Do not paste passwords, tokens, or private customer data.</small>
-                    <button id="send-button" class="button primary" type="submit">Send answer <span>↗</span></button>
+                    <div class="composer-actions">
+                      <label class="button ghost attach-button" for="attach-input">Attach files<input id="attach-input" type="file" multiple accept=".md,.markdown,.txt,.json,.yaml,.yml,.csv,.html,.xml,text/*,image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
+                      <button id="send-button" class="button primary" type="submit">Send answer <span>↗</span></button>
+                    </div>
                   </div>
                 </form>
               </div>
@@ -188,6 +192,17 @@
         </section>
       </main>
     </div>
+    <dialog id="project-dialog" class="feedback-dialog" aria-labelledby="project-heading">
+      <form id="project-form" class="feedback-form" method="dialog">
+        <div class="feedback-head">
+          <div><p class="eyebrow">New project</p><h2 id="project-heading">Name the project</h2></div>
+          <button id="project-close-button" class="button ghost small" type="button" aria-label="Close">✕</button>
+        </div>
+        <label class="field" for="project-name"><span class="field-title">Project name</span><input id="project-name" name="name" type="text" maxlength="80" required /></label>
+        <div class="feedback-actions"><button class="button primary" type="submit">Create project</button></div>
+      </form>
+    </dialog>
+
     <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-heading">
       <form id="feedback-form" class="feedback-form" novalidate>
         <div class="feedback-head">

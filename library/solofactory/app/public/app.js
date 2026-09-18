@@ -162,12 +162,26 @@ $("#project-select").addEventListener("change", (event) => switchProject(event.t
 $("#run-select").addEventListener("change", (event) => selectRun(event.target.value).catch(showError));
 $("#background-view-button").addEventListener("click", () => selectRun(state.busyJobId).catch(showError));
 
+// window.prompt is blocked in embedded browsers (the Claude desktop pane), so
+// the project name comes from a native <dialog> instead.
+const projectDialog = $("#project-dialog");
+$("#project-close-button").addEventListener("click", () => projectDialog.close());
+function askProjectName() {
+  return new Promise((resolve) => {
+    const input = $("#project-name");
+    input.value = "";
+    projectDialog.addEventListener("close", () => resolve(projectDialog.returnValue === "submit" ? input.value.trim() : ""), { once: true });
+    projectDialog.showModal();
+  });
+}
+$("#project-form").addEventListener("submit", () => projectDialog.close("submit"));
+
 // Switching projects only changes the view; runs in other projects keep going.
 async function switchProject(id) {
   clearError();
   const create = id === "new";
-  const body = create ? { name: window.prompt("Project name?") ?? "" } : { id };
-  if (create && !body.name.trim()) return renderProjects();
+  const body = create ? { name: await askProjectName() } : { id };
+  if (create && !body.name) return renderProjects();
   const url = create ? "/api/projects" : "/api/projects/select";
   await api(url, { method: "POST", body });
   stopPolling();
@@ -245,6 +259,23 @@ function renderMessages(thinking = false) {
     const item = document.createElement("div");
     item.className = `message ${message.role}`;
     item.textContent = message.content;
+    for (const src of message.images ?? []) {
+      const img = document.createElement("img");
+      img.src = src; img.alt = "Attached image"; img.className = "attachment-image";
+      item.append(img);
+    }
+    // Long user turns (pasted specs) collapse so the transcript stays readable.
+    if (message.role === "user" && message.content.length > 1_500) {
+      item.classList.add("long");
+      const toggle = document.createElement("a");
+      toggle.className = "expand";
+      toggle.textContent = "Show full message";
+      toggle.addEventListener("click", () => {
+        const open = item.classList.toggle("open");
+        toggle.textContent = open ? "Collapse" : "Show full message";
+      });
+      item.prepend(toggle);
+    }
     return item;
   }));
   if (thinking) {
@@ -292,15 +323,63 @@ function renderCoverage() {
   }));
 }
 
+// Attached documents ride inside the user turn: the Guide reads inline text
+// without a tool call, and nothing is stored server-side.
+const pending = [];
+$("#attach-input").addEventListener("change", async (event) => {
+  clearError();
+  for (const file of event.target.files) {
+    try {
+      if (file.type.startsWith("image/")) {
+        const response = await fetch(`/api/interview/upload?name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(body.error || `Upload failed with HTTP ${response.status}.`);
+        pending.push({ name: file.name, path: body.path, url: URL.createObjectURL(file) });
+      } else {
+        pending.push({ name: file.name, text: await file.text() });
+      }
+    } catch (error) {
+      showError(new Error(`Could not read ${file.name}: ${error.message}`));
+    }
+  }
+  event.target.value = "";
+  renderAttachments();
+});
+
+function renderAttachments() {
+  $("#attachments").replaceChildren(...pending.map((file, index) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = file.path ? `${file.name} · image` : `${file.name} · ${Math.ceil(file.text.length / 1000)}k chars`;
+    const remove = document.createElement("button");
+    remove.type = "button"; remove.title = "Remove"; remove.textContent = "×";
+    remove.addEventListener("click", () => { pending.splice(index, 1); renderAttachments(); });
+    chip.append(remove);
+    return chip;
+  }));
+  $("#message-input").required = pending.length === 0;
+}
+
+function composeMessage(typed) {
+  const parts = typed ? [typed] : [];
+  for (const file of pending) {
+    if (file.path) parts.push(`Attached image: ${file.path} (open this file to view it before answering)`);
+    else parts.push(`--- Attached document: ${file.name} ---\n${file.text.trim()}\n--- End of ${file.name} ---`);
+  }
+  return parts.join("\n\n");
+}
+
 $("#message-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const input = $("#message-input");
-  const content = input.value.trim();
+  const content = composeMessage(input.value.trim());
   if (!content) return;
   if (!state.provider) return showError(new Error(NO_PROVIDER));
   clearError();
-  state.messages.push({ role: "user", content });
+  state.messages.push({ role: "user", content, images: pending.filter((file) => file.url).map((file) => file.url) });
   input.value = "";
+  pending.length = 0;
+  renderAttachments();
   renderMessages(true);
   setInterviewBusy(true);
   try {
