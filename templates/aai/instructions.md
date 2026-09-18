@@ -22,8 +22,14 @@
 
 Capabilities resolve in this order: `.aai/skills/<name>/` (this folder's fork)
 → `.ailib/<name>/` (vendored, pinned) → `~/.ailib/library/<name>/` (the user's
-canonical library). Installed copies are read-only: to change one, fork it into
-`.aai/skills/` or propose it upstream (`~/.ailib/.aai/skills/propose-upstream.md`).
+canonical library). Installed copies are read-only, but personalizing one does
+not mean forking it: where the capability ships a `contract.yaml`, its values
+live in `.aai/skills/<name>/project.yaml` and `environment.yaml` (its own
+`scripts/resolve.py` writes them); one or two extra rules go in
+`.aai/skills/<name>/overrides.md`, applied after the body. Both keep receiving
+updates. A full `.aai/skills/<name>/instructions.md` is a fork — it does not.
+A change worth having everywhere goes upstream instead
+(`~/.ailib/.aai/skills/propose-upstream.md`).
 
 ## Process
 

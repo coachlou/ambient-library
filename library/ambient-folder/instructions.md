@@ -33,7 +33,7 @@ A folder becomes ambient by carrying `.aai/`. Its visible contents don't change;
 │   ├── context.md         #   routing map of contents — find without reading
 │   ├── memory/            #   runtime state across runs (optional)
 │   ├── references/        #   rules internalized as constraints (optional)
-│   └── skills/            #   own capabilities + forks of vendored ones (optional)
+│   └── skills/            #   per-capability: values, overrides, forks (optional)
 └── .ailib/                # VENDORED — pristine canonical copies, re-syncable
     ├── manifest.yaml      #   what's installed: name, source, version
     └── <capability>/
@@ -171,20 +171,21 @@ the closure when the folder must work standalone: it's going somewhere the
 library isn't, it's being handed to someone else, or it needs to be pinned
 against library changes. Say which you're doing and why, in one line.
 
-## Personalize — fork a capability (shadowing)
+## Personalize — adjust a capability the folder has
 
-1. Copy `<target>/.ailib/<cap>/` → `<target>/.aai/skills/<cap>/`.
-2. Edit the copy. The folder now resolves `<cap>` to the fork; the pristine
-   canonical stays in `.ailib/` for comparison and re-sync.
+Three tiers. Take the first that covers it; only the last gives up updates.
 
-### Lighter than a fork
-
-Forking cuts the capability off from upstream updates, so reach for it last.
-A capability that ships a `contract.yaml` takes its per-project values from
-`.aai/skills/<cap>/project.yaml` and inherited ones from `environment.yaml`
-(its own `scripts/resolve.py` reads and writes both — never hand-place them).
-For one small extra rule, write it in `<target>/.aai/skills/<cap>/overrides.md`;
-it is applied after the body and survives updates.
+1. **Values.** A capability that ships a `contract.yaml` takes its per-project
+   values from `<target>/.aai/skills/<cap>/project.yaml` and inherited ones
+   from the nearest `environment.yaml` at or above the project — which, with
+   nothing vendored above it, is `~/.aai/skills/<cap>/environment.yaml`. Its own
+   `scripts/resolve.py` asks once and writes both; never hand-place them.
+2. **Extra rules.** One or two standing instructions go in
+   `<target>/.aai/skills/<cap>/overrides.md`, applied after the capability body.
+3. **Fork.** Copy `<target>/.ailib/<cap>/` → `<target>/.aai/skills/<cap>/` and
+   edit the copy. The folder resolves `<cap>` to the fork and the pristine
+   canonical stays in `.ailib/` for comparison — but the fork stops receiving
+   upstream changes, so reach for it last.
 
 ## Learn — promote memory into a reference
 

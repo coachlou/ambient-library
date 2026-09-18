@@ -20,7 +20,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 | Status of the library or the work — "what am I working on", "what's in flight", "what's unfinished", "what's still open", "what's released", "what do folders actually get", "is anything broken", "did I miss a file" | `.aai/skills/admin.md` |  *(not present in a production build)*
 | Save the work just done as a new skill ("save this as a skill", "propose a skill", "remember how we did this") | `.aai/skills/propose.md` |  *(not present in a production build)*
 | Same phrases, or "propose a change to <name>", when `.aai/PRODUCTION` is present — this is an installed, read-only copy | `.aai/skills/propose-upstream.md` |
-| Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (fork/shadow), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
+| Make another folder ambiently intelligent — stamp `.aai/` into it (with or without an interview first), vendor a capability into its `.ailib/`, personalize (values, overrides, or a fork), re-sync, or promote a memory pattern to a reference | `.aai/skills/lifecycle.md` |
 | Rot sweep — "what's stale", "which skills have rotted", audit the canonical library for outdated context | `.aai/skills/lifecycle.md` |
 
 The four `admin.md` rows are one capability split by intent so a request lands
@@ -117,5 +117,8 @@ Capabilities resolve in this order: `.aai/skills/<name>/` (this folder's fork)
 canonical library) — the first that holds an `instructions.md`. An
 `.aai/skills/<name>/` holding only data (`project.yaml`, `environment.yaml`,
 `overrides.md`) is a project's settings for that capability, not a fork: keep
-resolving, then apply its `overrides.md` after the body. Installed copies are read-only: to change one, fork it into
-`.aai/skills/` or propose it upstream (`~/.ailib/.aai/skills/propose-upstream.md`).
+resolving, then apply its `overrides.md` after the body. Installed copies are
+read-only, but personalizing one does not mean forking it: saved values first,
+then `overrides.md` — both survive updates — and only then a full
+`instructions.md`, which gives them up. A change worth having everywhere goes
+upstream instead (`~/.ailib/.aai/skills/propose-upstream.md`).
