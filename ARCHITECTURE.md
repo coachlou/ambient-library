@@ -32,6 +32,8 @@ repo root (the agentic folder)
 │   ├── catalog.yaml                ← cheap routing index
 │   └── <skill>/
 │       ├── instructions.md         ← the sub-folder's behavior
+│       ├── contract.yaml           ← optional: the values it needs, left empty
+│       ├── scripts/resolve.py      ←   build-copied: finds the project and values
 │       ├── SKILL.md                ← standalone-plugin shim
 │       └── .claude-plugin/plugin.json
 ├── bundles/                        ← meta-plugins: symlinked skill sets
@@ -44,15 +46,23 @@ repo root (the agentic folder)
 └── templates/AGENTS-pointer.md     ← pointer adapter for non-plugin harnesses
 
 ~/.aai/skills-manifest.yaml         ← domain skills enabled in every project
-your-project/skills-manifest.yaml   ← domain skills enabled in this project
+your-project/
+├── skills-manifest.yaml            ← domain skills enabled in this project
+├── .ailib/<skill>/                 ← VENDORED: a pinned canonical copy (optional)
+└── .aai/skills/<skill>/            ← OWNED: no update ever writes here
+    ├── project.yaml                ←   this project's values for the skill
+    ├── environment.yaml            ←   machine-side values (often at ~ instead)
+    ├── overrides.md                ←   extra rules appended to the skill body
+    └── instructions.md             ←   a full fork — you own it, updates stop
 ```
 
 The same shape recurs at every level: a folder is agentic when it carries its
 own `instructions.md` (behavior) and whatever identity, rules, or context files
 that behavior loads. The repo is one; each library skill is a smaller one; a
 skill's own subfolders can be smaller ones still. Runtime memory does **not**
-live in these folders — installed copies are overwritten on update, so memory
-belongs to the project (e.g. `.context/`) or a per-user data dir. The canonical
+live in the installed copies — an update overwrites them. It belongs to the
+project's own `.aai/` (a skill with a `contract.yaml` names its paths in
+`state:`, resolved under the project) or to a per-user data dir. The canonical
 per-user data dir is the **global ambient home** `~/.aai/` (owned `references/`
 + `memory/`, mirroring the `.aai` model at user scope); the `cognitive-mirror`
 and `deep-mirror` skills are its first users. Skills locate that data through
@@ -142,6 +152,20 @@ domain skill is routable only where it's enabled: the union of
 `~/.aai/skills-manifest.yaml`, the project's `skills-manifest.yaml`, and skills
 vendored or forked into the project (`load.md` defines it). Enabling records a
 name rather than a copy, so updates still flow; naming a skill runs it anywhere.
+
+**Why a contract instead of letting users edit the skill?**
+A canonical skill that needs your group name, sender address, or brand used to
+be hand-edited after install — and the next update overwrote the edit. Instead a
+skill may ship a `contract.yaml` naming the values it needs, canonically empty.
+Its `scripts/resolve.py` locates the project folder, asks once for whatever is
+missing, and saves the answers in the project's owned `.aai/skills/<name>/`,
+outside everything an update replaces. That is the cheapest of three
+customization tiers — values, then `overrides.md`, then a fork — and only the
+fork gives up updates. Opting in is per skill: a skill with no `contract.yaml`
+is untouched and carries none of this. Resolution is a script rather than
+prose because *which folder am I working in* must be deterministic; the audit
+then holds an opted-in skill to its contract, so a shipped value or a leftover
+`YOUR_*` placeholder fails the build. See [docs/USAGE.md](docs/USAGE.md).
 
 **Why a routing table for per-user data instead of symlinks or hardcoded paths?**
 Skills that persist data (like `cognitive-mirror`) need a stable home separate

@@ -24,11 +24,11 @@ directory. The two form a pair with one ownership rule:
 │   ├── context.md         #   map of the folder's contents, for routing without reading
 │   ├── memory/            #   runtime state across runs — no update ever touches this
 │   ├── references/        #   curated rules the behavior internalizes as constraints
-│   ├── skills/            #   own capabilities + personalized forks of canonical ones
+│   ├── skills/            #   per-capability owned files: values, overrides, forks
 │   └── templates/         #   scaffolds this folder stamps out (including .aai itself)
 └── .ailib/                # VENDORED — canonical includes, read-only
     ├── manifest.yaml      #   what's installed: name, source, version
-    └── <capability>/      #   pristine copy; personalize by forking to .aai/skills/
+    └── <capability>/      #   pristine copy; personalize in .aai/skills/<capability>/
 ```
 
 Only `instructions.md` is required. Graduated adoption: start with it alone and
@@ -37,10 +37,21 @@ is installed.
 
 ## The shadowing rule
 
-**`.aai/` shadows `.ailib/`.** To personalize a canonical capability, copy it
-from `.ailib/` into `.aai/skills/` and edit the copy. When both define the same
-capability, the router resolves to `.aai/`. The pristine canonical stays in
-`.ailib/` for comparison and re-sync; the fork is yours forever.
+**`.aai/` shadows `.ailib/`.** Everything you customize about a canonical
+capability lives in `.aai/skills/<capability>/`; the pristine copy stays in
+`.ailib/` for comparison and re-sync. Three tiers, cheapest first — take the
+first one that holds:
+
+| Tier | File in `.aai/skills/<capability>/` | Still gets updates? |
+|---|---|---|
+| values | `project.yaml`, `environment.yaml` | yes |
+| extra rules | `overrides.md` — appended to the resolved body | yes |
+| fork | `instructions.md` — the whole capability | no, you own it |
+
+**Values** exist only where the capability ships a `contract.yaml` naming what
+it needs. Its own `scripts/resolve.py` asks once and writes them to the right
+file — don't hand-place them. Values and `overrides.md` both survive updates,
+which is why a fork is the last resort rather than the first move.
 
 Never edit inside `.ailib/` — edits there are lost on the next re-sync, by
 design.
@@ -162,7 +173,7 @@ write shared state directly.
 |------|--------|---------|
 | Stamp | copy this template in as `.aai/`, rewrite identity + instructions | `.aai/` |
 | Install | vendor a canonical capability, record it in the manifest | `.ailib/` |
-| Personalize | fork `.ailib/<cap>` → `.aai/skills/<cap>`, edit the fork | `.aai/skills/` |
+| Personalize | values, then `overrides.md`, then a fork — see the shadowing rule | `.aai/skills/` |
 | Learn | accumulate state; promote recurring patterns to references | `.aai/memory/` → `.aai/references/` |
 | Update | delete and re-sync vendor space from canonical | `.ailib/` only |
 

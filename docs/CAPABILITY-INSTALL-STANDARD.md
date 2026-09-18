@@ -30,8 +30,11 @@ Add `--check` (via `install.sh`) to report drift without writing.
 ./<launcher> --help
 ```
 
-Then read `.ailib/<capability>/instructions.md`. To customize behavior, copy it into
-`.aai/skills/<capability>/` and edit there; the copy shadows the vendored one.
+Then read `.ailib/<capability>/instructions.md`. Customize in
+`.aai/skills/<capability>/`, which shadows the vendored copy and survives every
+update: saved values first (where the capability ships a `contract.yaml`), then
+an `overrides.md` of extra rules, and only as a last resort a forked
+`instructions.md` — a fork stops receiving updates.
 
 ## For authors
 
