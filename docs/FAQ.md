@@ -28,8 +28,10 @@ Details: [INSTALLATION.md](INSTALLATION.md#other-harnesses-pointer-adapter).
 
 ### Do I need to install anything per project?
 
-No. The plugin installs once and is available everywhere. A project's only
-(optional) file is `skills-manifest.yaml`, which scopes its domain skills.
+No. The plugin installs once and is available everywhere. A project's files
+are all optional: `skills-manifest.yaml` scopes its domain skills, and
+`.aai/skills/<skill>/` holds anything you've personalized (see
+[Advanced](#a-skill-wants-my-details--do-i-edit-it)). Both are written for you.
 
 ### Do I need a GitHub account or SSH keys?
 
@@ -142,6 +144,17 @@ if needed.
 Yes. Add runtime-appropriate project guidance to your project root, such as
 `CLAUDE.md` for Claude Code or `AGENTS.md` for Codex. The adapter/router merges
 it before acting.
+
+### A skill wants my details — do I edit it?
+
+No, and editing it is the one thing an update undoes. Skills that need values
+ship a `contract.yaml` and ask you the first time they run, saving the answers
+in your project's `.aai/skills/<skill>/` — a folder no update overwrites. To add
+a few rules on top, write an `overrides.md` in that same folder; it's appended
+to the skill and still receives upstream updates. Fork the whole
+`instructions.md` only when the canonical skill is genuinely wrong for you —
+that's the one tier where updates stop. Details:
+[USAGE.md](USAGE.md#personalizing-a-skill).
 
 ### Can I create private domain skills?
 

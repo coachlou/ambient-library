@@ -46,6 +46,11 @@ capabilities (install, select, manage, review) always work.
 For skills you want in every project, say *"enable <skill> everywhere"* — that
 writes `~/.aai/skills-manifest.yaml` instead.
 
+A skill that needs a detail from you — a sender address, a group name — asks
+once, saves the answer in the project, and never asks again. Nothing in the
+skill's own files is edited. See
+[USAGE.md](USAGE.md#personalizing-a-skill).
+
 ## Day-to-day
 
 Just talk:

@@ -123,6 +123,46 @@ Edit either file directly or say *"configure my skills"* to update it
 conversationally. Enabling records a name — the skill still comes from the
 library and picks up updates.
 
+## Personalizing a Skill
+
+Some skills need to know things about you — a sender address, a group name,
+your brand. Those ship a `contract.yaml` listing what they need with nothing
+filled in. The first time you run one it asks, saves your answers in the
+project, and never asks again. You never edit the skill's own files; an update
+would overwrite them.
+
+Everything you customize lives in the project's `.aai/skills/<skill>/`, which no
+update touches. Three tiers — use the first that covers you:
+
+| What you want | File in `.aai/skills/<skill>/` | Keeps getting updates? |
+|---|---|---|
+| different values | `project.yaml`, `environment.yaml` | yes |
+| a few extra rules | `overrides.md` | yes |
+| a different skill | `instructions.md` (a fork) | no — you own it |
+
+The two value files split on whether a setting travels. `project.yaml` holds
+what belongs to the folder — copy that folder to another machine and the values
+should come with it. `environment.yaml` holds what belongs to this machine or
+account, and every project beneath it inherits the same file. The skill writes
+both for you: say *"change the sender to X"* rather than editing them by hand.
+
+Extra rules you write yourself:
+
+```bash
+mkdir -p .aai/skills/writing-team
+cat > .aai/skills/writing-team/overrides.md <<'EOF'
+- Drafts land in `content/drafts/`, never the repo root.
+EOF
+```
+
+They're appended to whichever skill body was resolved, so the skill still gets
+upstream updates. When a fork or an `overrides.md` is in play, the agent says
+so — a silent override makes a skill's behavior impossible to explain later.
+
+**No passwords or API keys go in any of these files.** A value may *name* a
+credential — which account alias to send as — but the credential itself stays
+in your environment or the relevant MCP server's own config.
+
 ## Project-Specific Rules
 
 Add project guidance to your project root to set standards that apply to all
