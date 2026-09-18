@@ -35,7 +35,21 @@ Desktop), send to two of Lou's own addresses, then archive the branded copy.
   release filter drops `MANAGEMENT.md`, so no installed library explained the
   feature; `admin.md` and `MANAGEMENT.md` now carry the four contract rules the
   audit enforces.
-- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.2.
+- An independent review after 2.2.2 found two live gaps, fixed in 2.2.3: the
+  curl one-liner installs from the public dev clone (the release repo is
+  private), where the resolver lives only at `scripts/` — so a vendored
+  contract capability had no `scripts/resolve.py` and could not start;
+  `install.sh` now copies it. And both `instructions.md` templates plus
+  `ambient-folder`'s Personalize operation still led with forking, which is the
+  one tier that gives up updates.
+- Still open from that review: ~9 shipping files link to `docs/MANAGEMENT.md`,
+  which the release filter drops (`library/README.md:28` is wrong even in dev);
+  several docs say saved answers live in the project, but `environment_file()`
+  writes environment keys to `~/.aai/skills/<skill>/` when nothing is vendored
+  above; `USAGE.md` tells users to hand-write `overrides.md`; shipped `.aai/`
+  files cite `admin.md`, `propose.md`, `build-production.sh` and `in-progress/`,
+  none of which ship; `AGENTS.md` says 56 domain skills, the build stages 61.
+- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.3.
   `v2.2.0` exists but carries 2.1.0 manifests (rsync skipped same-size files;
   the build now uses `--checksum`) — use `v2.2.1`. The build also now drops
   this file from the distribution.
