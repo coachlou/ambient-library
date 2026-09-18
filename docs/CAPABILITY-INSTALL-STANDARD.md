@@ -9,7 +9,15 @@ curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/libra
   | bash -s -- <capability> [target-folder]
 ```
 
-Target defaults to the current folder. The installer writes:
+Target defaults to the current folder.
+
+The script is public; the library it installs is a private repo, so this needs
+GitHub read access to `coachlou/aai-library` — either the `gh` CLI signed in
+(`gh auth login`) or `GITHUB_TOKEN` / `GH_TOKEN` set. Ask for an invite if you
+have neither. Don't put a token in the command itself: it lands in your shell
+history and in the process list.
+
+The installer writes:
 
 | Path | Yours? | What |
 |---|---|---|
