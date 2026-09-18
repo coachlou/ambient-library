@@ -1,8 +1,8 @@
 # Checkpoint — ambient-library
 
 ## Current state
-**Next objective:** none queued — the personalization layer is built and
-released (2.2.1). The AIMM newsletter migration is **parked as work in
+**Next objective:** none queued — the personalization layer is built,
+documented, and released (2.2.2). The AIMM newsletter migration is **parked as work in
 progress**: Lou is not using aimm-newsletter right now (sends go through the
 resend skill), so the live test was skipped on purpose.
 
@@ -27,7 +27,15 @@ Desktop), send to two of Lou's own addresses, then archive the branded copy.
   (`python3 scripts/test_resolve.py`), aimm-newsletter converted (v1.1.0), the
   build copies the resolver into opted-in skills, and the audit enforces the
   contract (`python3 scripts/audit-distribution.py --self-test`).
-- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.1.
+- Docs audited against the contract layer (2.2.2): the architecture tree now
+  shows `contract.yaml`, the resolver, and a project's owned
+  `.aai/skills/<skill>/`; `templates/aai/README.md` and
+  `docs/CAPABILITY-INSTALL-STANDARD.md` no longer teach forking as the way to
+  personalize; the consumer walkthrough moved into `docs/USAGE.md` because the
+  release filter drops `MANAGEMENT.md`, so no installed library explained the
+  feature; `admin.md` and `MANAGEMENT.md` now carry the four contract rules the
+  audit enforces.
+- Released: dev and distribution repos pushed, `~/.ailib` pulled at 2.2.2.
   `v2.2.0` exists but carries 2.1.0 manifests (rsync skipped same-size files;
   the build now uses `--checksum`) — use `v2.2.1`. The build also now drops
   this file from the distribution.
