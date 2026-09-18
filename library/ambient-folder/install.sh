@@ -85,6 +85,13 @@ fi
 for c in $CAPS; do
   mkdir -p "$TARGET/.ailib/$c"
   rsync -a --delete --exclude='.DS_Store' "$LIB/$c/" "$TARGET/.ailib/$c/"
+  # A capability with a contract needs the resolver beside it. The release build
+  # copies it in; installing from a source clone has it only at scripts/.
+  if [ -f "$TARGET/.ailib/$c/contract.yaml" ] && [ ! -f "$TARGET/.ailib/$c/scripts/resolve.py" ]; then
+    [ -f "$LIB/../scripts/resolve.py" ] || { echo "no resolver for '$c' at $LIB/../scripts/resolve.py" >&2; exit 2; }
+    mkdir -p "$TARGET/.ailib/$c/scripts"
+    cp "$LIB/../scripts/resolve.py" "$TARGET/.ailib/$c/scripts/resolve.py"
+  fi
 done
 python3 - "$TARGET/.ailib/manifest.yaml" "$CAP" "$DATE" $CAPS <<'PY'
 import sys,re,os,json

@@ -22,7 +22,8 @@ Target defaults to the current folder. The installer writes:
 ## Update
 
 Re-run the same command. `.ailib/` refreshes, `.aai/` is left alone.
-Add `--check` (via `install.sh`) to report drift without writing.
+Add `--check` (`bash .ailib/ambient-folder/install.sh <capability> --check [target]`)
+to report drift without writing.
 
 ## Use
 

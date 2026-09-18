@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/coachlou/ambient-library/main/libra
 Re-run to update. Runs only from the ambient-library dev workspace (it needs `scripts/` and `library/`):
 
 ```sh
-python3 in-progress/distro-kit/distro_kit.py --help    # or library/distro-kit/ once promoted
+python3 library/distro-kit/distro_kit.py --help
 ```
 
 ## Package a new app
