@@ -122,7 +122,8 @@ for f in $ANCHOR_FILES; do
 
 This folder is an ambient folder: \`$CAP\` is its agentic function.
 **Read \`.aai/instructions.md\` and follow it before acting.** "Ambient folder"
-means a folder with an \`.aai/\` behavior layer — do not scaffold a project here.
+means a folder with an \`.aai/\` behavior layer. Do not scaffold a project here
+unless \`.aai/instructions.md\` says to.
 MD
   fi
 done
