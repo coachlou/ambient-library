@@ -34,3 +34,5 @@
   about 12 components, go to a formal spec or WBS workflow.
 - The plan is `PLAN.md` in the app root. `.aai/` holds only what vibe needs
   to run. `.aai/context.md` routes to the app docs and does not copy them.
+- An older app gets the new layout at its next checkpoint: the plan moves
+  to `PLAN.md`, and `.aai/context.md` is rewritten to route to the docs.

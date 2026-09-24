@@ -53,7 +53,9 @@ finished result. The user touches each request twice: **ask** and **accept**.
 - **`.aai/` holds only what the loop needs to run:** the stamp, the context,
   and the log. Everything the user reads goes in the app root, including
   `PLAN.md`. An app with `.aai/memory/vibe/plan.md`: `git mv` it to `PLAN.md`
-  in the next checkpoint.
+  in the next checkpoint. If its `.aai/context.md` has an "App map" section,
+  rewrite the file to the form of `<skill>/templates/aai/context.md` in the
+  same checkpoint. Move any content that the docs do not have into `FUNCSPEC.md`.
 
 ## Mode and routing
 
