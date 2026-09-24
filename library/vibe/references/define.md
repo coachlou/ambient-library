@@ -2,7 +2,7 @@
 
 Read this only when step 1 picks tier L (a new app, or a request of about 3+
 slices). Define replaces step 1 for the whole plan. Its output is the app's
-`PRD.md` and `.aai/memory/vibe/plan.md`. Rules adapted from the grill skill
+`PRD.md` and `PLAN.md`, both in the app root. Rules adapted from the grill skill
 (how to ask) and solofactory's factory-guide (what to cover, how to write
 acceptance).
 
@@ -90,7 +90,7 @@ On a first build, run step 0 now. Then write `PRD.md` (every scenario as a
 numbered requirement, under one heading per component marked "planned") and
 the plan, commit them, and start the component loop.
 
-## Plan file — `.aai/memory/vibe/plan.md`
+## Plan file — `PLAN.md` (app root)
 
 ```markdown
 # Plan — <app name>

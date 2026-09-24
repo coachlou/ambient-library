@@ -32,3 +32,5 @@
   rest, and reports the live call as stuck.
 - vibe names no other skill. WBS and spec requests, and apps with more than
   about 12 components, go to a formal spec or WBS workflow.
+- The plan is `PLAN.md` in the app root. `.aai/` holds only what vibe needs
+  to run. `.aai/context.md` routes to the app docs and does not copy them.

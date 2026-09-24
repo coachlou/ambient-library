@@ -2,7 +2,7 @@
 
 ## Architecture
 
-(The parts of the app and how they connect.)
+(The stack, the key files, and how the parts connect.)
 
 ## Data
 

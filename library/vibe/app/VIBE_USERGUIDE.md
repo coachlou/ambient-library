@@ -51,7 +51,7 @@ model, logins, paid services, deletion of your data, and the stack of a new app.
 5. Read the result message at the end.
 
 The agent stops before the end only if it must ask about one of the items in
-the previous section. The plan is in `.aai/memory/vibe/plan.md`.
+the previous section. The plan is in `PLAN.md` in the app folder.
 
 ## Continue a build in a new session
 

@@ -22,6 +22,7 @@ off permanently, delete this section.
 
 | File | Load when |
 |---|---|
-| `.aai/context.md` | Always. It holds the app map and the commands. |
+| `.aai/context.md` | Always. It holds the commands and routes to the app docs. |
+| `PLAN.md` | If it exists. It holds the tier-L plan. |
 | `.aai/memory/vibe/log.md` | Always. Read the last entries only. |
 | `README.md`, `PRD.md`, `FUNCSPEC.md`, `USERGUIDE.md` | At the Docs step, or to answer a question about the app |

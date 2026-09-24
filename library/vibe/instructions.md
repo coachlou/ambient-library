@@ -50,6 +50,10 @@ finished result. The user touches each request twice: **ask** and **accept**.
   `<skill>/references/define.md` only for tier L.
 - **Long plans outlive the context window.** Keep the plan file current at
   every checkpoint. It, not the conversation, is the source of truth.
+- **`.aai/` holds only what the loop needs to run:** the stamp, the context,
+  and the log. Everything the user reads goes in the app root, including
+  `PLAN.md`. An app with `.aai/memory/vibe/plan.md`: `git mv` it to `PLAN.md`
+  in the next checkpoint.
 
 ## Mode and routing
 
@@ -71,8 +75,7 @@ While on, route by intent:
 | "Spec this as a WBS", more than ~12 components, or more than one person | not vibe: suggest a formal spec or WBS workflow (graduation path) |
 
 At the start of each session in a vibe folder, read `.aai/context.md`, the
-last ~40 lines of `.aai/memory/vibe/log.md`, and `.aai/memory/vibe/plan.md`
-if it exists.
+last ~40 lines of `.aai/memory/vibe/log.md`, and `PLAN.md` if it exists.
 
 ## The loop
 
@@ -89,9 +92,10 @@ from step 1 (the folder name if there is none).
    `## vibe mode` section of `<skill>/templates/aai/instructions.md` to it. Make
    sure `CLAUDE.md` and `AGENTS.md` tell agents to read `.aai/instructions.md`.
 3. **Stack.** Existing code: detect it. Empty folder: use the defaults below.
-4. **App map.** Fill `.aai/context.md`: purpose, stack, key files, and the
+4. **Context.** Fill `.aai/context.md`: a one-line purpose and the
    exact `dev` (the one command the user runs to use the app), `build`, `test`,
-   and `e2e` commands. Create an empty `.aai/memory/vibe/log.md`.
+   and `e2e` commands. It routes to the root docs. Never copy their content
+   into it. Create an empty `.aai/memory/vibe/log.md`.
 5. **Docs.** Copy `<skill>/templates/docs/*.md` to the app root when missing,
    replacing `{{NAME}}`.
 6. **Harness.** Set up the test runner and Playwright (web) with one passing
@@ -162,7 +166,7 @@ cheap to reverse, list it as an assumption instead of asking:
   runs steps 2–Checkpoint.
 
 **Component loop (tier L).** After the Define handoff, for each pending
-component in `.aai/memory/vibe/plan.md`, in dependency order:
+component in `PLAN.md`, in dependency order:
 
 1. **Pre-flight.** Re-read the component's scenarios against the current code
    and the log. An earlier component can make a scenario wrong, done, or
@@ -250,8 +254,8 @@ Read `<skill>/references/ste100.md`. Update `README.md`, `PRD.md`,
 `FUNCSPEC.md`, `USERGUIDE.md` to describe the app **as it is now**. Add each
 check to PRD as a numbered requirement. In tier L, PRD also lists the
 scenarios of components not built yet, under a heading marked "planned".
-Remove the mark when the component is done. Update `.aai/context.md` if commands or
-key files changed. If the app has `distro/APP_FILES`, keep it listing only the
+Remove the mark when the component is done. Update `.aai/context.md` if the commands
+changed. If the app has `distro/APP_FILES`, keep it listing only the
 user-facing files.
 
 ### Checkpoint
