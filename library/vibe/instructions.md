@@ -302,9 +302,13 @@ For a folder with `distro/`. Confirm before every write.
 1. Evals or tests green, tree clean, docs current.
 2. Bump `distro/.claude-plugin/plugin.json` version. Add a `CHANGELOG.md` entry.
 3. Commit and tag `vX.Y.Z`.
-4. From the ambient-library workspace: `distro_kit.py validate <repo>`, then
-   `distro_kit.py publish <cap> <repo> --check`. Show the plan.
-5. On go-ahead: `publish`, then `--release`. Never push unless asked.
+4. From the ambient-library dev workspace (never `~/.ailib`):
+   `distro_kit.py validate <repo>`, then `distro_kit.py publish <cap> <repo> --check`.
+   Show the plan.
+5. On go-ahead: `publish <cap> <repo>` once. Add `--release` to that same run
+   only if the user asks for production; it includes the publish. Each publish
+   bumps the library plugin version, so a second run bumps it twice. Never push
+   unless asked.
 
 ## Install (make a folder a vibe project)
 
@@ -314,4 +318,6 @@ bash "${CLAUDE_PLUGIN_ROOT}/library/ambient-folder/install.sh" vibe <app-folder>
 ```
 
 The first command is a no-write plan. Confirm the target before the second.
+If the capability is not in the production library yet, run the same script
+from the ambient-library dev clone: `<ambient-library>/library/ambient-folder/install.sh`.
 Without the plugin, "vibe on" in the folder does the same stamping at step 0.

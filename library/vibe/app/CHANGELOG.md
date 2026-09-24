@@ -36,3 +36,4 @@
   to run. `.aai/context.md` routes to the app docs and does not copy them.
 - An older app gets the new layout at its next checkpoint: the plan moves
   to `PLAN.md`, and `.aai/context.md` is rewritten to route to the docs.
+- The release step runs `publish` one time. `--release` is only for production, and it includes the publish.

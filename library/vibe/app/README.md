@@ -33,6 +33,10 @@ Use this procedure to make vibe permanent for one folder.
    bash "${CLAUDE_PLUGIN_ROOT}/library/ambient-folder/install.sh" vibe <app-folder>
    ```
 
+vibe is not in the production library yet. Until it is, use the
+ambient-library dev clone in place of `${CLAUDE_PLUGIN_ROOT}`:
+`bash <ambient-library>/library/ambient-folder/install.sh vibe <app-folder>`.
+
 ### Use vibe without the installer (session mode)
 
 1. Open your agent in the app folder.
