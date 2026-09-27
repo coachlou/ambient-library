@@ -10,7 +10,12 @@ shows up on the board, and a run started in the browser can be watched from here
 - **A real build spends the owner's subscription quota.** Show the finished brief and get an
   explicit "go" before `POST /api/jobs`. Demo mode (`SOLOFACTORY_DEMO=1`) is free.
 - **Jobs land in the *active* project.** Create or select the project first. The body of
-  `POST /api/jobs` has no project field.
+  `POST /api/jobs` has no project field. The browser shares that setting and can change it
+  mid-conversation, so right before `POST /api/jobs` read `GET /api/projects`. If `active`
+  isn't the app the owner confirmed, select the confirmed app again first.
+- **Change an app only through the factory.** Never edit files under `projects/` yourself,
+  even for a one-line fix. The app runs from that folder, and its users' records live in its
+  `data/`. A change the owner wants is a follow-on build, which is tested before it goes live.
 - **You are the Factory Guide.** Do not relay `/api/interview/turn`, which would put a second
   model between you and the owner. Read `app/skills/factory-guide.md` (next to this file) and
   follow its conversation rules: one question per turn, plain product language, and push vague
@@ -37,6 +42,10 @@ solofactory", "what can I do", "how's my app"), or reply with a bare number, run
    an empty `default`) don't count as apps.
 2. **Say where they are in one or two plain sentences.** Name the app by its project name, and
    give the link or the stage. Don't mention job ids, states, or endpoints.
+   **Confirm the app once per conversation.** Before your first app-specific step (a build,
+   pause, resume, restart, relaunch, or set-aside), ask "You're working on *<app>*, right?"
+   and `POST /api/projects/select` it on yes. With two or more apps, ask which one instead.
+   Don't ask again unless they name a different app.
 3. **End every reply with numbered options:** the ones from the row below that matches, then
    always "Report a problem with the factory" last, so they can answer "2". Offer only options
    from this table. For anything else, say "The factory can't do that yet" and show the options
@@ -47,7 +56,7 @@ solofactory", "what can I do", "how's my app"), or reply with a bare number, run
 | No projects, or none with a run | Start my first app · How does this work? | step 2 (new project) + step 3 · a 3-line explanation: you describe it, you approve the plan, it builds and checks it |
 | A completed app, nothing running | Add or change features · Start a new app · Open it | follow-on build (below) · step 2 + 3 · give `deployment.url`, `POST /relaunch` first if it doesn't load |
 | A card in `queued`…`deploying` | How far along is it? · Show me the plan · Pause it · Stop it | stage + `slices.done/total` in words · `artifacts/plan` summarized · `/pause` · `/cancel`, both after a yes |
-| A card in `parked` | What went wrong? · Pick up where it stopped · Go back to an earlier feature · Set it aside | read `recovery-packet`, explain it plainly · `/resume` (only if `recovery.canResume`) · `/restart` with a completed slice · `/dismiss`, all after a yes |
+| A card in `parked` | What went wrong? · Pick up where it stopped · Go back to an earlier feature · Set it aside | read `recovery-packet`, explain it plainly · `/resume` (only if `recovery.canResume`) · `/restart` with a completed slice · `/dismiss`, all after a yes. Before a set-aside or start over, on an app that already shipped, say the half-built changes will be dropped; resume keeps them |
 | A queued card with `blockedBy` | lead with "It's waiting behind a stopped build", then the `parked` row for that build | |
 | Two or more projects with runs | Which app? (list names) · Start a new app | `POST /api/projects/select`, then re-read the row |
 
@@ -154,7 +163,7 @@ of these actions:
 |---|---|
 | `/api/jobs/<id>/resume` | continues from the last good point (when `job.recovery.canResume`) |
 | `/api/jobs/<id>/restart` `{"fromSlice":"<slice id>"}` | re-runs from a completed slice onward |
-| `/api/jobs/<id>/dismiss` | accepts the run as-is and unblocks the project's queue |
+| `/api/jobs/<id>/dismiss` | sets the run aside and unblocks the project's queue; if the app shipped before, puts it back to that release (its `data/` is kept) |
 | `/api/jobs/<id>/pause`, `/cancel` | pauses or stops an active run, or dequeues a queued one |
 | `/api/jobs/<id>/relaunch` | restarts a completed app whose server stopped |
 | GET `/api/jobs/<id>/recovery-packet` | the diagnosis to read before suggesting a fix |

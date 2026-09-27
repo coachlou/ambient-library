@@ -106,6 +106,13 @@ export class SoloFactory {
       // A manifest already in the project means an earlier release shipped: spec and slice
       // this brief as an increment on top of it. Stamped once so resumes stay consistent.
       job.followOn ??= existsSync(path.join(appDir, "factory.json"));
+      // The shipped app (plus anything attached since) is what "Set it aside" and "Start over"
+      // rewind a failed follow-on to; data/ is gitignored, so the rewind keeps owner data.
+      // Only a clean tree is a safe point: if the commit failed, record nothing and never rewind.
+      if (job.followOn && !job.baseCommit) {
+        await this.commit(job, "factory: before follow-on");
+        if (!(await this.store.git("status", "--porcelain").catch(() => "unknown"))) job.baseCommit = await this.store.git("rev-parse", "HEAD");
+      }
       await mkdir(path.join(factoryDir, "logs"), { recursive: true });
       await writeFile(
         path.join(factoryDir, "requirements.json"),
@@ -599,8 +606,11 @@ export class SoloFactory {
   async relaunch(jobId) {
     const job = await this.store.read(jobId);
     if (job.state !== "completed" || job.deployment?.status === "live") throw new FactoryError("not_relaunchable", "Only a completed run whose app is not running can be relaunched.");
-    const [newest] = await this.store.list();
-    if (newest.id !== job.id) throw new FactoryError("not_relaunchable", "A newer run exists in this project; relaunch that one.");
+    // A newer run blocks only if its work may still be in the folder: set aside with a rollback
+    // point means the server rewound it, so the folder holds this job's release again.
+    const runs = await this.store.list();
+    const newer = runs.slice(0, runs.findIndex((run) => run.id === job.id));
+    if (newer.some((run) => !(run.dismissed && run.baseCommit))) throw new FactoryError("not_relaunchable", "A newer run exists in this project; relaunch that one.");
     const manifest = await this.readManifest(this.store.appDir(jobId));
     await mkdir(path.join(this.store.appDir(jobId), ".factory", "logs"), { recursive: true }); // gitignored, so may be absent
     job.deployment = await this.deployLocal(job, manifest, new AbortController().signal);

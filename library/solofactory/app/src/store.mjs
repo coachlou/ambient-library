@@ -38,7 +38,7 @@ export class JobStore {
     // ponytail: append-only ignore rules; a hand-edited .gitignore keeps its own lines
     const ignoreFile = path.join(this.project, ".gitignore");
     const current = await readFile(ignoreFile, "utf8").catch(() => "");
-    const missing = [".solofactory/", ".factory/logs/", ".aai/memory/"].filter((rule) => !current.split("\n").includes(rule));
+    const missing = [".solofactory/", ".factory/logs/", ".aai/memory/", "data/"].filter((rule) => !current.split("\n").includes(rule));
     if (missing.length) await writeFile(ignoreFile, `${current}${current && !current.endsWith("\n") ? "\n" : ""}${missing.join("\n")}\n`);
     await this.scaffoldContext();
   }
@@ -59,6 +59,12 @@ export class JobStore {
       const current = await readFile(target, "utf8").catch(() => "");
       if (current.includes("ambient folder")) continue;
       await writeFile(target, `${current}${current && !current.endsWith("\n") ? "\n" : ""}${current ? "\n" : ""}${ANCHOR}`);
+    }
+    // Appended by heading rather than templated, so projects scaffolded before 0.9.5 get it too.
+    const instructions = path.join(this.project, ".aai", "instructions.md");
+    const rules = await readFile(instructions, "utf8");
+    if (!rules.includes("## The app is live")) {
+      await writeFile(instructions, `${rules}${rules.endsWith("\n") ? "" : "\n"}${await readFile(path.join(templatesRoot, "live-app.md"), "utf8")}`);
     }
   }
 
