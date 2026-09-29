@@ -169,6 +169,7 @@ separate decisions, and so is the moment you ship:
 Production keeps serving the previous version until you rebuild. That is a
 feature: a promoted capability can sit in the canonical library through as many
 sessions as you like before it reaches anyone's folder.
+Promoting never enables it anywhere; that is the last step of a release.
 
 ### Release a skill to production
 
@@ -181,6 +182,10 @@ skill is how a library accumulates capabilities nobody trusts.
 3. Preview: `scripts/build-production.sh --dry-run`. Nothing is written; you
    see exactly which files would land.
 4. Build: `scripts/build-production.sh`.
+5. Enable it. Ask the user where: every project (`~/.aai/skills-manifest.yaml`),
+   this project, or not yet. Then follow `manage.md` → **Enable a domain skill**.
+   Domain skills are opt-in, so a released skill that isn't in a manifest only
+   runs when someone names it — the router never picks it up.
 
 The build refuses if the audit fails, if `RELEASE.yaml` names a skill that
 does not exist or is not in the catalog, or if it is run from a clone marked
