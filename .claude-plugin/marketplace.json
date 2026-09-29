@@ -52,6 +52,11 @@
    "description": "Exports and archives a chat conversation or session as portable markdown \u2014 conversation only, or with the artifacts the session produced; use for \"export this conversation\", \"capture this chat\", \"save this session\", \"export with artifacts\". Defaults to the cross-harness .aai session archive; redirectable to any path."
   },
   {
+   "name": "chat-n-build",
+   "source": "./library/chat-n-build",
+   "description": "Runs a live local dashboard you drive by talking to the agent: it keeps a process's state on screen, answers buttons, adds widgets on demand, and skillifies the process; use for \"fire up a dashboard for my X\", \"show this on the dashboard\", \"turn this process into a skill\"."
+  },
+  {
    "name": "checkpoint",
    "source": "./library/checkpoint",
    "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows \u2014 distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\"."
