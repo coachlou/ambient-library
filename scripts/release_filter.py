@@ -63,7 +63,7 @@ KEEP_DIRS = [
     "bundles",
 ]
 # docs/ is mixed: consumer guides ship, maintainer and planning notes do not.
-DROP_DOCS = ["MANAGEMENT.md", "DEFERRED-IDEAS.md"]
+DROP_DOCS = ["MANAGEMENT.md", "DEFERRED-IDEAS.md", "JEV-OPPORTUNITIES.md"]
 # Authoring only — production cannot create, propose, or promote a skill.
 DROP_SUBSKILLS = ["admin.md", "propose.md"]
 
