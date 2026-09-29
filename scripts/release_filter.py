@@ -53,7 +53,14 @@ if uncatalogued:
     )
 
 # --- what production needs to install and vend ---------------------------
-KEEP_FILES = ["README.md", "SKILLS.md", "ARCHITECTURE.md", "AGENTS.md", "CLAUDE.md", "GEMINI.md"]
+KEEP_FILES = [
+    "README.md",
+    "SKILLS.md",
+    "ARCHITECTURE.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+]
 KEEP_DIRS = [
     ".claude-plugin",
     ".codex-plugin",
@@ -79,7 +86,10 @@ for d in KEEP_DIRS:
 
 # the one script a user of an installed library runs: is my folder compliant?
 os.makedirs(os.path.join(stage, "scripts"))
-shutil.copy2(os.path.join(src, "scripts", "audit-compliance.py"), os.path.join(stage, "scripts", "audit-compliance.py"))
+shutil.copy2(
+    os.path.join(src, "scripts", "audit-compliance.py"),
+    os.path.join(stage, "scripts", "audit-compliance.py"),
+)
 
 # docs/ — consumer guides only
 os.makedirs(os.path.join(stage, "docs"))
@@ -188,5 +198,9 @@ distributed from https://github.com/coachlou/aai-library.
 
 To propose a new or revised skill from here: .aai/skills/propose-upstream.md.
 """)
+
+# Its own, not the dev .gitignore: that one hides .aai/PRODUCTION, which ships.
+# Keeps OS/runtime litter in installed clones out of `git status`.
+open(os.path.join(stage, ".gitignore"), "w").write(".DS_Store\n__pycache__/\n")
 
 print(f"staged {len(released)} skills")
