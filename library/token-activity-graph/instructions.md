@@ -16,8 +16,10 @@ Exit with "No Claude Code session data found" if missing or empty.
 
 **2. Fetch live pricing**
 
-`GET https://models.dev/api.json` and filter to Claude models. Extract per-model:
-- `input_price`, `output_price`, `cache_read_price`, `cache_creation_price` ($/1M tokens)
+`GET https://models.dev/api.json` and read `anthropic.models.<model-id>.cost`. Extract per-model:
+- `input`, `output`, `cache_read`, `cache_write` ($/1M tokens)
+
+Models with no `cost` (e.g. non-Claude or `:free` variants in the stats) cost $0 — list them in the page footnote.
 
 If cache prices missing, derive: `cache_read = input × 0.1`, `cache_write = cache_read × 3`.
 
@@ -49,7 +51,9 @@ Aggregate dailyModelTokens by date and app into:
 }
 ```
 
-**Token split estimation:** If source provides only totals (no split), estimate input 30% / output 70%.
+**Token split:** each `dailyModelTokens` total is input + output + cache read + cache write combined. Split it with that model's lifetime mix from `modelUsage`: `in = total × inputTokens / Σ`, `out = total × outputTokens / Σ`, `cr = total × cacheReadInputTokens / Σ`, `cw = total × cacheCreationInputTokens / Σ`, where `Σ` is the sum of those four fields. Only when a model is missing from `modelUsage` (or its four fields sum to 0), fall back to input 30% / output 70% and say so in the footnote.
+
+**Calls:** `dailyActivity[date].messageCount`, shared across that day's models by token share.
 
 Cost = `(in × in_price + out × out_price + cr × cr_price + cw × cw_price) ÷ 1,000,000`
 
@@ -82,6 +86,8 @@ File must run in a live browser (file:// blocks JS in static preview). Use `open
 - **Validate the data block before inlining** — `json.loads` it (or `JSON.parse`) and confirm `days` is non-empty. An invalid block now renders an error, not a graph.
 - **Claude Code only** — other agents (Codex, Cline, etc.) lack aggregated stats. Skip unless user explicitly includes others.
 - **One self-contained file** — move it anywhere, it still works (all data inlined).
+- **Never apply 30/70 to the whole dataset** — Claude Code traffic is ~95% cache reads (cheapest rate) and <1% output (dearest). Pricing daily totals as 30/70 input/output overstates cost ~23×; on one real 43-day dataset it gave $195,638 against $8,632 with the lifetime mix.
+- **Stats can be stale** — `lastComputedDate` is when Claude Code last rebuilt the cache, not today. Put the date range in the footnote so a gap (and a "0 day streak") isn't read as inactivity.
 - **Cache pricing rule:** Mark "3x" as a comment if derived.
 - **Local file limitations** — browsers block JS on file:// URLs in some contexts. Instruct user to open in browser directly.
 
@@ -89,9 +95,9 @@ File must run in a live browser (file:// blocks JS in static preview). Use `open
 
 ## Data source notes
 
-- **dailyModelTokens:** Total tokens per model per day (no input/output split).
-- **modelUsage:** Cumulative per-model counts used for pricing reference.
-- **Graph input/output split:** Estimated 30/70 when source lacks split. Refine if actual breakdown is available.
+- **dailyModelTokens:** Total tokens per model per day — all four types combined, no split.
+- **modelUsage:** Cumulative per-model input / output / cache-read / cache-write counts — the source of the daily split ratios. `costUSD` there is 0; ignore it.
+- **Split accuracy:** the lifetime mix is exact in total but approximate per day. 30/70 is a last resort for models without `modelUsage` only.
 
 ---
 
