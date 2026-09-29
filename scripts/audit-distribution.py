@@ -42,7 +42,11 @@ FM_FIELD = re.compile(r"^(name|description): (.+?)\s*$", re.M)
 # SKILL.md descriptions verified as deliberate tuning of their catalog line. Each is
 # pinned to a hash of both texts, so editing either one brings the warning back.
 # To record one, copy the hash its warning prints.
-TUNED_DESCRIPTIONS = { "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
+TUNED_DESCRIPTIONS = {
+    "capture-chat": "e6d216948e17",  # names harnesses, vault phrasings, both modes
+    "chat-n-build": "3f7ee5193e45",  # more trigger examples + not-for negatives
+    "checkpoint": "e6ab8abb1f5a",  # spells out both modes and their triggers
+    "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
 }
 
 
@@ -125,19 +129,33 @@ def check_contract(skill_dir):
     for sec in SECTION.values():
         filled = [k for k, v in (contract.get(sec) or {}).items() if v]
         if filled:
-            problems.append(f"contract.yaml ships values for {', '.join(filled)} — canonical stays empty")
+            problems.append(
+                f"contract.yaml ships values for {', '.join(filled)} — canonical stays empty"
+            )
 
     body = next(
-        (f for f in ("instructions.md", "SKILL.md") if os.path.exists(os.path.join(skill_dir, f))),
+        (
+            f
+            for f in ("instructions.md", "SKILL.md")
+            if os.path.exists(os.path.join(skill_dir, f))
+        ),
         None,
     )
-    if not body or "scripts/resolve.py --start" not in open(os.path.join(skill_dir, body)).read():
-        problems.append(f"{body or 'body file'} does not open with the Project block (no `scripts/resolve.py --start`)")
+    if (
+        not body
+        or "scripts/resolve.py --start"
+        not in open(os.path.join(skill_dir, body)).read()
+    ):
+        problems.append(
+            f"{body or 'body file'} does not open with the Project block (no `scripts/resolve.py --start`)"
+        )
 
     copy = os.path.join(skill_dir, "scripts", "resolve.py")
     source = os.path.join(ROOT, "scripts", "resolve.py")
     if os.path.exists(copy) and open(copy).read() != open(source).read():
-        problems.append("scripts/resolve.py differs from the repo's scripts/resolve.py — the build copies it; delete the hand copy")
+        problems.append(
+            "scripts/resolve.py differs from the repo's scripts/resolve.py — the build copies it; delete the hand copy"
+        )
 
     for dirpath, _, files in os.walk(skill_dir):
         for f in files:
@@ -151,9 +169,13 @@ def check_contract(skill_dir):
                 continue
             for cls, key in set(PLACEHOLDER.findall(text)):
                 if key not in (contract.get(SECTION[cls]) or {}):
-                    problems.append(f"{rel}: {{{{{cls}.{key}}}}} is not a key in contract.yaml")
+                    problems.append(
+                        f"{rel}: {{{{{cls}.{key}}}}} is not a key in contract.yaml"
+                    )
             for m in sorted(set(re.findall(r"YOUR_[A-Z_]+", text))):
-                problems.append(f"{rel}: hand-edit placeholder {m} — use a contract key")
+                problems.append(
+                    f"{rel}: hand-edit placeholder {m} — use a contract key"
+                )
     return problems
 
 
@@ -163,14 +185,22 @@ def self_test():
 
     d = tempfile.mkdtemp()
     put = lambda name, text: open(os.path.join(d, name), "w").write(text)
-    put("contract.yaml", "environment:   # inherited\n  alias:  # hint\nproject:\n  group:\n")
-    put("instructions.md", "run `scripts/resolve.py --start .`\n{{project.group}} via {{env.alias}}, then {{BODY_HTML}}\n")
+    put(
+        "contract.yaml",
+        "environment:   # inherited\n  alias:  # hint\nproject:\n  group:\n",
+    )
+    put(
+        "instructions.md",
+        "run `scripts/resolve.py --start .`\n{{project.group}} via {{env.alias}}, then {{BODY_HTML}}\n",
+    )
     assert check_contract(d) == [], check_contract(d)
     put("contract.yaml", "environment:\n  alias: lou\nproject:\n  group:\n")
     put("instructions.md", "{{project.groop}} {{env.group}} YOUR_GROUP_NAME\n")
     got = check_contract(d)
     assert len(got) == 5, got  # value shipped, no block, two bad keys, one YOUR_
-    assert pair_hash("a", "bc") != pair_hash("ab", "c")  # separator keeps the pair unambiguous
+    assert pair_hash("a", "bc") != pair_hash(
+        "ab", "c"
+    )  # separator keeps the pair unambiguous
     print("self-test passed")
 
 
@@ -221,9 +251,9 @@ def main():
                 )
             if not fm.get("description"):
                 errors.append(f"{name}: SKILL.md frontmatter has no description")
-            elif fm["description"] != desc and TUNED_DESCRIPTIONS.get(name) != pair_hash(
-                desc, fm["description"]
-            ):
+            elif fm["description"] != desc and TUNED_DESCRIPTIONS.get(
+                name
+            ) != pair_hash(desc, fm["description"]):
                 # Warning, not drift. A SKILL.md description is the live routing
                 # trigger for the standalone install, where the skill competes
                 # against every other skill the user has — the catalog line only
@@ -262,7 +292,9 @@ def main():
             for line in open(dep_file, encoding="utf-8"):
                 dep = line.split("#", 1)[0].strip()
                 if dep and not os.path.isdir(os.path.join(ROOT, "library", dep)):
-                    errors.append(f"{name}: DEPENDS names {dep!r}, which is not in library/")
+                    errors.append(
+                        f"{name}: DEPENDS names {dep!r}, which is not in library/"
+                    )
 
         if os.path.exists(os.path.join(skill_dir, "contract.yaml")):
             errors += [f"{name}: {p}" for p in check_contract(skill_dir)]
