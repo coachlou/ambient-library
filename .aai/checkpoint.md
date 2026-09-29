@@ -1,6 +1,66 @@
 # Checkpoint — ambient-library
 
 ## Current state
+**Next objective:** none queued. Released and tagged **v2.7.3**; `~/.ailib` is
+on v2.7.3 with a clean `git status`; the audit runs with zero warnings.
+
+**Parked:** AIMM newsletter migration, no test send yet — see the 2026-09-17
+section for how to resume.
+
+**Open, Lou's call:**
+- gears-* rollout steps 5–6; scrub gears-broadcast's segment ID from history;
+  collapse gears-* into one capability.
+- Docs gaps from the 2.2.2 review (links to `MANAGEMENT.md`, which doesn't ship,
+  etc.) — listed in the 2026-09-17 section.
+- 27 `in-progress/` candidates still unreviewed (`in-progress/CANDIDATES.md`).
+- `~/.claude/stats-cache.json` stopped updating at 2026-08-30, so the token
+  graph shows no data after that date. Cause not investigated.
+
+---
+
+## 2026-09-29 checkpoint
+
+**Done since last:**
+- **token-activity-graph brought in through the dev repo** (it had been
+  hand-added to `~/.ailib`). Promoted, released, `~/.ailib` restored to clean.
+  - 1.0.1: `graph.js` is a pinned fork of bentossell.com's renderer with the
+    remote data fetch removed (upstream charts its author's usage when inline
+    data is missing). `check-graph.js` is its smoke test.
+  - 1.0.2: daily totals are split by each model's lifetime in/out/cache mix
+    from `modelUsage`, not a flat 30/70. Why: usage is ~95% cache reads, so
+    30/70 priced it ~23× too high ($195,638 vs $8,632 over 43 days).
+- **publish-article enabled everywhere** in `~/.aai/skills-manifest.yaml`.
+  `admin.md` → Release now ends with step 5: ask where to enable the skill.
+  Why: an unlisted domain skill is only reachable by name.
+- **Audit warnings cleared.** `TUNED_DESCRIPTIONS` in
+  `scripts/audit-distribution.py` records checked SKILL.md/catalog description
+  pairs by a hash of both texts; editing either one brings the warning back.
+  publish-article, capture-chat, chat-n-build and checkpoint were all
+  deliberate tuning, not drift.
+- **Housekeeping:** untracked a committed `distro-kit` `.pyc`; `__pycache__/`
+  now in the dev `.gitignore`; the build (`scripts/release_filter.py`) writes
+  its own `.gitignore` (`.DS_Store`, `__pycache__/`) into the distribution,
+  since rsync `--delete` wipes anything added there by hand.
+- Versions: wrappers 2.7.1 → 2.7.3. 2.7.2 was reused by two untagged
+  republishes; 2.7.3 tags them.
+
+**Touched:** `library/token-activity-graph/`, `library/catalog.yaml`,
+`.claude-plugin/marketplace.json`, `SKILLS.md`, `RELEASE.yaml`,
+`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`,
+`.aai/skills/admin.md`, `scripts/audit-distribution.py`,
+`scripts/release_filter.py`, `.gitignore`, `~/.aai/skills-manifest.yaml`.
+
+**Open:** checkpoint's standalone SKILL.md also claims "what should I work
+on", which overlaps Claudio's EA triggers. Harmless inside the library, where
+the catalog line routes it; left as-is.
+
+**Next:** nothing in flight. The next release that changes a skill bumps to
+2.7.4 (the publish script refuses to tag a version that already exists).
+
+---
+
+## 2026-09-17 checkpoint (former Current state header, kept verbatim)
+
 **Next objective:** none queued — the personalization layer is built,
 documented, and released (2.2.2). The AIMM newsletter migration is **parked as work in
 progress**: Lou is not using aimm-newsletter right now (sends go through the
