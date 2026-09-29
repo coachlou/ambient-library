@@ -53,13 +53,14 @@ STEP 1 — HARVEST (catch any conversations missed by daily runs):
 
 STEP 2 — MINE:
 - Run Mine mode against my conversations from the past 7 days
-- Read references/cognitive-profile.md and compare new observations
+- Read ~/.aai/identity.md and the modules under ~/.aai/references/identity/,
+  and compare new observations
 - Produce a Mirror Report with confirmed, new, challenged, and fading patterns
 - Save proposed profile updates to references/mine-review-[today's date].md
   for my review (do NOT auto-apply profile changes)
 
 STEP 3 — DIRECTIVE CHECK:
-- Read references/operational-directives.md
+- Read ~/.aai/rules/operational.md and the modules under ~/.aai/rules/operational/
 - If any Mine observations suggest new or modified directives, include
   proposed directive updates in the mine-review file
 
