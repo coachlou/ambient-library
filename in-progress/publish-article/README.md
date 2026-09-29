@@ -5,11 +5,21 @@ aimmhub.coachlou.com. Writing skills (article-studio, the writing teams,
 evaluate-article) end at "here's a draft"; this is the missing last step.
 
 Drafted (2026-09-29): `instructions.md`, `SKILL.md`, `.claude-plugin/plugin.json`,
-`evals/trigger-evals.json`. Not yet promoted or in the catalog. Standalone trigger
-evals scored 0/8 should-trigger: in Lou's environment, routing goes through
-`~/.aai/references/publishing.md` first, and that file still sends hub publishing to
-the old here.now `publish-hub.sh`. Fix that routing, re-run the evals, then run
-`bash scripts/promote.sh publish-article`.
+`evals/trigger-evals.json`, `evals/route_eval.py`. Not yet promoted or in the catalog.
+
+Trigger evals: create-skill's `run_eval` can't measure this environment. It scores
+only the first tool call, which is always the `~/.aai` load, so every should-trigger
+reads 0. `evals/route_eval.py` scores the whole trajectory instead (run it from a
+directory that has `.claude/`, with `CLAUDECODE` unset):
+
+    env -u CLAUDECODE python3 route_eval.py <trigger-evals.json> <SKILL.md>
+
+With `~/.aai/references/publishing.md` routing hub publishing here (2026-09-29): 15/18.
+- One route went to `aimm-send` (the newsletter command) for "post this article to aimmhub".
+- One query hunted for a nonexistent file and never routed.
+- One false "trigger" is a release request that legitimately reads this skill's files.
+
+Next: `bash scripts/promote.sh publish-article --dry-run`.
 
 ## Proven by hand (2026-09-29, "Transfer Your Intelligence, Not Your Content")
 
