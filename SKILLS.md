@@ -35,6 +35,7 @@ until the router reads one. Optionally scope which a project uses via
 | **chat-n-build** | Live local dashboard driven by chat: the agent keeps a process's state on screen via the `dash` CLI, answers button clicks, builds sandboxed custom widgets, and skillifies the process | *"Fire up a dashboard for my X"*, *"Show this on the dashboard"*, *"Turn this process into a skill"* |
 | **aimm-newsletter** | Sends a newsletter email to a named Google Contacts group | *"Send this to [group]"*, *"Send the newsletter"* |
 | **aimm-writing-team** | Autonomous multi-role AIMM article team (Researcher → Publisher) | *"Use Strategist mode"*, full AIMM article run |
+| **publish-article** | Publishes a finished Markdown article to aimmhub.coachlou.com — KB ingest, deploy, live check | *"Publish this article"*, *"Put it on the hub"* |
 | **audit-fix** | Six-lens adversarial audit of a plan or change, then root-cause fixes | *"Audit this"*, *"Pressure test"*, *"Poke holes"* |
 | **audit-mcp** | Security audit of a third-party MCP server repo before install | *"Audit this MCP"*, *"Is this MCP safe"* |
 | **skill-auditor** | Audits a skill's `SKILL.md` frontmatter, catalog projection, references, and evals shape against the library schema | *"Audit this skill"*, *"Does X follow the schema"*, *"Lint X against the catalog"* |
