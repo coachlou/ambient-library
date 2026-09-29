@@ -12,7 +12,7 @@ Read the cognitive-mirror skill at cognitive-mirror/SKILL.md and load
 references/harvest-dimensions.md.
 
 Run Harvest mode against my conversations from the last 24 hours.
-Check references/harvest-log.txt and skip any already harvested.
+Check ~/.aai/memory/cognitive-mirror/harvest-log.txt and skip any already harvested.
 
 For each new conversation:
 1. Scan for decision moments using the 7 harvest dimensions
@@ -21,11 +21,11 @@ For each new conversation:
 
 Then:
 - Auto-append HIGH-confidence instances to the active harvest store shard
-- Save MEDIUM-confidence instances to references/harvest-review-[today's date].md
+- Save MEDIUM-confidence instances to ~/.aai/memory/cognitive-mirror/harvest-review-[today's date].md
   formatted as a checklist I can quickly approve/edit/discard
 - Discard LOW-confidence instances (mention count in report only)
-- Update references/harvest-log.txt with conversations processed
-- Update references/harvest-store/store-index.json with new counts
+- Update ~/.aai/memory/cognitive-mirror/harvest-log.txt with conversations processed
+- Update ~/.aai/memory/cognitive-mirror/harvest-store/store-index.json with new counts
 - Produce a brief Harvest Report summary
 
 If no conversations from the last 24 hours contain extractable decisions,
@@ -45,10 +45,10 @@ Read the cognitive-mirror skill at cognitive-mirror/SKILL.md.
 Load references/extraction-dimensions.md AND references/harvest-dimensions.md.
 
 STEP 1 — HARVEST (catch any conversations missed by daily runs):
-- Check references/harvest-log.txt for gaps
+- Check ~/.aai/memory/cognitive-mirror/harvest-log.txt for gaps
 - Run Harvest mode against any unharvested conversations from the past 7 days
 - Auto-append HIGH-confidence instances to the active harvest store shard
-- Save MEDIUM-confidence instances to references/harvest-review-[today's date].md
+- Save MEDIUM-confidence instances to ~/.aai/memory/cognitive-mirror/harvest-review-[today's date].md
 - Update harvest-log.txt and store-index.json
 
 STEP 2 — MINE:
@@ -56,7 +56,7 @@ STEP 2 — MINE:
 - Read ~/.aai/identity.md and the modules under ~/.aai/references/identity/,
   and compare new observations
 - Produce a Mirror Report with confirmed, new, challenged, and fading patterns
-- Save proposed profile updates to references/mine-review-[today's date].md
+- Save proposed profile updates to ~/.aai/memory/cognitive-mirror/mine-review-[today's date].md
   for my review (do NOT auto-apply profile changes)
 
 STEP 3 — DIRECTIVE CHECK:
@@ -65,7 +65,7 @@ STEP 3 — DIRECTIVE CHECK:
   proposed directive updates in the mine-review file
 
 Save the combined report as:
-references/weekly-mirror-report-[today's date].md
+~/.aai/memory/cognitive-mirror/weekly-mirror-report-[today's date].md
 
 Report summary should include:
 - Harvest: N new instances found, N conversations scanned, domain breakdown
@@ -99,13 +99,13 @@ store-index.json) and how many more I likely need to reach 40.
 ## Review Processor (after you review flagged instances)
 
 ```
-Read references/harvest-review-[DATE].md.
+Read ~/.aai/memory/cognitive-mirror/harvest-review-[DATE].md.
 
 For each instance I marked as APPROVED: append to the active harvest store shard
 For each instance I marked as EDITED: apply my edits and append to store
 For each instance I marked as DISCARD: skip
 
-Update references/harvest-store/store-index.json with new counts.
+Update ~/.aai/memory/cognitive-mirror/harvest-store/store-index.json with new counts.
 
 Report: N approved, N edited, N discarded. New store total: N instances.
 Domain breakdown of store after update.
@@ -116,7 +116,7 @@ Domain breakdown of store after update.
 ## DSPy Export (when a domain reaches 40+ instances)
 
 ```
-Read references/harvest-store/store-index.json.
+Read ~/.aai/memory/cognitive-mirror/harvest-store/store-index.json.
 Identify which shard(s) contain instances for domain = "[TARGET DOMAIN]".
 Read only those shards. Filter for confidence = "high".
 
