@@ -70,6 +70,7 @@ skills:
   - skill-evals
   - teaching-block-synthesized
   - to-issues
+  - token-activity-graph
   - transcript-to-content-pipeline
   - trello-pipeline
   - trigger-runner
