@@ -184,7 +184,11 @@ def self_test():
     import tempfile
 
     d = tempfile.mkdtemp()
-    put = lambda name, text: open(os.path.join(d, name), "w").write(text)
+
+    def put(name, text):
+        with open(os.path.join(d, name), "w") as f:
+            f.write(text)
+
     put(
         "contract.yaml",
         "environment:   # inherited\n  alias:  # hint\nproject:\n  group:\n",
