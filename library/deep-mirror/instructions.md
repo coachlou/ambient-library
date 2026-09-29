@@ -22,6 +22,17 @@ rather than merely stale.
 - **Raw session logs never enter the main context.** All file mining goes
   through cheap-model subagents that return structured findings only. The
   archives total hundreds of MB; the main session holds evidence, never logs.
+- **Split the models by job: cheap extracts, strong synthesizes.** Cheap
+  subagents (Haiku) are fine for decision instances, because every quote is
+  grep-verified against the source before storing and errors get caught.
+  They are NOT fine for cognitive patterns: in 2026-09 runs they misattributed
+  assistant text to Lou, mislabeled receipts, and — because each batch sees
+  only a slice — could not see a pattern spread thinly across batches. So
+  pattern-finding runs as ONE strong-model pass (Opus) over the whole filtered
+  corpus at once, blind to the profile. Discard per-batch pattern notes. If
+  the corpus is too large for one context (bootstrap, audit), cheap batches
+  return dated verbatim receipts only, and the strong pass synthesizes
+  patterns across all of them.
 - **The audit runs BLIND.** Do not read the cognitive profile before or during
   audit mining. Loading it first is the exact contamination the audit exists to
   detect. Profile comparison happens only after cold findings are complete.
@@ -165,6 +176,10 @@ This mode is a thin dispatcher — the work belongs to `cognitive-mirror`.
 2. Invoke the `cognitive-mirror` skill: run **Mine mode** over the past week's
    conversations, then **Harvest mode** (it deduplicates via its own
    harvest-log). Follow that skill's own procedures — do not reimplement them.
+   Model split for this step (see Gotchas): Haiku batches produce Harvest
+   decision instances only; one Opus subagent reads the whole week's filtered
+   turns, without the profile, and produces the Mine observations. Only then
+   read the profile and diff against it.
 3. Cognitive-mirror presents its Mirror Report and proposed updates; Lou
    approves or declines per its normal flow.
 4. Update `last_weekly` in the state file.
@@ -233,3 +248,7 @@ notice yourself reading a session file directly in the main session, stop and
 dispatch a subagent instead. Expected order of magnitude: bootstrap ≈ a
 mid-double-digit-dollar API-equivalent run with delegation (triple without);
 audits a small fraction of that; weekly runs are conversation-level and cheap.
+
+On a subscription the real cost is weekly usage allowance, not dollars.
+Spend it where judgment happens: the one strong-model pattern pass is worth
+roughly one long session of usage; the extraction around it stays cheap.
