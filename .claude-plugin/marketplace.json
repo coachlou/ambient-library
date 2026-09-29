@@ -287,6 +287,11 @@
    "description": "Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for \"turn this plan into issues\", \"break this PRD into tickets\"."
   },
   {
+   "name": "token-activity-graph",
+   "source": "./library/token-activity-graph",
+   "description": "Builds an interactive self-contained HTML graph of token usage by day, app, and model with live pricing; use for \"build a token activity graph\", \"show my token usage\", \"visualize my API costs\"."
+  },
+  {
    "name": "transcript-to-content-pipeline",
    "source": "./library/transcript-to-content-pipeline",
    "description": "Turns a raw transcript or session notes into a full content package (article, LinkedIn variants, summary, audio script); use for \"turn this into content\", \"write something from this transcript\"."

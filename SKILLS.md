@@ -86,6 +86,7 @@ until the router reads one. Optionally scope which a project uses via
 | **wbs-toolkit** | Installs and operates the outcome-driven WBS toolkit as a folder's agentic planning and verified execution function | *"Set up WBS here"*, *"Spec this project"*, *"Run the WBS"* |
 | **distro-kit** | Package any app repo as an ambient-library capability with one install standard (init/validate/publish) | *"Make a distro"*, *"Package this for ambient-library"*, *"Publish capability"* |
 | **vibe** | Vibe mode — a persistent, test-first build loop for local web apps and CLIs. The user describes a change; the loop tests, builds, runs, screenshots, fixes, commits, and shows the result. Use when the user says "vibe on", "/vibe", "let's vibe this", "vibe code a ...", asks to install or set up vibe in a folder, or works in a folder whose .aai/instructions.md marks it as a vibe project. Also handles "vibe off". Do not use for a plain "I want to build" outside a vibe folder, or for WBS or formal spec requests. |  |
+| **token-activity-graph** | Builds one self-contained HTML graph of Claude Code token usage by day, app, and model, costed from live models.dev pricing | *"Build a token activity graph"*, *"Show my token usage"*, *"Visualize my API costs"* |
 
 ### In-context vs. spawned execution
 
