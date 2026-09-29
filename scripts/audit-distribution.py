@@ -22,6 +22,7 @@ Exit codes:
   2  a source file is missing or unparseable
 """
 
+import hashlib
 import json
 import os
 import re
@@ -37,6 +38,16 @@ MARKETPLACE = os.path.join(ROOT, ".claude-plugin", "marketplace.json")
 CATALOG_LINE = re.compile(r"^  ([a-z0-9][a-z0-9-]*): (.+?)\s*$")
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---", re.S)
 FM_FIELD = re.compile(r"^(name|description): (.+?)\s*$", re.M)
+
+# SKILL.md descriptions verified as deliberate tuning of their catalog line. Each is
+# pinned to a hash of both texts, so editing either one brings the warning back.
+# To record one, copy the hash its warning prints.
+TUNED_DESCRIPTIONS = { "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
+}
+
+
+def pair_hash(catalog_desc, skill_desc):
+    return hashlib.sha256(f"{catalog_desc}\0{skill_desc}".encode()).hexdigest()[:12]
 
 
 def die(msg):
@@ -159,6 +170,7 @@ def self_test():
     put("instructions.md", "{{project.groop}} {{env.group}} YOUR_GROUP_NAME\n")
     got = check_contract(d)
     assert len(got) == 5, got  # value shipped, no block, two bad keys, one YOUR_
+    assert pair_hash("a", "bc") != pair_hash("ab", "c")  # separator keeps the pair unambiguous
     print("self-test passed")
 
 
@@ -209,7 +221,9 @@ def main():
                 )
             if not fm.get("description"):
                 errors.append(f"{name}: SKILL.md frontmatter has no description")
-            elif fm["description"] != desc:
+            elif fm["description"] != desc and TUNED_DESCRIPTIONS.get(name) != pair_hash(
+                desc, fm["description"]
+            ):
                 # Warning, not drift. A SKILL.md description is the live routing
                 # trigger for the standalone install, where the skill competes
                 # against every other skill the user has — the catalog line only
@@ -218,7 +232,8 @@ def main():
                 # which admin.md warns against. Divergence is legitimate; check it.
                 warnings.append(
                     f"{name}: SKILL.md description differs from catalog.yaml "
-                    "(intentional tuning, or drift — verify)"
+                    "(intentional tuning, or drift — verify; if intentional, add "
+                    f"{name!r}: {pair_hash(desc, fm['description'])!r} to TUNED_DESCRIPTIONS)"
                 )
 
         pj = read_plugin_json(os.path.join(skill_dir, ".claude-plugin", "plugin.json"))
