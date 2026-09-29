@@ -4,8 +4,12 @@ Standalone skill: take a finished Markdown article and get it live on
 aimmhub.coachlou.com. Writing skills (article-studio, the writing teams,
 evaluate-article) end at "here's a draft"; this is the missing last step.
 
-Not yet a skill: no `instructions.md`, `SKILL.md`, or catalog entry. Build it
-with `create-skill`, then `bash scripts/promote.sh publish-article`.
+Drafted (2026-09-29): `instructions.md`, `SKILL.md`, `.claude-plugin/plugin.json`,
+`evals/trigger-evals.json`. Not yet promoted or in the catalog. Standalone trigger
+evals scored 0/8 should-trigger: in Lou's environment, routing goes through
+`~/.aai/references/publishing.md` first, and that file still sends hub publishing to
+the old here.now `publish-hub.sh`. Fix that routing, re-run the evals, then run
+`bash scripts/promote.sh publish-article`.
 
 ## Proven by hand (2026-09-29, "Transfer Your Intelligence, Not Your Content")
 
