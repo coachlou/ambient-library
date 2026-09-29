@@ -66,7 +66,7 @@ Create `token-graph.html`:
 
 - **Inline data:** `<script type="application/json" id="token-activity-data">` with graph format JSON
 
-- **Renderer:** Download https://bentossell.com/token-activity/graph.js (unchanged) as inline `<script>`
+- **Renderer:** Inline `${CLAUDE_PLUGIN_ROOT}/library/token-activity-graph/graph.js` verbatim as a `<script>` after the data block. Never fetch it from the web.
 
 - **Mount:** `<div data-token-activity></div>` — renderer auto-mounts
 
@@ -78,7 +78,8 @@ File must run in a live browser (file:// blocks JS in static preview). Use `open
 
 ## Gotchas
 
-- **graph.js is read-only** — download as-is, never modify.
+- **graph.js is a pinned, reviewed fork** — inline the bundled copy as-is. Upstream (bentossell.com) falls back to fetching its author's own usage data when inline data is missing or invalid, which would chart someone else's tokens as yours; the fork removes that and shows an error instead. Never swap in a fresh download without re-reviewing it; any re-pin must pass `node ${CLAUDE_PLUGIN_ROOT}/library/token-activity-graph/check-graph.js ${CLAUDE_PLUGIN_ROOT}/library/token-activity-graph/graph.js` (exit 0).
+- **Validate the data block before inlining** — `json.loads` it (or `JSON.parse`) and confirm `days` is non-empty. An invalid block now renders an error, not a graph.
 - **Claude Code only** — other agents (Codex, Cline, etc.) lack aggregated stats. Skip unless user explicitly includes others.
 - **One self-contained file** — move it anywhere, it still works (all data inlined).
 - **Cache pricing rule:** Mark "3x" as a comment if derived.

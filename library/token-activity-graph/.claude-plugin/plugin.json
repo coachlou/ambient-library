@@ -1,7 +1,7 @@
 {
   "name": "token-activity-graph",
   "description": "Builds an interactive self-contained HTML graph of token usage by day, app, and model with live pricing; use for \"build a token activity graph\", \"show my token usage\", \"visualize my API costs\".",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Coach Lou"
   },
