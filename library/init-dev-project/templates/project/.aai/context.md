@@ -15,3 +15,4 @@
 | .aai/references/dev-standard.md | the standard this folder follows | always |
 | .aai/HANDOFF.md, .aai/checkpoint.md | session state | at session start and end |
 | build/, runtime/ | regenerable; gitignored | never commit |
+| data/ | durable user state | never delete; deploy/ says how it is backed up |

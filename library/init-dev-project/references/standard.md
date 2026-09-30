@@ -12,12 +12,16 @@ grokbot ADLC studio, vibe-skilling); this reuses their surviving parts.
 |---|---|---|
 | **Scratch** | `GitHub/code experiments/<name>/` | Anything goes. Only rule: `README.md` first line = what it is + `Status:`. No git required. |
 | **Incubator** | `GitHub/code experiments/tinkering/<name>/` | Shared private repo. Follows the folder contract (§3). One `HANDOFF.md` per sub-project. |
-| **Project** | `GitHub/<name>/` own repo | Full contract. `main` is always releasable. Graduates from incubator at its first tag. |
+| **Project** | `GitHub/<name>/` own repo | Full contract. `main` is always releasable. Graduates from incubator by decision, not by event. |
 | **Released** | a version tag on `main` + a publish target (§4) | Only the release channel puts it in front of a user. |
 
-Move rule: a folder moves up one lane when it gets its first user other than you
-(incubator → project) or its first tag (project → released). It never moves down;
-dead projects get `Status: archived` in the README and stay put.
+Move rule: incubator → project is an explicit decision, made when the thing
+needs its own maintenance or distribution (its own issues, its own release
+cadence, its own installers). Write the decision in the README. A tag is a
+release event, not evidence a project needs its own repo; incubator projects
+may tag. Project → released happens at the first tag that reaches a publish
+target. Nothing moves down; dead projects get `Status: archived` in the README
+and stay put.
 
 ## 2. Stages — the same loop for every kind
 
@@ -37,9 +41,9 @@ for the cold end-to-end run in release.
 | Gate | Command | Passes when |
 |---|---|---|
 | studio entry | `make run` | it starts and you can touch it |
-| release entry | `make check` | lint + smoke + one cold `try` on another model pass |
-| release exit | `make release BUMP=patch` | version bumped in one place, CHANGELOG line added, tag on `main` |
-| deploy exit | `make deploy` | the URL/install path in README answers |
+| release entry | `make check` | lint + unit + smoke pass, locally, in under a minute |
+| release exit | `make release BUMP=patch` | acceptance passes on the built candidate, then: version bumped in one place, CHANGELOG line added, tag on `main` |
+| deploy exit | `make deploy` | one smoke request against the deployed instance reports the released version, and `deploy/README.md` names the rollback |
 
 ## 3. Repo layout — one folder per concern
 
@@ -57,14 +61,16 @@ An empty folder is the first sign of a template that is too heavy.
 │   ├── PROTOCOL.md        any wire or file contract, normative
 │   └── adr/               one file per non-obvious choice, dated, never edited
 │
-├── src/                   HOW it does it. The only folder `make deploy` ships.
+├── src/                   HOW it does it. Ships (see the ship list, §4).
 │   (or skills/, app-skills/, worker/ — whatever the kind dictates)
 │
 ├── tests/                 PROOF, split by what it proves and how long it takes
 │   ├── unit/              dev test: fast, pure, every `make check`
 │   ├── smoke/             dev test: does it start, does one button round-trip
-│   └── acceptance/        production test: cold run on another model, real
-│                          target, against a tagged build. Only in `make release`.
+│   └── acceptance/        production test: end-to-end on the built candidate,
+│                          real target. Only in `make release`, before the tag.
+│                          Cold run on a second model only where it has caught
+│                          a real failure; it is not charged to every release.
 │
 ├── deploy/                WHERE it goes. Config only, no logic.
 │   ├── <target>/          cloudflare/  docker/  library/  — one is active
@@ -81,7 +87,10 @@ An empty folder is the first sign of a template that is too heavy.
 │   └── HANDOFF.md         where we stopped and why; rewritten every session
 │
 ├── build/                 regenerable output of `make check` / `make release`
-└── runtime/               regenerable state of a running instance. Both gitignored.
+├── runtime/               disposable state of a running instance: caches, pids,
+│                          logs. Safe to delete at any time. Both gitignored.
+└── data/                  durable state: user data, databases. Never regenerable,
+                           never gitignored by default, backed up by `deploy/`.
 ```
 
 ### The four verbs
@@ -94,11 +103,13 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
 ### Separation rules
 
 - **Spec is upstream of everything.** A change to `spec/` needs a decision. A
-  change to `src/` needs a test. If they drift, one of them is wrong; fix that
-  one, never let both float.
+  change to behavior in `src/` needs a test; docs, comments and low-risk edits
+  do not. If they drift, one of them is wrong; fix that one, never let both
+  float.
 - **Tests split by cost and stage, not by module.** Unit and smoke run in studio
-  on every `make check`. Acceptance runs only in `make release`, against the
-  tag, on a cold model. `try_app` transcripts are acceptance tests and live in
+  on every `make check`; they are fast and local. Acceptance runs only in
+  `make release`, against the candidate `build/` produces, and the tag is cut
+  only after it passes. `try_app` transcripts are acceptance tests and live in
   `tests/acceptance/`, not in `build/`.
 - **Deploy holds config, not code.** `wrangler.toml`, `compose.yaml`,
   `RELEASE.yaml` live in `deploy/<target>/`. `src/` does not know where it runs.
@@ -107,21 +118,24 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
   and ships with it. `spec/` and `.aai/` are for whoever builds it and never
   ship.
 - **Regenerable means gitignored.** `build/`, `runtime/`, `__pycache__`. If
-  `make check` can recreate it, git does not track it.
-- **The ship set is a whitelist.** `make deploy` copies `src/` and `docs/` and
-  nothing else. A production copy cannot author because the files are not
-  there, not because a policy says so.
+  `make check` can recreate it, git does not track it. `data/` is the opposite:
+  if losing it loses a user's work, it is not runtime and `deploy/` says how it
+  is backed up and restored.
+- **The ship set is a whitelist, per kind.** Each kind in §4 names the ship
+  list; `make check` verifies the built package contains exactly that list.
+  `spec/`, `tests/`, `tools/`, `.aai/` are never on it. A production copy
+  cannot author because the files are not there, not because a policy says so.
 - **Universal rules stay in `~/.aai/rules/`.** Coding policy, skill authoring,
   commit style. Nothing in the repo duplicates them.
 
 ## 4. Kinds and their publish channels
 
-| Kind | Source shape | `make check` | `make deploy` target |
-|---|---|---|---|
-| **skill** | `SKILL.md` or `instructions.md` + `references/` + `scripts/` | skill-auditor + trigger evals | ambient-library → `RELEASE.yaml` → `build-production.sh` → aai-library-release → `~/.ailib` |
-| **tool** | one Python file, stdlib, `--help`, `--json`, no prompts | `python3 tool.py --help` + one `test_*.py` | rides inside a skill's `scripts/`; standalone = `pyproject` + `uv` |
-| **skill-app** | vibe-skilling folder (bridge/dashboard/scripts/adapters) | `lint_app` + `smoke` + `try_app` | `package_app` → same skill channel |
-| **web app / service** | repo with `wrangler.*`, `Dockerfile`, or `vercel.json` | typecheck + build + one smoke request | Cloudflare (`wrangler deploy`), Docker on Hostinger, or Vercel; **one** of them, named in README |
+| Kind | Source shape | `make check` | Ship list | `make deploy` target |
+|---|---|---|---|---|
+| **skill** | `SKILL.md` or `instructions.md` + `references/` + `scripts/` | skill-auditor + trigger evals | `SKILL.md`, `instructions.md`, `.claude-plugin/`, `references/`, `scripts/`, `templates/`, `docs/` | ambient-library → `RELEASE.yaml` → `build-production.sh` → aai-library-release → `~/.ailib` |
+| **tool** | one Python file, stdlib, `--help`, `--json`, no prompts | `python3 tool.py --help` + one `test_*.py` | the one file | rides inside a skill's `scripts/`; standalone = `pyproject` + `uv` |
+| **skill-app** | vibe-skilling folder (bridge/dashboard/scripts/adapters) | `lint_app` + `smoke` + `try_app` | what `package_app` emits | `package_app` → same skill channel |
+| **web app / service** | repo with `wrangler.*`, `Dockerfile`, or `vercel.json` | typecheck + build + one smoke request | `src/` + `docs/` + the target's manifest | Cloudflare (`wrangler deploy`), Docker on Hostinger, or Vercel; **one** of them, named in README |
 
 The skill channel already exists and already has the right property:
 committing does not release, a one-line `RELEASE.yaml` edit does. Web apps get
@@ -153,5 +167,10 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
 
 1. **Makefile** is the pipeline entry point (decided 2026-09-30). Zero install on
    macOS, agents know it, one entry point.
-2. `tinkering/` stays an incubator; graduation at first tag.
+2. `tinkering/` stays an incubator; graduation is a written decision in the
+   README, not a tag (revised 2026-09-30, was "at first tag").
 3. Open: which ten lines of this go into `~/.aai/rules/coding.md` as doctrine.
+4. v0.2.0 (2026-09-30) adopts all four findings of a codex review: graduation
+   rule, per-kind ship list, check/acceptance split, deploy proof + `data/`.
+   The standard is piloted through this skill and a web app before any of it
+   becomes `~/.aai` doctrine.

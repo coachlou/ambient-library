@@ -30,7 +30,7 @@ or documenting {{name}}. The folder is governed by the dev-and-deploy standard.
 
 - Code → `src/` (or the kind's folder). Proof → `tests/`. Config → `deploy/<target>/`.
 - User docs → `docs/`. Decisions → `spec/`. Agent state → `.aai/`.
-- Regenerable output → `build/`, `runtime/` (gitignored).
+- Regenerable output → `build/`, `runtime/` (gitignored). Durable user state → `data/`, never regenerable.
 
 ## Rules
 
