@@ -148,6 +148,11 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
 | **skill-app** | vibe-skilling folder (bridge/dashboard/scripts/adapters) | `lint_app` + `smoke` + `try_app` | what `package_app` emits, including `VERSION` | `package_app` → same skill channel |
 | **web app / service** | repo with `wrangler.*`, `Dockerfile`, or `vercel.json` | typecheck + build + one smoke request | `VERSION` + `src/` + `docs/` + the target's manifest | Cloudflare (`wrangler deploy`), Docker on Hostinger, or Vercel; **one** of them, named in README |
 
+`init-dev-project` writes the ship list from this table, so a new skill does
+not start with a web app's `src/`. The kind comes from `--kind`, else from
+files already in the folder (`SKILL.md`, `wrangler.*`, `Dockerfile`, ...),
+else the web layout.
+
 The skill channel already exists and already has the right property:
 committing does not release, a one-line `RELEASE.yaml` edit does. Web apps get
 the same property from the tag: `make deploy` refuses on an untagged commit.
@@ -195,3 +200,11 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
    4 SHIP in this map and in `make` help, never in folder names. Tools expect
    plain `src/` and `tests/`, only four folders are ordered, and numbered names
    break every path on insert.
+7. v0.3.3 (2026-10-01): `--kind` writes the §4 ship list and the map's BUILD
+   row for `skill`, `skill-app` and `tool`; every other kind keeps the web
+   layout. Before this, a scaffolded skill failed its first `make build` on a
+   missing `src/` it was never meant to have. Without `--kind` the script
+   detects the kind from existing files and reports why, because the agent
+   defaulted to `project` and nobody typed the flag. Scaffolding inside an
+   existing repo (an incubator subfolder) no longer creates a nested repo;
+   git is left alone and the report names the enclosing repo.

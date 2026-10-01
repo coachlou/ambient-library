@@ -8,7 +8,7 @@ VERSION := $(shell cat VERSION)
 help:
 	@echo "THE PIPELINE      folder    verb"
 	@echo "1 SPEC            spec/     -              what it must do, written before code"
-	@echo "2 BUILD           src/      make run       start it so you can touch it"
+	@echo "2 BUILD           {{source}}make run       start it so you can touch it"
 	@echo "3 PROVE           tests/    make check     candidate from deploy/SHIPLIST, then lint + unit + smoke"
 	@echo "                            make release   BUMP=patch|minor|major NOTE='...' [PUSH=1]  bump, accept, CHANGELOG, tag"
 	@echo "4 SHIP            deploy/   make deploy    ship build/candidate to the README target (refuses untagged HEAD)"

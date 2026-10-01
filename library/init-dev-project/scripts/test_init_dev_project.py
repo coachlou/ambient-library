@@ -84,6 +84,45 @@ with tempfile.TemporaryDirectory() as tmp:
     open(os.path.join(p, "deploy", "SHIPLIST"), "a").write("release notes.md\n")
     r = subprocess.run(["make", "build"], cwd=p, capture_output=True, text=True)
     assert r.returncode != 0 and "release notes.md is on SHIPLIST but missing" in r.stderr, r.stderr
+    before = (sh("git", "tag", cwd=p), sh("git", "log", "--oneline", cwd=p))
+    # kind picks the ship list and the BUILD row of the map; unknown kinds get the web layout
+    k = os.path.join(tmp, "demo-skill")
+    sh(sys.executable, SCRIPT, k, "--kind", "skill", "--json")
+    ship = open(os.path.join(k, "deploy", "SHIPLIST")).read().split("\n")
+    assert "SKILL.md" in ship and "references/" in ship and "src/" not in ship, ship
+    assert "2 BUILD           root      make run" in sh("make", cwd=k)
+    sh("make", "build", cwd=k, ok=False)   # SKILL.md etc. not written yet
+    for f in ship:
+        if f.endswith("/"): os.makedirs(os.path.join(k, f), exist_ok=True); open(os.path.join(k, f, ".keep"), "w").close()
+        elif f and f != "VERSION": open(os.path.join(k, f), "w").write("x\n")
+    sh("make", "build", cwd=k)
+    t = os.path.join(tmp, "my-tool")
+    sh(sys.executable, SCRIPT, t, "--kind", "tool", "--json")
+    assert open(os.path.join(t, "deploy", "SHIPLIST")).read() == "VERSION\nmy_tool.py\n"
+    assert open(os.path.join(p, "deploy", "SHIPLIST")).read().startswith("VERSION\nsrc/\ndocs/\n")
+    # no --kind: detect from files already there, say why; explicit --kind always wins
+    def seed(name, files):
+        d = os.path.join(tmp, name); os.makedirs(d)
+        for f in files:
+            if f.endswith("/"): os.makedirs(os.path.join(d, f))
+            else: open(os.path.join(d, f), "w").write("x\n")
+        return d
+    for name, files, kind in [("det-skill", ["SKILL.md"], "skill"),
+                              ("det-app", ["SKILL.md", "manifest.json", "bridge/"], "skill-app"),
+                              ("det-web", ["wrangler.toml"], "web"),
+                              ("det-none", [], "project")]:
+        r = json.loads(sh(sys.executable, SCRIPT, seed(name, files), "--no-git", "--json"))
+        assert r["kind"] == kind and r["kind_reason"], (name, r["kind"], r.get("kind_reason"))
+    r = json.loads(sh(sys.executable, SCRIPT, seed("det-forced", ["SKILL.md"]), "--kind", "web", "--no-git", "--json"))
+    assert r["kind"] == "web" and r["kind_reason"] == "given", r
+    assert "kind: skill (found SKILL.md)" in sh(sys.executable, SCRIPT, seed("det-text", ["SKILL.md"]), "--no-git")
+    # inside an existing repo (incubator lane): never git init a nested repo, never commit for the owner
+    n = os.path.join(p, "incubated")
+    r = json.loads(sh(sys.executable, SCRIPT, n, "--json"))
+    assert not os.path.exists(os.path.join(n, ".git")) and r["git"].startswith("inside existing repo"), r["git"]
+    assert (sh("git", "tag", cwd=p), sh("git", "log", "--oneline", cwd=p)) == before
+    d = json.loads(sh(sys.executable, SCRIPT, os.path.join(p, "not", "yet"), "--dry-run", "--json"))
+    assert d["git"].startswith("inside existing repo"), d["git"]
     # dry run writes nothing
     q = os.path.join(tmp, "dry")
     d = json.loads(sh(sys.executable, SCRIPT, q, "--dry-run", "--json"))
