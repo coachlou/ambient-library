@@ -7,20 +7,33 @@ VERSION := $(shell cat VERSION)
 
 help:
 	@echo "make run      start it so you can touch it"
-	@echo "make check    lint + unit + smoke; must pass before release"
+	@echo "make check    build the candidate from deploy/SHIPLIST, then lint + unit + smoke"
 	@echo "make release  BUMP=patch|minor|major NOTE='...' [PUSH=1]  bump VERSION, CHANGELOG, tag"
-	@echo "make deploy   ship src/ and docs/ to the target named in README (refuses untagged HEAD)"
+	@echo "make deploy   ship build/candidate to the target named in README (refuses untagged HEAD)"
 
 run:
 	@echo "run: not defined yet — edit the run recipe in Makefile" >&2; exit 1
 
-check:
+check: build
 	@echo "check: not defined yet — a gate with nothing behind it must fail" >&2; exit 1
+
+# The candidate: exactly what deploy/SHIPLIST names, verified both ways.
+build:
+	@rm -rf build/candidate && mkdir -p build/candidate
+	@rsync -a --recursive --files-from=deploy/SHIPLIST . build/candidate/
+	@for f in $$(cat deploy/SHIPLIST); do test -e "build/candidate/$$f" || { echo "build: $$f is on SHIPLIST but missing" >&2; exit 1; }; done
+	@cd build/candidate && for f in $$(find . -mindepth 1 -maxdepth 1 | sed "s|^./||"); do grep -qxF -e "$$f" -e "$$f/" ../../deploy/SHIPLIST || { echo "build: $$f is not on SHIPLIST" >&2; exit 1; }; done
+
+# Production test on the candidate. Runs inside make release, after the bump,
+# so the artifact it passes is the artifact that gets tagged.
+accept: build
+	@echo "accept: not defined yet — a gate with nothing behind it must fail" >&2; exit 1
 
 release: check
 	@test -z "$$(git status --porcelain)" || { echo "release: working tree not clean" >&2; exit 1; }
 	@new=$$(awk -F. -v b=$(BUMP) '{ if (b=="major") {$$1++; $$2=0; $$3=0} else if (b=="minor") {$$2++; $$3=0} else {$$3++} ; print $$1"."$$2"."$$3 }' VERSION); \
 	 echo "$$new" > VERSION; \
+	 if ! $(MAKE) -s accept; then git checkout -- VERSION; echo "release: acceptance failed on v$$new; VERSION restored, nothing tagged" >&2; exit 1; fi; \
 	 printf '## v%s — %s\n- %s\n\n' "$$new" "$$(date +%F)" "$(NOTE)" | cat - CHANGELOG.md | awk 'NR==1{print "# Changelog"; print ""} !/^# Changelog$$/ && !(NR<=2 && /^$$/)' > CHANGELOG.tmp && mv CHANGELOG.tmp CHANGELOG.md; \
 	 git add VERSION CHANGELOG.md && git commit -q -m "Release v$$new: $(NOTE)" && git tag "v$$new" && echo "tagged v$$new"; \
 	 if [ "$(PUSH)" = "1" ]; then git push && git push --tags; fi
@@ -29,4 +42,4 @@ deploy:
 	@git describe --tags --exact-match HEAD >/dev/null 2>&1 || { echo "deploy: HEAD is not tagged — run make release first" >&2; exit 1; }
 	@echo "deploy: no target defined yet — name it in README and fill this recipe" >&2; exit 1
 
-.PHONY: help run check release deploy
+.PHONY: help run check build accept release deploy

@@ -17,7 +17,8 @@ with tempfile.TemporaryDirectory() as tmp:
     out = json.loads(sh(sys.executable, SCRIPT, p, "--kind", "web", "--description", "Demo.", "--json"))
     for f in ["README.md", "VERSION", "CHANGELOG.md", "Makefile", ".gitignore",
               ".aai/instructions.md", ".aai/identity.md", ".aai/purpose.md", ".aai/context.md",
-              ".aai/HANDOFF.md", ".aai/checkpoint.md", ".aai/references/dev-standard.md"]:
+              ".aai/HANDOFF.md", ".aai/checkpoint.md", ".aai/references/dev-standard.md",
+              "deploy/SHIPLIST"]:
         assert os.path.isfile(os.path.join(p, f)), f
         assert "{{" not in open(os.path.join(p, f)).read(), f"unrendered placeholder in {f}"
     assert "demo-app" in open(os.path.join(p, "README.md")).read()
@@ -32,17 +33,36 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "make release" in sh("make", cwd=p)
     sh("make", "check", cwd=p, ok=False)
     sh("make", "run", cwd=p, ok=False)
-    # release path: define check, then release bumps VERSION, CHANGELOG and tags
-    mk = open(os.path.join(p, "Makefile")).read().replace(
-        '\t@echo "check: not defined yet — a gate with nothing behind it must fail" >&2; exit 1', '\t@true')
-    open(os.path.join(p, "Makefile"), "w").write(mk)
-    sh("git", "commit", "-qam", "define check", cwd=p)
+    # build enforces SHIPLIST: nothing in src/ or docs/ yet, so it fails
+    sh("make", "build", cwd=p, ok=False)
+    os.makedirs(os.path.join(p, "src")); os.makedirs(os.path.join(p, "docs"))
+    open(os.path.join(p, "src", "app.py"), "w").write("print('hi')\n")
+    open(os.path.join(p, "docs", "help.md"), "w").write("# help\n")
+    sh("make", "build", cwd=p)
+    assert sorted(os.listdir(os.path.join(p, "build", "candidate"))) == ["VERSION", "docs", "src"]
+    # define check only; accept still fails, so release must restore VERSION and tag nothing
+    mk = os.path.join(p, "Makefile")
+    src = open(mk).read(); open(mk, "w").write(src.replace(
+        '\t@echo "check: not defined yet — a gate with nothing behind it must fail" >&2; exit 1', '\t@true'))
+    sh("git", "add", "-A", cwd=p); sh("git", "commit", "-qm", "define check", cwd=p)
+    r = subprocess.run(["make", "release", "NOTE=first"], cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "acceptance failed" in r.stderr, r.stderr
+    assert open(os.path.join(p, "VERSION")).read().strip() == "0.0.0"
+    assert sh("git", "status", "--porcelain", cwd=p) == ""
+    assert sh("git", "tag", cwd=p).strip() == "v0.0.0"
+    # define accept; it must see the bumped VERSION in the candidate
+    src = open(mk).read(); open(mk, "w").write(src.replace(
+        '\t@echo "accept: not defined yet — a gate with nothing behind it must fail" >&2; exit 1',
+        '\t@cat build/candidate/VERSION > build/accepted'))
+    sh("git", "commit", "-qam", "define accept", cwd=p)
     sh("make", "release", "NOTE=first", cwd=p)
     assert open(os.path.join(p, "VERSION")).read().strip() == "0.0.1"
+    assert open(os.path.join(p, "build", "accepted")).read().strip() == "0.0.1", "accept ran on a stale VERSION"
     assert "## v0.0.1" in open(os.path.join(p, "CHANGELOG.md")).read().splitlines()[2]
     assert "v0.0.1" in sh("git", "tag", cwd=p)
     sh("make", "release", "BUMP=minor", cwd=p)
     assert open(os.path.join(p, "VERSION")).read().strip() == "0.1.0"
+    assert sh("git", "status", "--porcelain", cwd=p) == ""
     # dry run writes nothing
     q = os.path.join(tmp, "dry")
     d = json.loads(sh(sys.executable, SCRIPT, q, "--dry-run", "--json"))

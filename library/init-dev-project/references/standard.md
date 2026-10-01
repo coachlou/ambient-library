@@ -41,8 +41,8 @@ for the cold end-to-end run in release.
 | Gate | Command | Passes when |
 |---|---|---|
 | studio entry | `make run` | it starts and you can touch it |
-| release entry | `make check` | lint + unit + smoke pass, locally, in under a minute |
-| release exit | `make release BUMP=patch` | acceptance passes on the built candidate, then: version bumped in one place, CHANGELOG line added, tag on `main` |
+| release entry | `make check` | the candidate builds from `deploy/SHIPLIST`, then lint + unit + smoke pass, locally, in under a minute |
+| release exit | `make release BUMP=patch` | VERSION bumped, then acceptance passes on the candidate built with that VERSION, then CHANGELOG line, commit, tag on `main`. A failed acceptance restores VERSION and tags nothing |
 | deploy exit | `make deploy` | one smoke request against the deployed instance reports the released version, and `deploy/README.md` names the rollback |
 
 ## 3. Repo layout — one folder per concern
@@ -73,6 +73,8 @@ An empty folder is the first sign of a template that is too heavy.
 │                          a real failure; it is not charged to every release.
 │
 ├── deploy/                WHERE it goes. Config only, no logic.
+│   ├── SHIPLIST           what ships, one path per line. `make build` copies
+│   │                      exactly this into build/candidate and fails on any gap
 │   ├── <target>/          cloudflare/  docker/  library/  — one is active
 │   └── README.md          which target is live, how to roll back
 │
@@ -108,7 +110,8 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
   float.
 - **Tests split by cost and stage, not by module.** Unit and smoke run in studio
   on every `make check`; they are fast and local. Acceptance runs only in
-  `make release`, against the candidate `build/` produces, and the tag is cut
+  `make release`, after the version bump, against the candidate `build/`
+  produces, so the artifact that passed is the artifact that is tagged. The tag is cut
   only after it passes. `try_app` transcripts are acceptance tests and live in
   `tests/acceptance/`, not in `build/`.
 - **Deploy holds config, not code.** `wrangler.toml`, `compose.yaml`,
@@ -122,7 +125,10 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
   if losing it loses a user's work, it is not runtime and `deploy/` says how it
   is backed up and restored.
 - **The ship set is a whitelist, per kind.** Each kind in §4 names the ship
-  list; `make check` verifies the built package contains exactly that list.
+  list and `deploy/SHIPLIST` holds it. `make build` copies exactly that list to
+  `build/candidate` and fails on a missing or an extra entry; `check`, `accept`
+  and `deploy` all use the candidate, never the working tree. `VERSION` is on
+  every list, because the deploy gate needs the instance to report it.
   `spec/`, `tests/`, `tools/`, `.aai/` are never on it. A production copy
   cannot author because the files are not there, not because a policy says so.
 - **Universal rules stay in `~/.aai/rules/`.** Coding policy, skill authoring,
@@ -132,10 +138,10 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
 
 | Kind | Source shape | `make check` | Ship list | `make deploy` target |
 |---|---|---|---|---|
-| **skill** | `SKILL.md` or `instructions.md` + `references/` + `scripts/` | skill-auditor + trigger evals | `SKILL.md`, `instructions.md`, `.claude-plugin/`, `references/`, `scripts/`, `templates/`, `docs/` | ambient-library → `RELEASE.yaml` → `build-production.sh` → aai-library-release → `~/.ailib` |
-| **tool** | one Python file, stdlib, `--help`, `--json`, no prompts | `python3 tool.py --help` + one `test_*.py` | the one file | rides inside a skill's `scripts/`; standalone = `pyproject` + `uv` |
-| **skill-app** | vibe-skilling folder (bridge/dashboard/scripts/adapters) | `lint_app` + `smoke` + `try_app` | what `package_app` emits | `package_app` → same skill channel |
-| **web app / service** | repo with `wrangler.*`, `Dockerfile`, or `vercel.json` | typecheck + build + one smoke request | `src/` + `docs/` + the target's manifest | Cloudflare (`wrangler deploy`), Docker on Hostinger, or Vercel; **one** of them, named in README |
+| **skill** | `SKILL.md` or `instructions.md` + `references/` + `scripts/` | skill-auditor + trigger evals | `VERSION`, `SKILL.md`, `instructions.md`, `.claude-plugin/`, `references/`, `scripts/`, `templates/`, `docs/` | ambient-library → `RELEASE.yaml` → `build-production.sh` → aai-library-release → `~/.ailib` |
+| **tool** | one Python file, stdlib, `--help`, `--json`, no prompts | `python3 tool.py --help` + one `test_*.py` | the one file + `VERSION` | rides inside a skill's `scripts/`; standalone = `pyproject` + `uv` |
+| **skill-app** | vibe-skilling folder (bridge/dashboard/scripts/adapters) | `lint_app` + `smoke` + `try_app` | what `package_app` emits, including `VERSION` | `package_app` → same skill channel |
+| **web app / service** | repo with `wrangler.*`, `Dockerfile`, or `vercel.json` | typecheck + build + one smoke request | `VERSION` + `src/` + `docs/` + the target's manifest | Cloudflare (`wrangler deploy`), Docker on Hostinger, or Vercel; **one** of them, named in README |
 
 The skill channel already exists and already has the right property:
 committing does not release, a one-line `RELEASE.yaml` edit does. Web apps get
@@ -174,3 +180,9 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
    rule, per-kind ship list, check/acceptance split, deploy proof + `data/`.
    The standard is piloted through this skill and a web app before any of it
    becomes `~/.aai` doctrine.
+5. v0.3.0 (2026-10-01) folds in the web-app pilot (`tinkering/test-scaffold`):
+   `deploy/SHIPLIST` + `make build` make the ship list enforceable, VERSION
+   ships everywhere, acceptance runs after the bump so the tested and tagged
+   artifacts are the same. Kept unchanged because the pilot confirmed them: the
+   deploy version check (it caught a port owned by another service) and `data/`
+   outside releases (a note survived rollback).

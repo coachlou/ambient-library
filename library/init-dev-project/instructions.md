@@ -12,8 +12,8 @@ from then on.
   re-scaffold.
 - It does `git init -b main`, one commit, and tag `v0.0.0` only when the folder
   had no `.git`. It never adds a remote and never pushes.
-- Only the root files, `Makefile`, and `.aai/` are created. `spec/`, `src/`,
-  `tests/`, `deploy/`, `docs/`, `tools/` appear on first use, by hand. An empty
+- Only the root files, `Makefile`, `deploy/SHIPLIST`, and `.aai/` are created.
+  `spec/`, `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
   folder is the first sign of a template that is too heavy.
 
 ## Process
@@ -41,6 +41,7 @@ from then on.
 ```
 <path>/
 ├── README.md  VERSION (0.0.0)  CHANGELOG.md  Makefile  .gitignore
+├── deploy/SHIPLIST          VERSION, src/, docs/ — edit per kind (standard §4)
 └── .aai/
     ├── instructions.md      behavior of a project under the standard
     ├── identity.md          general development harness (edit as the build progresses)
