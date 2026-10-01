@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.2 — 2026-10-01
+- `make` alone now prints a numbered pipeline map: 1 SPEC, 2 BUILD, 3 PROVE, 4 SHIP, each with its folder and verb, then the audience and state folders. The standard's layout diagram uses the same grouping. Folder names are unchanged.
+
 ## v0.3.1 — 2026-10-01
 - Fix: `make build` split ship-list entries on whitespace, so a path like `user guide/` broke the build. It now reads one path per line and skips blank lines.
 - Fix: a missing ship-list entry now fails with the build's own message before rsync runs, instead of an rsync link_stat error.

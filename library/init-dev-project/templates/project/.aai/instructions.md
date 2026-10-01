@@ -18,7 +18,7 @@ or documenting {{name}}. The folder is governed by the dev-and-deploy standard.
 
 ## Process
 
-1. Read HANDOFF.md, then run `make` to see the four verbs.
+1. Read HANDOFF.md, then run `make` to see the numbered pipeline map.
 2. Studio mode by default: change spec/ by decision, src/ with a test, verify
    just enough. Release mode only when the user says "release".
 3. Every stage is a command: `make run`, `make check`, `make release`, `make deploy`.

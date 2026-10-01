@@ -1,15 +1,20 @@
 # The pipeline. Four verbs, same names in every repo; bodies change per project.
-# `make` alone prints this help.
+# `make` alone prints the numbered pipeline map.
 .DEFAULT_GOAL := help
 BUMP ?= patch
 NOTE ?= release
 VERSION := $(shell cat VERSION)
 
 help:
-	@echo "make run      start it so you can touch it"
-	@echo "make check    build the candidate from deploy/SHIPLIST, then lint + unit + smoke"
-	@echo "make release  BUMP=patch|minor|major NOTE='...' [PUSH=1]  bump VERSION, CHANGELOG, tag"
-	@echo "make deploy   ship build/candidate to the target named in README (refuses untagged HEAD)"
+	@echo "THE PIPELINE      folder    verb"
+	@echo "1 SPEC            spec/     -              what it must do, written before code"
+	@echo "2 BUILD           src/      make run       start it so you can touch it"
+	@echo "3 PROVE           tests/    make check     candidate from deploy/SHIPLIST, then lint + unit + smoke"
+	@echo "                            make release   BUMP=patch|minor|major NOTE='...' [PUSH=1]  bump, accept, CHANGELOG, tag"
+	@echo "4 SHIP            deploy/   make deploy    ship build/candidate to the README target (refuses untagged HEAD)"
+	@echo ""
+	@echo "BESIDE IT         docs/ for users (ships)   tools/ for builders   .aai/ for the agent"
+	@echo "STATE             data/ durable, backed up   build/ runtime/ disposable"
 
 run:
 	@echo "run: not defined yet — edit the run recipe in Makefile" >&2; exit 1

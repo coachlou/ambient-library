@@ -7,7 +7,7 @@
 ## Run
 
 ```bash
-make            # prints the four verbs
+make            # prints the numbered pipeline map
 make run
 ```
 

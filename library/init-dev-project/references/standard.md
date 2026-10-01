@@ -54,17 +54,20 @@ An empty folder is the first sign of a template that is too heavy.
 ```
 <repo>/
 ├── README.md              entry point: what, status, run, deploy. One screen.
-├── VERSION  CHANGELOG.md  Makefile
+├── VERSION  CHANGELOG.md  Makefile   (`make` alone prints this map, numbered)
 │
-├── spec/                  WHAT it must do. Written before code, changed by decision.
+│   THE PIPELINE — numbered in docs and help, never in folder names
+│
+├── spec/                  1 SPEC. WHAT it must do. Written before code,
+│   │                      changed by decision.
 │   ├── SPEC.md            requirements + decisions log
 │   ├── PROTOCOL.md        any wire or file contract, normative
 │   └── adr/               one file per non-obvious choice, dated, never edited
 │
-├── src/                   HOW it does it. Ships (see the ship list, §4).
+├── src/                   2 BUILD. HOW it does it. Ships (see the ship list, §4).
 │   (or skills/, app-skills/, worker/ — whatever the kind dictates)
 │
-├── tests/                 PROOF, split by what it proves and how long it takes
+├── tests/                 3 PROVE. Split by what it proves and how long it takes
 │   ├── unit/              dev test: fast, pure, every `make check`
 │   ├── smoke/             dev test: does it start, does one button round-trip
 │   └── acceptance/        production test: end-to-end on the built candidate,
@@ -72,33 +75,35 @@ An empty folder is the first sign of a template that is too heavy.
 │                          Cold run on a second model only where it has caught
 │                          a real failure; it is not charged to every release.
 │
-├── deploy/                WHERE it goes. Config only, no logic.
+├── deploy/                4 SHIP. WHERE it goes. Config only, no logic.
 │   ├── SHIPLIST           what ships, one path per line. `make build` copies
 │   │                      exactly this into build/candidate and fails on any gap
 │   ├── <target>/          cloudflare/  docker/  library/  — one is active
 │   └── README.md          which target is live, how to roll back
 │
+│   BESIDE IT — by audience, no order
+│
 ├── docs/                  FOR the user of the thing. Ships with it.
 │   ├── help.md            command grammar, Help page source
 │   └── examples/          one worked run
-│
 ├── tools/                 FOR the builder. Never ships. Stdlib scripts with --help.
-│
 ├── .aai/                  FOR the agent. Never ships.
 │   ├── checkpoint.md      session state
 │   └── HANDOFF.md         where we stopped and why; rewritten every session
 │
+│   STATE — durable or disposable
+│
+├── data/                  durable state: user data, databases. Never regenerable,
+│                          never gitignored by default, backed up by `deploy/`.
 ├── build/                 regenerable output of `make check` / `make release`
-├── runtime/               disposable state of a running instance: caches, pids,
-│                          logs. Safe to delete at any time. Both gitignored.
-└── data/                  durable state: user data, databases. Never regenerable,
-                           never gitignored by default, backed up by `deploy/`.
+└── runtime/               disposable state of a running instance: caches, pids,
+                           logs. Safe to delete at any time. Both gitignored.
 ```
 
 ### The four verbs
 
 The Makefile is the pipeline: `run`, `check`, `release`, `deploy`. `make` alone
-prints help. Targets call whatever tools the project already has (`lint_app.py`,
+prints the numbered pipeline map from §3. Targets call whatever tools the project already has (`lint_app.py`,
 `smoke.py`, `try_app.py`, `package_app.py`, `wrangler deploy`, `docker compose
 up`). A new kind of project changes the recipe bodies, never the verb names.
 
@@ -186,3 +191,7 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
    artifacts are the same. Kept unchanged because the pilot confirmed them: the
    deploy version check (it caught a port owned by another service) and `data/`
    outside releases (a note survived rollback).
+6. v0.3.2 (2026-10-01): the pipeline is numbered 1 SPEC, 2 BUILD, 3 PROVE,
+   4 SHIP in this map and in `make` help, never in folder names. Tools expect
+   plain `src/` and `tests/`, only four folders are ordered, and numbered names
+   break every path on insert.

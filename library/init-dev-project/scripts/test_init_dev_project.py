@@ -30,7 +30,8 @@ with tempfile.TemporaryDirectory() as tmp:
     again = json.loads(sh(sys.executable, SCRIPT, p, "--json"))
     assert again["created"] == [] and "untouched" in again["git"]
     # the four verbs: help works, closed gates fail, deploy refuses when untagged
-    assert "make release" in sh("make", cwd=p)
+    help_out = sh("make", cwd=p)
+    assert "make release" in help_out and "1 SPEC" in help_out and "4 SHIP" in help_out
     sh("make", "check", cwd=p, ok=False)
     sh("make", "run", cwd=p, ok=False)
     # build enforces SHIPLIST: nothing in src/ or docs/ yet, so it fails
