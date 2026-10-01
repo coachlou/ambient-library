@@ -36,6 +36,7 @@ skills:
   - deep-comprehension-assessment
   - deep-field
   - deep-mirror
+  - distro-kit
   - editor
   - editorial-desk
   - eigenthinking
@@ -50,6 +51,7 @@ skills:
   - graphify
   - grill
   - harness-prd
+  - init-dev-project
   - ireport
   - irreplaceable-edge
   - knowledge-base-architect
@@ -64,10 +66,10 @@ skills:
   - publish-article
   - researcher
   - session
-  - software-dev-factory
-  - solofactory
   - skill-auditor
   - skill-evals
+  - software-dev-factory
+  - solofactory
   - teaching-block-synthesized
   - to-issues
   - token-activity-graph
@@ -76,8 +78,7 @@ skills:
   - trigger-runner
   - voice-crm-pipeline
   - voice-profile-trainer
+  - wbs-toolkit
   - wrap
   - writer
   - writing-team
-  - distro-kit
-  - wbs-toolkit
