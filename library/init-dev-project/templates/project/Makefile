@@ -20,9 +20,9 @@ check: build
 # The candidate: exactly what deploy/SHIPLIST names, verified both ways.
 build:
 	@rm -rf build/candidate && mkdir -p build/candidate
+	@while IFS= read -r f; do [ -n "$$f" ] || continue; test -e "$$f" || { echo "build: $$f is on SHIPLIST but missing" >&2; exit 1; }; done < deploy/SHIPLIST
 	@rsync -a --recursive --files-from=deploy/SHIPLIST . build/candidate/
-	@for f in $$(cat deploy/SHIPLIST); do test -e "build/candidate/$$f" || { echo "build: $$f is on SHIPLIST but missing" >&2; exit 1; }; done
-	@cd build/candidate && for f in $$(find . -mindepth 1 -maxdepth 1 | sed "s|^./||"); do grep -qxF -e "$$f" -e "$$f/" ../../deploy/SHIPLIST || { echo "build: $$f is not on SHIPLIST" >&2; exit 1; }; done
+	@cd build/candidate && find . -mindepth 1 -maxdepth 1 | sed "s|^./||" | while IFS= read -r f; do grep -qxF -e "$$f" -e "$$f/" ../../deploy/SHIPLIST || { echo "build: $$f is not on SHIPLIST" >&2; exit 1; }; done
 
 # Production test on the candidate. Runs inside make release, after the bump,
 # so the artifact it passes is the artifact that gets tagged.

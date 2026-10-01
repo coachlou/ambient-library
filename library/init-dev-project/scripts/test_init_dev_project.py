@@ -63,6 +63,26 @@ with tempfile.TemporaryDirectory() as tmp:
     sh("make", "release", "BUMP=minor", cwd=p)
     assert open(os.path.join(p, "VERSION")).read().strip() == "0.1.0"
     assert sh("git", "status", "--porcelain", cwd=p) == ""
+    # existing deploy/: a ship list the owner already wrote is kept, not overwritten
+    e = os.path.join(tmp, "existing")
+    os.makedirs(os.path.join(e, "deploy", "docker"))
+    open(os.path.join(e, "deploy", "SHIPLIST"), "w").write("VERSION\nworker/\n")
+    open(os.path.join(e, "deploy", "docker", "compose.yaml"), "w").write("services: {}\n")
+    r = json.loads(sh(sys.executable, SCRIPT, e, "--json"))
+    assert "deploy/SHIPLIST" in r["skipped"] and "deploy/SHIPLIST" not in r["created"]
+    assert open(os.path.join(e, "deploy", "SHIPLIST")).read() == "VERSION\nworker/\n"
+    assert open(os.path.join(e, "deploy", "docker", "compose.yaml")).read() == "services: {}\n"
+    assert sh("git", "status", "--porcelain", cwd=e) == ""   # owner's files are in the first commit
+    # ship list entries with spaces: one line is one path, never split on whitespace
+    os.makedirs(os.path.join(p, "user guide"))
+    open(os.path.join(p, "user guide", "intro.md"), "w").write("# intro\n")
+    open(os.path.join(p, "deploy", "SHIPLIST"), "a").write("user guide/\n")
+    sh("make", "build", cwd=p)
+    assert os.path.isfile(os.path.join(p, "build", "candidate", "user guide", "intro.md"))
+    # a listed path with spaces that does not exist still fails the build
+    open(os.path.join(p, "deploy", "SHIPLIST"), "a").write("release notes.md\n")
+    r = subprocess.run(["make", "build"], cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "release notes.md is on SHIPLIST but missing" in r.stderr, r.stderr
     # dry run writes nothing
     q = os.path.join(tmp, "dry")
     d = json.loads(sh(sys.executable, SCRIPT, q, "--dry-run", "--json"))
