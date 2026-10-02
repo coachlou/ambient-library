@@ -177,6 +177,11 @@
       "description": "Converges on a decision or spec via one high-leverage question at a time with a decisions ledger, then executes; use for \"grill me\", \"interview me\", \"ask me questions one at a time\"."
     },
     {
+      "name": "grill-with-prototype",
+      "source": "./library/grill-with-prototype",
+      "description": "Builds a clickable prototype of an app's screens live in a local dashboard while interviewing for requirements, ending in a SPEC.md; use only when the user asks for a prototype, mockup, clickable demo or wireframes. Without that ask, \"grill me\"/\"interview me\" — even about building an app — is grill."
+    },
+    {
       "name": "harness-prd",
       "source": "./library/harness-prd",
       "description": "Interviews the user to design a stateful-agent-harness ProcessSpec (a state machine of agents, skills, gates, artifacts); use for \"build an agent process for X\", \"spec out an agent pipeline\". NOT for code work-breakdowns (wbs-prd)."

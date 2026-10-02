@@ -45,6 +45,7 @@ with tempfile.TemporaryDirectory() as tmp:
     r = subprocess.run(["make", "spec"], cwd=p, capture_output=True, text=True)
     assert r.returncode != 0 and "fill the TODO: lines" in r.stderr, r.stderr
     sp = os.path.join(p, "spec", "SPEC.md")
+    assert "`grill-with-prototype`" in open(sp).read()  # UI projects are pointed at the prototype interview
     open(sp, "w").write(open(sp).read().replace("TODO: one observable", "- Prints hi. One observable").replace("TODO: input", "- run → hi. Input"))
     sh("make", "spec", cwd=p)
     # define check only; accept still fails, so release must restore VERSION and tag nothing

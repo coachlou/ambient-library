@@ -54,6 +54,7 @@ until the router reads one. Optionally scope which a project uses via
 | **fresh-eyes** | Zero-context agent walks docs/onboarding cold, fix-and-respawn | *"Fresh eyes"*, *"Test the docs"* |
 | **geo-authority-architect** | GEO / AI-citation authority strategy and content architecture | *"GEO strategy"*, *"Get cited by AI"* |
 | **grill** | One-question-at-a-time convergence with a decisions ledger | *"Grill me"*, *"Interview me"* |
+| **grill-with-prototype** | Requirements interview while a clickable prototype re-renders live in a local dashboard; writes SPEC.md | *"Prototype this app"*, *"Clickable mockup of X"* |
 | **hot-take-forge** | Hardens a contrarian claim until it is both novel and true | *"Give me a hot take on X"*, *"Pressure test this take"* |
 | **ireport** | Styled, interactive HTML research reports | *"Interactive report on X"* |
 | **irreplaceable-edge** | Live discovery of an irreplaceable competitive edge vs. AI competition | *"Find my edge"*, *"What's my moat"* |

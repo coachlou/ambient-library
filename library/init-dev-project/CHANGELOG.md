@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.3.7 — 2026-10-02
+- The SPEC template points projects with screens at `grill-with-prototype` (workspace `spec/`, project `prototype`). Its `prd` step writes `spec/SPEC.md` and keeps the scaffold's dated decisions. The gate is unchanged. Piloted on Porch Light.
+
 ## v0.3.6 — 2026-10-02
 - SPEC now has a gate. The scaffold writes `spec/SPEC.md` with three sections (what it must do, examples, decisions) and `TODO:` placeholders. `make spec` fails until they are filled, and `make check` runs it, so code cannot pass the checks before a spec exists. Each example is meant to get a test. The map's SPEC row now shows `make spec`.
 - Existing projects are not touched: a rerun keeps their Makefile, and adds `spec/SPEC.md` only if it is missing.

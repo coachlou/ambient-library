@@ -225,3 +225,6 @@ anything the root `.gitignore` names, so caches never reach the candidate.
    example gets a test. BUILD stays with `~/.aai/rules/coding.md`; PROVE and
    SHIP were already gates. Deeper spec work points to `grill`/`harness-prd`
    instead of copying them.
+10. v0.3.7 (2026-10-02): a project with screens specs by prototype. The SPEC
+   template names `grill-with-prototype` (workspace `spec/`, project
+   `prototype`), whose `prd` writes SPEC.md. Same gate; piloted on Porch Light.
