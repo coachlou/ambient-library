@@ -14,8 +14,8 @@ from then on.
   is not already inside a git repo (its own or a parent's). Inside one, git is
   left untouched and the report names the repo; commit there. It never adds a
   remote and never pushes.
-- Only the root files, `Makefile`, `deploy/SHIPLIST`, and `.aai/` are created.
-  `spec/`, `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
+- Only the root files, `Makefile`, `deploy/SHIPLIST`, `spec/SPEC.md`, and `.aai/`
+  are created. `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
   folder is the first sign of a template that is too heavy.
 
 ## Process
@@ -50,6 +50,7 @@ from then on.
 <path>/
 ├── README.md  VERSION (0.0.0)  CHANGELOG.md  Makefile  .gitignore
 ├── deploy/SHIPLIST          picked by --kind (standard §4); edit to match the real layout
+├── spec/SPEC.md             TODO: placeholders; `make check` fails until they are filled
 └── .aai/
     ├── instructions.md      behavior of a project under the standard
     ├── identity.md          general development harness (edit as the build progresses)

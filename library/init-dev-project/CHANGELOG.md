@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.6 — 2026-10-02
+- SPEC now has a gate. The scaffold writes `spec/SPEC.md` with three sections (what it must do, examples, decisions) and `TODO:` placeholders. `make spec` fails until they are filled, and `make check` runs it, so code cannot pass the checks before a spec exists. Each example is meant to get a test. The map's SPEC row now shows `make spec`.
+- Existing projects are not touched: a rerun keeps their Makefile, and adds `spec/SPEC.md` only if it is missing.
+
 ## v0.3.5 — 2026-10-02
 - Fix: `make deploy` checked only that HEAD was tagged, so uncommitted edits shipped under the existing tag (the scaffold's own `v0.0.0` counts). It now also refuses a dirty tree.
 - Fix: `make build` copied gitignored files under a shipped folder (e.g. `scripts/__pycache__/`) into the candidate. It now excludes what the root `.gitignore` names.

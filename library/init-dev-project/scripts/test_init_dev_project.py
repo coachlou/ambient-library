@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory() as tmp:
     for f in ["README.md", "VERSION", "CHANGELOG.md", "Makefile", ".gitignore",
               ".aai/instructions.md", ".aai/identity.md", ".aai/purpose.md", ".aai/context.md",
               ".aai/HANDOFF.md", ".aai/checkpoint.md", ".aai/references/dev-standard.md",
-              "deploy/SHIPLIST"]:
+              "deploy/SHIPLIST", "spec/SPEC.md"]:
         assert os.path.isfile(os.path.join(p, f)), f
         assert "{{" not in open(os.path.join(p, f)).read(), f"unrendered placeholder in {f}"
     assert "demo-app" in open(os.path.join(p, "README.md")).read()
@@ -41,6 +41,12 @@ with tempfile.TemporaryDirectory() as tmp:
     open(os.path.join(p, "docs", "help.md"), "w").write("# help\n")
     sh("make", "build", cwd=p)
     assert sorted(os.listdir(os.path.join(p, "build", "candidate"))) == ["VERSION", "docs", "src"]
+    # the spec gate fails on the scaffold's TODO: lines and passes once they are filled
+    r = subprocess.run(["make", "spec"], cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "fill the TODO: lines" in r.stderr, r.stderr
+    sp = os.path.join(p, "spec", "SPEC.md")
+    open(sp, "w").write(open(sp).read().replace("TODO: one observable", "- Prints hi. One observable").replace("TODO: input", "- run → hi. Input"))
+    sh("make", "spec", cwd=p)
     # define check only; accept still fails, so release must restore VERSION and tag nothing
     mk = os.path.join(p, "Makefile")
     src = open(mk).read(); open(mk, "w").write(src.replace(

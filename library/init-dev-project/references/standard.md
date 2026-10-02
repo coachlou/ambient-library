@@ -40,6 +40,7 @@ for the cold end-to-end run in release.
 
 | Gate | Command | Passes when |
 |---|---|---|
+| spec exit | `make spec` (run by `make check`) | `spec/SPEC.md` exists and no line starts with `TODO:`; each example in it has a test |
 | studio entry | `make run` | it starts and you can touch it |
 | release entry | `make check` | the candidate builds from `deploy/SHIPLIST`, then lint + unit + smoke pass, locally, in under a minute |
 | release exit | `make release BUMP=patch` | VERSION bumped, then acceptance passes on the candidate built with that VERSION, then CHANGELOG line, commit, tag on `main`. A failed acceptance restores VERSION and tags nothing |
@@ -60,7 +61,7 @@ An empty folder is the first sign of a template that is too heavy.
 │
 ├── spec/                  1 SPEC. WHAT it must do. Written before code,
 │   │                      changed by decision.
-│   ├── SPEC.md            requirements + decisions log
+│   ├── SPEC.md            behaviors, examples (one test each), decisions; scaffolded
 │   ├── PROTOCOL.md        any wire or file contract, normative
 │   └── adr/               one file per non-obvious choice, dated, never edited
 │
@@ -178,8 +179,8 @@ anything the root `.gitignore` names, so caches never reach the candidate.
 - No CI until a repo has a second committer. Local `make check` before tag is
   the CI.
 - No new tooling. The scaffold skill in this folder drops the root files, a
-  Makefile with four stub targets, and `.aai/`. Other folders appear on first
-  use. That is its whole job.
+  Makefile with four stub targets, `spec/SPEC.md`, and `.aai/`. Other folders
+  appear on first use. That is its whole job.
 
 ## Decisions
 
@@ -217,3 +218,10 @@ anything the root `.gitignore` names, so caches never reach the candidate.
    `v0.0.0` tag, and `make build` copied `scripts/__pycache__/` into the
    candidate. Minor, kept: the skill ship list names folders a small skill
    lacks; the build gate says which, and the owner trims it.
+9. v0.3.6 (2026-10-02): SPEC gets a gate, not a process. The pilot's spec was
+   freehand and nothing would have noticed it missing. The scaffold now writes
+   `spec/SPEC.md` (behaviors, examples, decisions) with `TODO:` placeholders,
+   and `make spec`, run by `make check`, fails until they are filled. Each
+   example gets a test. BUILD stays with `~/.aai/rules/coding.md`; PROVE and
+   SHIP were already gates. Deeper spec work points to `grill`/`harness-prd`
+   instead of copying them.

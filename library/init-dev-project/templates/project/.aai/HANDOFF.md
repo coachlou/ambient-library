@@ -14,4 +14,4 @@ Nothing.
 - Define `make run` and `make check`.
 
 ## Next
-Write `spec/SPEC.md` with the outcome, non-goals, and proof, then `make run`.
+Fill the `TODO:` lines in `spec/SPEC.md` until `make spec` passes, then `make run`.

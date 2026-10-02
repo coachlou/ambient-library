@@ -7,7 +7,7 @@ VERSION := $(shell cat VERSION)
 
 help:
 	@echo "THE PIPELINE      folder    verb"
-	@echo "1 SPEC            spec/     -              what it must do, written before code"
+	@echo "1 SPEC            spec/     make spec      SPEC.md written before code: no TODO: lines left"
 	@echo "2 BUILD           {{source}}make run       start it so you can touch it"
 	@echo "3 PROVE           tests/    make check     candidate from deploy/SHIPLIST, then lint + unit + smoke"
 	@echo "                            make release   BUMP=patch|minor|major NOTE='...' [PUSH=1]  bump, accept, CHANGELOG, tag"
@@ -19,7 +19,12 @@ help:
 run:
 	@echo "run: not defined yet — edit the run recipe in Makefile" >&2; exit 1
 
-check: build
+# The spec gate: SPEC.md exists and its TODO: placeholders are filled in.
+spec:
+	@test -f spec/SPEC.md || { echo "spec: spec/SPEC.md is missing" >&2; exit 1; }
+	@! grep -n '^TODO:' spec/SPEC.md >&2 || { echo "spec: fill the TODO: lines in spec/SPEC.md first" >&2; exit 1; }
+
+check: spec build
 	@echo "check: not defined yet — a gate with nothing behind it must fail" >&2; exit 1
 
 # The candidate: exactly what deploy/SHIPLIST names, verified both ways.
@@ -49,4 +54,4 @@ deploy:
 	@test -z "$$(git status --porcelain)" || { echo "deploy: uncommitted changes; the tag would not describe what ships" >&2; exit 1; }
 	@echo "deploy: no target defined yet — name it in README and fill this recipe" >&2; exit 1
 
-.PHONY: help run check build accept release deploy
+.PHONY: help spec run check build accept release deploy

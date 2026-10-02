@@ -11,7 +11,7 @@ makes it a git repo. The standard is [references/standard.md](references/standar
 python3 scripts/init_dev_project.py ~/GitHub/my-thing --kind web --description "One sentence."
 ```
 
-Creates `README.md`, `VERSION`, `CHANGELOG.md`, `Makefile`, `.gitignore`, and
+Creates `README.md`, `VERSION`, `CHANGELOG.md`, `Makefile`, `.gitignore`, `spec/SPEC.md`, and
 `.aai/` (instructions, identity, purpose, context, HANDOFF, checkpoint, and a
 version-stamped copy of the standard). Then, unless the folder is already inside a
 git repo, `git init -b main`, one commit, tag `v0.0.0`. Never overwrites, never
