@@ -155,7 +155,9 @@ else the web layout.
 
 The skill channel already exists and already has the right property:
 committing does not release, a one-line `RELEASE.yaml` edit does. Web apps get
-the same property from the tag: `make deploy` refuses on an untagged commit.
+the same property from the tag: `make deploy` refuses on an untagged commit or
+a dirty tree, so the tag always describes what shipped. `make build` leaves out
+anything the root `.gitignore` names, so caches never reach the candidate.
 
 ## 5. Versioning and git
 
@@ -209,3 +211,9 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
    defaulted to `project` and nobody typed the flag. Scaffolding inside an
    existing repo (an incubator subfolder) no longer creates a nested repo;
    git is left alone and the report names the enclosing repo.
+8. v0.3.5 (2026-10-02): skill-kind pilot (`slugify`, scratchpad). Spec to
+   deploy worked; detection, the `root` map row, and the ship-list gate all
+   held. Two fixes: deploy shipped uncommitted edits under the scaffold's
+   `v0.0.0` tag, and `make build` copied `scripts/__pycache__/` into the
+   candidate. Minor, kept: the skill ship list names folders a small skill
+   lacks; the build gate says which, and the owner trims it.

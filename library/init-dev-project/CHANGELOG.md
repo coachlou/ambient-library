@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.3.5 — 2026-10-02
+- Fix: `make deploy` checked only that HEAD was tagged, so uncommitted edits shipped under the existing tag (the scaffold's own `v0.0.0` counts). It now also refuses a dirty tree.
+- Fix: `make build` copied gitignored files under a shipped folder (e.g. `scripts/__pycache__/`) into the candidate. It now excludes what the root `.gitignore` names.
+- Found by piloting a skill-kind project end to end (standard decision 8).
+
 ## v0.3.4 — 2026-10-02
 - The README still called this an incubator skill to promote "at first tag"; it has been in ambient-library since its first release. It now says so, describes the release flow, and notes that git is skipped inside an existing repo. Standard decision 3 (doctrine) is marked closed.
 - Fix: a Finder `.DS_Store` inside `templates/` crashed every scaffold with a UTF-8 decode error. Those files are now skipped.

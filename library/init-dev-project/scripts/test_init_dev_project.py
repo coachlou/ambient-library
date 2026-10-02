@@ -64,6 +64,16 @@ with tempfile.TemporaryDirectory() as tmp:
     sh("make", "release", "BUMP=minor", cwd=p)
     assert open(os.path.join(p, "VERSION")).read().strip() == "0.1.0"
     assert sh("git", "status", "--porcelain", cwd=p) == ""
+    # gitignored files under a shipped folder stay out of the candidate
+    os.makedirs(os.path.join(p, "src", "__pycache__"))
+    open(os.path.join(p, "src", "__pycache__", "app.pyc"), "w").write("x")
+    sh("make", "build", cwd=p)
+    assert not os.path.exists(os.path.join(p, "build", "candidate", "src", "__pycache__"))
+    # deploy refuses a dirty tree even on a tagged HEAD: the tag must describe what ships
+    open(os.path.join(p, "src", "app.py"), "a").write("# wip\n")
+    r = subprocess.run(["make", "deploy"], cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "uncommitted" in r.stderr, r.stderr
+    sh("git", "checkout", "--", "src/app.py", cwd=p)
     # existing deploy/: a ship list the owner already wrote is kept, not overwritten
     e = os.path.join(tmp, "existing")
     os.makedirs(os.path.join(e, "deploy", "docker"))

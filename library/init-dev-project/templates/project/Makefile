@@ -26,7 +26,8 @@ check: build
 build:
 	@rm -rf build/candidate && mkdir -p build/candidate
 	@while IFS= read -r f; do [ -n "$$f" ] || continue; test -e "$$f" || { echo "build: $$f is on SHIPLIST but missing" >&2; exit 1; }; done < deploy/SHIPLIST
-	@rsync -a --recursive --files-from=deploy/SHIPLIST . build/candidate/
+	@# ponytail: root .gitignore only; nested .gitignore files and ! negations are not honored
+	@rsync -a --recursive --exclude-from=.gitignore --files-from=deploy/SHIPLIST . build/candidate/
 	@cd build/candidate && find . -mindepth 1 -maxdepth 1 | sed "s|^./||" | while IFS= read -r f; do grep -qxF -e "$$f" -e "$$f/" ../../deploy/SHIPLIST || { echo "build: $$f is not on SHIPLIST" >&2; exit 1; }; done
 
 # Production test on the candidate. Runs inside make release, after the bump,
@@ -45,6 +46,7 @@ release: check
 
 deploy:
 	@git describe --tags --exact-match HEAD >/dev/null 2>&1 || { echo "deploy: HEAD is not tagged — run make release first" >&2; exit 1; }
+	@test -z "$$(git status --porcelain)" || { echo "deploy: uncommitted changes; the tag would not describe what ships" >&2; exit 1; }
 	@echo "deploy: no target defined yet — name it in README and fill this recipe" >&2; exit 1
 
 .PHONY: help run check build accept release deploy
