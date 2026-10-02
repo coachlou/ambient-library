@@ -185,7 +185,8 @@ the same property from the tag: `make deploy` refuses on an untagged commit.
    macOS, agents know it, one entry point.
 2. `tinkering/` stays an incubator; graduation is a written decision in the
    README, not a tag (revised 2026-09-30, was "at first tag").
-3. Open: which ten lines of this go into `~/.aai/rules/coding.md` as doctrine.
+3. Doctrine (closed 2026-10-02): `~/.aai/rules/coding.md` has a `## Projects`
+   section that points here and lists the seven rules agents break without it.
 4. v0.2.0 (2026-09-30) adopts all four findings of a codex review: graduation
    rule, per-kind ship list, check/acceptance split, deploy proof + `data/`.
    The standard is piloted through this skill and a web app before any of it

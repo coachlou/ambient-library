@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.4 — 2026-10-02
+- The README still called this an incubator skill to promote "at first tag"; it has been in ambient-library since its first release. It now says so, describes the release flow, and notes that git is skipped inside an existing repo. Standard decision 3 (doctrine) is marked closed.
+- Fix: a Finder `.DS_Store` inside `templates/` crashed every scaffold with a UTF-8 decode error. Those files are now skipped.
+
 ## v0.3.3 — 2026-10-01
 - `--kind` now matters. `skill`, `skill-app` and `tool` get their own ship list in `deploy/SHIPLIST`, and the `make` map shows where their source lives. Any other kind keeps `VERSION src/ docs/`. A scaffolded skill no longer fails its first build on a missing `src/`.
 - Without `--kind`, the kind is detected from files already in the folder (`SKILL.md`, `manifest.json` + `bridge/`, `wrangler.*`, `Dockerfile`, `vercel.json`) and falls back to the web layout. The report says which kind was used and why. The agent now passes `--kind` only when the request names one.

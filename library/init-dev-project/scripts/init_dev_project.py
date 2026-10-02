@@ -98,6 +98,7 @@ def main():
     files = []
     for d, _, fs in os.walk(TEMPLATES):
         for fn in fs:
+            if fn == ".DS_Store": continue   # ponytail: Finder litter; only junk seen so far
             src = os.path.join(d, fn)
             rel = os.path.relpath(src, TEMPLATES)
             with open(src) as f:

@@ -27,6 +27,6 @@ release: check
 
 deploy:
 	@git describe --tags --exact-match HEAD >/dev/null 2>&1 || { echo "deploy: HEAD is not tagged — run make release first" >&2; exit 1; }
-	@echo "deploy: promote into ambient-library via ~/.ailib/.aai/skills/admin.md, then add to RELEASE.yaml" >&2; exit 1
+	@echo "deploy: release to ambient-library via ~/.ailib/.aai/skills/admin.md (see README Deploy)" >&2; exit 1
 
 .PHONY: help run check release deploy
