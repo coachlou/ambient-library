@@ -2,11 +2,9 @@
 name: The Wisdom Doctrine
 type: command
 description: Reverse-engineer your own unconscious expertise — the patterns, heuristics, and decision-making frameworks you've internalized so deeply you can't articulate them anymore. Surface the invisible knowledge that separates 10 years of experience from 10 times 1 year.
-source: multiple — Aug 14, 2025 AIMM session on excavating expertise below conscious access
 trigger: /aimm:wisdom-doctrine
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-08-14_Mastermind
+- 2025-08-14_Mastermind
 ---
 
 # The Wisdom Doctrine
@@ -100,4 +98,4 @@ Revise what doesn't hold up. Mark confidence levels on each pattern.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-08-14_Mastermind]] (multiple — excavating expertise below conscious access)
+- 2025-08-14_Mastermind (multiple — excavating expertise below conscious access)

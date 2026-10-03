@@ -2,11 +2,9 @@
 name: The Brand Alignment Audit
 type: command
 description: Compare what your website says about you against what you actually want to be known for — surfacing contradictions, ghost positioning, and priority fixes with draft copy.
-source: Don Back — Feb 26, 2026 AIMM session on homepage positioning contradiction
 trigger: /aimm:brand-alignment-audit
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-26_Mastermind
+- 2026-02-26_Mastermind
 ---
 
 # The Brand Alignment Audit
@@ -81,4 +79,4 @@ Be blunt. The value is in finding every place the online presence works against 
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-26_Mastermind]] (Don Back — homepage positioning contradiction)
+- PowerUp AI Mastermind Recap — 2026-02-26 (Don Back — homepage positioning contradiction)

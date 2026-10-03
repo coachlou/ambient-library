@@ -2,11 +2,9 @@
 name: The Advisory Board
 type: command
 description: Convene a multi-perspective AI advisory board — not generic "expert personas" but a structured hierarchy of advisors with different levels of authority, different domains, and genuine disagreement built in — to evaluate any decision, strategy, or challenge from angles your default thinking can't reach.
-source: Kasimir Hedstrom — Oct 30, 2025 AIMM session on 5-level advisory board architecture
 trigger: /aimm:advisory-board
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-10-30_Mastermind
+- 2025-10-30_Mastermind
 ---
 
 # The Advisory Board
@@ -112,4 +110,4 @@ Revise what doesn't hold up.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-10-30_Mastermind]] (Kasimir Hedstrom — 5-level advisory board architecture)
+- 2025-10-30_Mastermind (Kasimir Hedstrom — 5-level advisory board architecture)

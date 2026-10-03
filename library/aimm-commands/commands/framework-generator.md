@@ -2,11 +2,9 @@
 name: The Authority Framework Generator
 type: command
 description: Turn an unnamed process or methodology into a named, structured, AI-discoverable framework — complete with candidate names, architecture, authority statement, and schema-readiness. From Lou's "baptize it" principle — named frameworks are the highest originality authority signal to both AI engines and human audiences.
-source: Lou Dallo — Jan 22, 2026 AIMM session on "baptize it" principle — naming frameworks
 trigger: /aimm:framework-generator
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-01-22_Mastermind
+- 2026-01-22_Mastermind
 ---
 
 # The Authority Framework Generator
@@ -83,4 +81,4 @@ Flag any concerns and suggest alternatives.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-01-22_Mastermind]] (Lou Dallo — "baptize it" principle — naming frameworks)
+- PowerUp AI Mastermind Recap — 2026-01-22 (Lou Dallo — "baptize it" principle — naming frameworks)

@@ -2,11 +2,9 @@
 name: Second-Order Cascade
 type: command
 description: Map the cascading consequences of a development, trend, or event — surfacing what will be obvious in 6 months but almost no one is talking about today. Based on Michael Simmons' sense-making system for generating non-obvious analysis.
-source: Michael Simmons — Mar 19, 2026 AIMM session on sense-making system for non-obvious analysis
 trigger: /aimm:second-order-cascade
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-03-19_Mastermind
+- 2026-03-19_Mastermind
 ---
 
 # Second-Order Cascade
@@ -33,4 +31,4 @@ Work through these steps in order:
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-03-19_Mastermind]] (Michael Simmons — sense-making system for non-obvious analysis)
+- PowerUp AI Mastermind Recap — 2026-03-19 (Michael Simmons — sense-making system for non-obvious analysis)

@@ -2,11 +2,9 @@
 name: The Blind Spot Scanner
 type: command
 description: Surface what you don't know you don't know — adjacent knowledge, unasked questions, and confidence-knowledge gaps hiding in your current thinking. Designed for the structural problem Jamie W identified — you can only ask questions about what you already know exists.
-source: Jamie W — Feb 12, 2026 AIMM session on surfacing what you don't know you don't know
 trigger: /aimm:blind-spot-scanner
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-12_Mastermind
+- 2026-02-12_Mastermind
 ---
 
 # The Blind Spot Scanner
@@ -68,4 +66,4 @@ Deliver with directness. The value of this analysis is proportional to how uncom
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-12_Mastermind]] (Jamie W — surfacing what you don't know you don't know)
+- PowerUp AI Mastermind Recap — 2026-02-12 (Jamie W — surfacing what you don't know you don't know)

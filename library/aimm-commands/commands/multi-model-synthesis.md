@@ -1,13 +1,10 @@
 ---
 name: Multi-Model Synthesis
 type: command
-trigger: /multi-model-synthesis
 description: Run structured parallel model deliberation on any question or document. Use when a decision or draft is high-stakes enough to warrant multiple cognitive perspectives before committing.
-score: 84/100
-sessions: 7
-last_updated: 2026-04-06
+trigger: /multi-model-synthesis
 source-sessions:
-  - vault-wide
+- vault-wide
 ---
 
 # Multi-Model Synthesis Command

@@ -2,11 +2,9 @@
 name: The Adaptive Tutor
 type: command
 description: Turn Claude into a tutor that teaches by testing — adapting difficulty in real time, gating progression on demonstrated competency rather than self-reported understanding, and diagnosing misconceptions through wrong-answer analysis.
-source: multiple — Jul 31, 2025 AIMM session on competency-gated AI tutoring
 trigger: /aimm:adaptive-tutor
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-31_Mastermind
+- 2025-07-31_Mastermind
 ---
 
 # The Adaptive Tutor
@@ -99,4 +97,4 @@ CONSTRAINTS:
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-31_Mastermind]] (multiple — competency-gated AI tutoring)
+- 2025-07-31_Mastermind (multiple — competency-gated AI tutoring)

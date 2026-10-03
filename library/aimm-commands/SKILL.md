@@ -1,6 +1,6 @@
 ---
 name: aimm-commands
-description: Library of 62 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming an AIMM command.
+description: Library of 66 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming an AIMM command.
 ---
 
 Read `instructions.md` in this skill's directory and follow it.

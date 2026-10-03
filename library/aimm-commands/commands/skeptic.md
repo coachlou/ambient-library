@@ -2,11 +2,9 @@
 name: The Skeptic
 type: command
 description: Structured adversarial review of any AI output — identifying vulnerable assumptions, simulating failure scenarios, and producing a hardened revision. The single highest-ROI post-generation habit — costs nothing on a subscription and routinely produces substantial improvements.
-source: Lou Dallo — Mar 5, 2026 AIMM session on adversarial review workflow
 trigger: /aimm:skeptic
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-03-05_Mastermind
+- 2026-03-05_Mastermind
 ---
 
 # The Skeptic
@@ -65,4 +63,4 @@ If any check fails, redo that section.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-03-05_Mastermind]] (Lou Dallo — adversarial review workflow)
+- PowerUp AI Mastermind Recap — 2026-03-05 (Lou Dallo — adversarial review workflow)

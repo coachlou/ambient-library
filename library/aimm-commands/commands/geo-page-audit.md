@@ -2,11 +2,9 @@
 name: The GEO Page Audit
 type: command
 description: Evaluate any web page for Generative Engine Optimization readiness — how likely a retrieval-augmented generation system is to select this page as a citation source.
-source: multiple — Jan 8, 2026 AIMM session on GEARS and AI-optimized schema
 trigger: /aimm:geo-page-audit
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-01-08_Mastermind
+- 2026-01-08_Mastermind
 ---
 
 # The GEO Page Audit
@@ -87,4 +85,4 @@ Revise any that fail before delivering.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-01-08_Mastermind]] (multiple — GEARS and AI-optimized schema)
+- PowerUp AI Mastermind Recap — 2026-01-08 (multiple — GEARS and AI-optimized schema)

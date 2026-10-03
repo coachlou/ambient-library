@@ -2,11 +2,9 @@
 name: The Chat-to-Script Extractor
 type: command
 description: Extract a shareable narrative script and key decisions from a long AI work session — ready for NotebookLM, slides, or a team briefing.
-source: Lou — 2026-04-23, cognitive twin pipeline / session-to-video workflow
 trigger: /aimm:chat-to-script-extractor
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-04-23_Mastermind
+- 2026-04-23_Mastermind
 ---
 
 # The Chat-to-Script Extractor
@@ -38,4 +36,4 @@ Here is the conversation:
 
 ## Source
 
-From [[2026-04-23_Mastermind]]: Lou's cognitive twin pipeline — the cognitive mirror skill scans a session, extracts decisions and architecture, and produces a narrative script. That script feeds NotebookLM (which generates podcast-style audio) or goes directly into slides. A 6-to-8-hour development session becomes a 6-minute narrated video in roughly 30 minutes. "I now have a process I can use every single time." The command extracts the pipeline step that turns raw chat into structured, shareable narrative.
+From 2026-04-23_Mastermind: Lou's cognitive twin pipeline — the cognitive mirror skill scans a session, extracts decisions and architecture, and produces a narrative script. That script feeds NotebookLM (which generates podcast-style audio) or goes directly into slides. A 6-to-8-hour development session becomes a 6-minute narrated video in roughly 30 minutes. "I now have a process I can use every single time." The command extracts the pipeline step that turns raw chat into structured, shareable narrative.

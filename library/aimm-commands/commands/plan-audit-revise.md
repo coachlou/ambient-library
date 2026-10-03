@@ -3,9 +3,8 @@ name: Plan-Audit-Revise
 type: command
 description: Three-step workflow that catches plan-level errors before they become implementation bugs. Ask AI to generate a plan, then audit its own plan for gaps, conflicts, and unstated assumptions, then revise. Exploits the difference between AI generation mode (narrative coherence) and evaluation mode (gap detection). Lou found 18 problems in one pass.
 trigger: /aimm:plan-audit-revise
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-04-16_Mastermind
+- 2026-04-16_Mastermind
 ---
 
 # Plan-Audit-Revise
@@ -59,4 +58,4 @@ Lou demonstrated this during the April 16 session while integrating the AAR syst
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-04-16_Mastermind]] (Lou — plan-audit-revise pattern, 18-problem discovery)
+- PowerUp AI Mastermind Recap — 2026-04-16 (Lou — plan-audit-revise pattern, 18-problem discovery)

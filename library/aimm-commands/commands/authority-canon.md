@@ -2,11 +2,9 @@
 name: The Authority Canon Builder
 type: command
 description: Build your 3-layer authority architecture for Generative Engine Optimization — the canon (core beliefs that are always true), frameworks (how the canon becomes usable), and diagnostics (where your reader is right now). Designed to make AI engines recognize you as the voice worth citing.
-source: Don Back — Dec 19, 2025 AIMM session on GEO authority framework (3-layer)
 trigger: /aimm:authority-canon
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-12-19_Mastermind
+- 2025-12-19_Mastermind
 ---
 
 # The Authority Canon Builder
@@ -100,4 +98,4 @@ Revise what doesn't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-12-19_Mastermind]] (Don Back — GEO authority framework (3-layer))
+- 2025-12-19_Mastermind (Don Back — GEO authority framework (3-layer))

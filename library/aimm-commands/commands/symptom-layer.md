@@ -2,11 +2,9 @@
 name: The Symptom Layer Discovery
 type: command
 description: Map the gap between what you sell and what your clients actually experience before they know they need help — surfacing pre-awareness symptoms, client-language queries, and content blind spots.
-source: Dirk Ohlmeier + Don Back — Jan 15, 2026 AIMM session on pre-awareness search behavior
 trigger: /aimm:symptom-layer
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-01-15_Mastermind
+- 2026-01-15_Mastermind
 ---
 
 # The Symptom Layer Discovery
@@ -82,4 +80,4 @@ Then: a prioritized list of the top 5 blind spots, ranked by: (a) how many poten
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-01-15_Mastermind]] (Dirk Ohlmeier + Don Back — pre-awareness search behavior)
+- PowerUp AI Mastermind Recap — 2026-01-15 (Dirk Ohlmeier + Don Back — pre-awareness search behavior)

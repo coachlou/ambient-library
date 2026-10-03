@@ -2,11 +2,9 @@
 name: Voice Activator
 type: command
 description: Draft content in your voice by activating Claude's accumulated knowledge of your communication style, then running a self-critique loop to close the gap between "polished AI prose" and how you actually write. Based on Lou Dallo's "knowing what you know about me" technique.
-source: Lou Dallo — Mar 19, 2026 AIMM session on "knowing what you know about me" technique
 trigger: /aimm:voice-activator
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-03-19_Mastermind
+- 2026-03-19_Mastermind
 ---
 
 # Voice Activator
@@ -33,4 +31,4 @@ After you produce the draft, do not stop. Continue with this self-critique seque
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-03-19_Mastermind]] (Lou Dallo — "knowing what you know about me" technique)
+- PowerUp AI Mastermind Recap — 2026-03-19 (Lou Dallo — "knowing what you know about me" technique)

@@ -2,11 +2,9 @@
 name: The Avatar Archaeologist
 type: command
 description: Excavate the hidden psychographic patterns in your client data — the fears they won't say out loud, the identity shifts they're chasing, the language that signals readiness to buy — by mining transcripts, intake forms, reviews, and conversations for what lives beneath the demographic surface.
-source: multiple — Jul 3, 2025 AIMM session on building avatars from real client data
 trigger: /aimm:avatar-archaeologist
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-03_Mastermind
+- 2025-07-03_Mastermind
 ---
 
 # The Avatar Archaeologist
@@ -94,4 +92,4 @@ Flag low-confidence elements. Note where more data would change the analysis.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-03_Mastermind]] (multiple — building avatars from real client data)
+- 2025-07-03_Mastermind (multiple — building avatars from real client data)

@@ -2,11 +2,9 @@
 name: The Canon Lock
 type: command
 description: Protect your canonical framework from AI drift — preventing the model from silently adding, renaming, reinterpreting, or "improving" your intellectual property. Addresses the specific failure modes of context compaction, inferred extrapolation, and synonym drift.
-source: Don Back — Feb 5, 2026 AIMM session on protecting canonical framework from AI drift
 trigger: /aimm:canon-lock
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-05_Mastermind
+- 2026-02-05_Mastermind
 ---
 
 # The Canon Lock
@@ -38,4 +36,4 @@ Now: tell me what task you'd like to accomplish using this framework, and I will
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-05_Mastermind]] (Don Back — protecting canonical framework from AI drift)
+- PowerUp AI Mastermind Recap — 2026-02-05 (Don Back — protecting canonical framework from AI drift)

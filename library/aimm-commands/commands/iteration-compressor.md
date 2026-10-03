@@ -2,11 +2,9 @@
 name: The Iteration Compressor
 type: command
 description: Map any creative or service delivery process as a cycle, identify the rinse-lather-repeat loops where time disappears, and determine exactly which loops AI can compress — so you go from blank page to shipped in days instead of weeks.
-source: Lou Dallo — Dec 5, 2025 AIMM session on iteration compression thesis
 trigger: /aimm:iteration-compressor
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-12-05_Mastermind
+- 2025-12-05_Mastermind
 ---
 
 # The Iteration Compressor
@@ -102,4 +100,4 @@ Revise the compression map based on what doesn't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-12-05_Mastermind]] (Lou Dallo — iteration compression thesis)
+- 2025-12-05_Mastermind (Lou Dallo — iteration compression thesis)

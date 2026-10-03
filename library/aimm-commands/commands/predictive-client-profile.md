@@ -2,11 +2,9 @@
 name: The Predictive Client Onboarding Profile
 type: command
 description: Turn an onboarding interview transcript into a dual-output client profile — a private analysis with predicted friction points, and a warm onboarding letter that normalizes the journey ahead.
-source: multiple — onboarding transcript → dual-output profile
 trigger: /aimm:predictive-client-profile
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-31_Mastermind
+- 2025-07-31_Mastermind
 ---
 
 # The Predictive Client Onboarding Profile
@@ -40,4 +38,4 @@ If no transcript was provided above, ask me to paste or point to the onboarding 
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-31_Mastermind]] (multiple — onboarding transcript → dual-output profile)
+- 2025-07-31_Mastermind (multiple — onboarding transcript → dual-output profile)

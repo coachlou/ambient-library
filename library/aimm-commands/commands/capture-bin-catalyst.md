@@ -2,11 +2,9 @@
 name: The Capture Bin Catalyst
 type: command
 description: Index and catalog a disorganized collection of notes, ideas, or fragments into a navigable, rated, thematically grouped document.
-source: Lou Dallo — indexing disorganized notes
 trigger: /aimm:capture-bin-catalyst
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-01-29_Mastermind
+- 2026-01-29_Mastermind
 ---
 
 # The Capture Bin Catalyst
@@ -39,4 +37,4 @@ If no folder path or collection of notes was provided above, ask me to describe 
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-01-29_Mastermind]] (Lou Dallo — indexing disorganized notes)
+- PowerUp AI Mastermind Recap — 2026-01-29 (Lou Dallo — indexing disorganized notes)

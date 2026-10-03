@@ -2,11 +2,9 @@
 name: The Prompt Abstraction Ladder
 type: command
 description: Climb from task-level prompting to meta-level to meta-meta-level — three distinct altitudes of prompt design, each producing fundamentally different outputs. Most people stay on the ground floor. This takes you to the roof.
-source: multiple — Jul 31, 2025 AIMM session on three levels of prompt abstraction
 trigger: /aimm:prompt-abstraction-ladder
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-31_Mastermind
+- 2025-07-31_Mastermind
 ---
 
 # The Prompt Abstraction Ladder
@@ -103,4 +101,4 @@ Revise any level that doesn't hold up to scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-31_Mastermind]] (multiple — three levels of prompt abstraction)
+- 2025-07-31_Mastermind (multiple — three levels of prompt abstraction)

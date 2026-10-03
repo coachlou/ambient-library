@@ -2,11 +2,9 @@
 name: The Content Pipeline
 type: command
 description: Build a complete content system from psychographic foundations — audience psychology → content pillars → topic generation → multi-version drafts calibrated by platform. Turns one strategic insight into a month of content that compounds instead of scatters.
-source: Don Back — Jul 17, 2025 AIMM session on LinkedIn content machine
 trigger: /aimm:content-pipeline
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-17_Mastermind
+- 2025-07-17_Mastermind
 ---
 
 # The Content Pipeline
@@ -97,4 +95,4 @@ Revise what doesn't pass.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-17_Mastermind]] (Don Back — LinkedIn content machine)
+- 2025-07-17_Mastermind (Don Back — LinkedIn content machine)

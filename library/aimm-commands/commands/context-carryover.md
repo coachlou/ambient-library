@@ -2,18 +2,16 @@
 name: context-carryover
 type: command
 description: Generates a structured 9-section handover artifact + receiving prompt to transfer a Claude conversation to a new thread without information loss
-source: Elizabeth Stief — shared at 2026-02-19 AIMM session, protocol at github.com/coachlou/aimm/prompts/Handover_Protocol_Universal (AIMM)/
 trigger: /context-carryover
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-19_Mastermind
+- 2026-02-19_Mastermind
 ---
 
 # Context Carryover (Handover Protocol)
 
 ## Origin
 
-Elizabeth Stief introduced this at the 2026-02-19 PowerUp AI Mastermind session. Lou's reaction: "I need that yesterday." The full protocol is published at [github.com/coachlou/aimm](https://github.com/coachlou/aimm/tree/main/prompts/Handover_Protocol_Universal%20(AIMM)).
+Elizabeth Stief introduced this at the 2026-02-19 PowerUp AI Mastermind session. Lou's reaction: "I need that yesterday." The full protocol is published at github.com/coachlou/aimm).
 
 This command is Elizabeth's exact protocol, lightly formatted for vault consistency.
 
@@ -167,9 +165,9 @@ You get **two things** every time:
 
 ## Related
 
-- `wiki/mastermind/commands/grounded-query-protocol.md` — context-lock the new thread to your handover before it acts
-- `wiki/mastermind/commands/multi-model-synthesis.md` — if continuing a multi-model deliberation
+- `Grounded Query Protocol` — context-lock the new thread to your handover before it acts
+- `Multi-Model Synthesis` — if continuing a multi-model deliberation
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-19_Mastermind]] (Elizabeth Stief — context-carryover protocol)
+- PowerUp AI Mastermind Recap — 2026-02-19 (Elizabeth Stief — context-carryover protocol)

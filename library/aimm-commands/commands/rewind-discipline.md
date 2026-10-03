@@ -1,6 +1,15 @@
+---
+name: Rewind Discipline
+type: command
+description: Use this to recover cleanly from a Claude misinterpretation, explains why correcting forward makes it worse and gives you the exact steps to rewind to the last good instruction and re-run clean. From Kasimir's interjection during the May 14 live tax demo.
+trigger: /aimm:rewind-discipline
+source-sessions:
+- 2026-05-14_Mastermind
+---
+
 # Rewind Discipline
 
-Use this to recover cleanly from a Claude misinterpretation — explains why correcting forward makes it worse and gives you the exact steps to rewind to the last good instruction and re-run clean. From Kasimir's interjection during the May 14 live tax demo.
+Use this to recover cleanly from a Claude misinterpretation, explains why correcting forward makes it worse and gives you the exact steps to rewind to the last good instruction and re-run clean. From Kasimir's interjection during the May 14 live tax demo.
 
 ---
 
@@ -23,7 +32,7 @@ When Claude does something you didn't intend:
 4. Re-run. Claude is now starting clean from a corrected instruction, with
    no contaminated context from the wrong attempt.
 
-The wrong move — and the one everyone defaults to — is appending
+The wrong move, and the one everyone defaults to, is appending
 "actually I meant…" to a thread that's already gone off the rails. That
 burns tokens, pollutes context, and almost never recovers cleanly.
 

@@ -1,17 +1,9 @@
 ---
 name: Grounded Query Protocol
-type: prompt
+type: command
 description: A parameterized prompt template that enforces evidence-grounded AI responses. Prevents hallucination by context-locking the model to specific sources and requiring explicit confidence disclosure.
-use-when:
-  - Any research or fact-finding task where accuracy is consequential
-  - Technical queries where you have reference documentation
-  - Any time you are tempted to ask an AI a question it might confidently fabricate the answer to
-  - High-stakes decisions where you need to distinguish sourced claims from inferences
-score: 82/100
-sessions: 8
-last_updated: 2026-04-06
 source-sessions:
-  - vault-wide
+- vault-wide
 ---
 
 # Grounded Query Protocol Prompt
@@ -133,4 +125,4 @@ This combination is the highest-fidelity research workflow available without hum
 
 ## Related Artifacts
 
-- `wiki/mastermind/commands/multi-model-synthesis.md` — for combining multiple model outputs
+- `Multi-Model Synthesis` — for combining multiple model outputs

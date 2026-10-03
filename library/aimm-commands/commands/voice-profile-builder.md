@@ -2,11 +2,9 @@
 name: The Voice Profile Builder
 type: command
 description: Construct a precise, reusable model of anyone's writing voice by analyzing the delta between their drafts and their edits — the gap between "what AI wrote" and "what I actually sound like" is the most information-dense signal for voice modeling.
-source: multiple — Jul 17, 2025 AIMM session on building voice profiles from draft/edit deltas
 trigger: /aimm:voice-profile-builder
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-17_Mastermind
+- 2025-07-17_Mastermind
 ---
 
 # The Voice Profile Builder
@@ -112,4 +110,4 @@ Revise the profile based on calibration feedback.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-17_Mastermind]] (multiple — building voice profiles from draft/edit deltas)
+- 2025-07-17_Mastermind (multiple — building voice profiles from draft/edit deltas)

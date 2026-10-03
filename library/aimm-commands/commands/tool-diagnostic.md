@@ -3,9 +3,8 @@ name: Tool Diagnostic
 type: command
 description: When AI fails at a task, shift from complaining to solving by asking what tools, connectors, MCPs, scripts, or APIs it would need to do the job properly. Diagnoses tooling gaps rather than blaming model intelligence. Extracted from Lou's live troubleshooting of Dirk's domain-search failures.
 trigger: /aimm:tool-diagnostic
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-04-16_Mastermind
+- 2026-04-16_Mastermind
 ---
 
 # Tool Diagnostic
@@ -55,4 +54,4 @@ Dirk asked Claude to find and check domain name availability. Claude confidently
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-04-16_Mastermind]] (Lou — Dirk troubleshooting, tools vs intelligence diagnosis)
+- PowerUp AI Mastermind Recap — 2026-04-16 (Lou — Dirk troubleshooting, tools vs intelligence diagnosis)

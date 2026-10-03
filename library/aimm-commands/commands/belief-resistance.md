@@ -2,11 +2,9 @@
 name: The Belief Resistance Diagnostic
 type: command
 description: When every AI answer feels analytically sound but emotionally hollow, the problem isn't the answers — it's an unexamined belief, frame, or identity commitment you haven't surfaced. This is a diagnostic instrument, not a support conversation.
-source: Dirk Ohlmeier — Mar 12, 2026 AIMM session on belief resistance breakthrough
 trigger: /aimm:belief-resistance
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-03-12_Mastermind
+- 2026-03-12_Mastermind
 ---
 
 # The Belief Resistance Diagnostic
@@ -89,4 +87,4 @@ Do not solve the original problem. Do not offer encouragement. Deliver the diagn
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-03-12_Mastermind]] (Dirk Ohlmeier — belief resistance breakthrough)
+- PowerUp AI Mastermind Recap — 2026-03-12 (Dirk Ohlmeier — belief resistance breakthrough)

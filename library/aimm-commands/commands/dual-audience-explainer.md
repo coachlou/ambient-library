@@ -2,11 +2,9 @@
 name: The Dual-Audience Explainer
 type: command
 description: Write the same explanation at two different technical levels simultaneously, with parallel editing locked across both versions.
-source: Scott Delinger — 2026-04-23, domain transfer / business sale client situation
 trigger: /aimm:dual-audience-explainer
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-04-23_Mastermind
+- 2026-04-23_Mastermind
 ---
 
 # The Dual-Audience Explainer
@@ -31,4 +29,4 @@ After I read them, I may ask you to make edits. When I do, apply the same change
 
 ## Source
 
-From [[2026-04-23_Mastermind]]: Scott Delinger had spent three conversations trying to help a business seller (technically sophisticated) and a buyer (engineering background, but not internet-savvy) reach agreement on a domain transfer. Claude wrote two parallel documents — one at a technical level, one at near-layman level — covering the same topic in structurally identical order. The buyer's response: "Kathy and I like very much what you have created. We think this is going to solve the problem. Please proceed." One document wouldn't have worked. Two, parallel, simultaneous — did.
+From 2026-04-23_Mastermind: Scott Delinger had spent three conversations trying to help a business seller (technically sophisticated) and a buyer (engineering background, but not internet-savvy) reach agreement on a domain transfer. Claude wrote two parallel documents — one at a technical level, one at near-layman level — covering the same topic in structurally identical order. The buyer's response: "Kathy and I like very much what you have created. We think this is going to solve the problem. Please proceed." One document wouldn't have worked. Two, parallel, simultaneous — did.

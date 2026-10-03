@@ -2,11 +2,9 @@
 name: The Ontology Architect
 type: command
 description: Run your entire body of work through ontology-building to extract the 3-7 pillars that organize everything you know — then use those pillars as an editorial filter so every piece of content connects to your core architecture or doesn't get published.
-source: Kasimir Hedstrom — Dec 19, 2025 AIMM session on ontology exercise for body of work
 trigger: /aimm:ontology-architect
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-12-19_Mastermind
+- 2025-12-19_Mastermind
 ---
 
 # The Ontology Architect
@@ -96,4 +94,4 @@ Revise what doesn't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-12-19_Mastermind]] (Kasimir Hedstrom — ontology exercise for body of work)
+- 2025-12-19_Mastermind (Kasimir Hedstrom — ontology exercise for body of work)

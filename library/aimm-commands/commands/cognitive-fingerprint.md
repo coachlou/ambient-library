@@ -2,11 +2,9 @@
 name: The Cognitive Fingerprint
 type: command
 description: Reverse-engineer your unique thinking patterns from how you engage with problems — surfacing cognitive axes, signature moves, and the intellectual property embedded in your process. Based on Lou's Eigenthinking framework — Your Unique Process = Intellectual Property.
-source: Lou Dallo — Feb 19, 2026 AIMM session on Eigenthinking — UP→IP framework
 trigger: /aimm:cognitive-fingerprint
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-19_Mastermind
+- 2026-02-19_Mastermind
 ---
 
 # The Cognitive Fingerprint
@@ -74,4 +72,4 @@ Flag concerns. Revise where needed. The fingerprint is only valuable if it captu
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-19_Mastermind]] (Lou Dallo — Eigenthinking — UP→IP framework)
+- PowerUp AI Mastermind Recap — 2026-02-19 (Lou Dallo — Eigenthinking — UP→IP framework)

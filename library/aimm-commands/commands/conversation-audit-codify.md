@@ -1,9 +1,7 @@
 ---
 name: conversation-audit-codify
-description: End-of-session audit command. Reviews the conversation for decisions, fixes, and discoveries made during an iterative work session, then updates the relevant skill, code, or documentation to reflect them as permanent root-cause changes. Prevents session insights from evaporating when the context window closes. Use after any iterative session involving debugging, skill refinement, prompt improvement, or document development.
 type: command
-source-session: "[[2026-04-09_Mastermind]]"
-source-insight: "[[Insight - The Conversation Audit Technique — Never Let a Session's Fixes Evaporate]]"
+description: End-of-session audit command. Reviews the conversation for decisions, fixes, and discoveries made during an iterative work session, then updates the relevant skill, code, or documentation to reflect them as permanent root-cause changes. Prevents session insights from evaporating when the context window closes. Use after any iterative session involving debugging, skill refinement, prompt improvement, or document development.
 ---
 
 # Conversation Audit & Codify

@@ -2,12 +2,10 @@
 name: Latent Space Cartographer
 type: command
 description: Takes any prompt and transforms it from a single-shot oracle query into a 6-phase traversal of the model's probability landscape. Instead of getting the modal answer (the fat center of the distribution), you get a topographic map of the entire answer space — then a synthesized position that knows what it chose against and why.
-source: Lou Dallo — 2026-02-19 and 2026-01-22 Mastermind (latent cartography and non-modal intelligence)
 trigger: /aimm:latent-cartographer
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-19_Mastermind
-  - 2026-01-22_Mastermind
+- 2026-02-19_Mastermind
+- 2026-01-22_Mastermind
 ---
 
 # Latent Space Cartographer
@@ -123,5 +121,5 @@ The Delta Report is the accountability mechanism. If the traversal didn't change
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-19_Mastermind]] (Lou Dallo — latent cartography and non-modal intelligence themes)
-- [[wiki/mastermind/sessions/2026-01-22_Mastermind]] (Lou Dallo — latent cartography and non-modal intelligence themes)
+- PowerUp AI Mastermind Recap — 2026-02-19 (Lou Dallo — latent cartography and non-modal intelligence themes)
+- PowerUp AI Mastermind Recap — 2026-01-22 (Lou Dallo — latent cartography and non-modal intelligence themes)

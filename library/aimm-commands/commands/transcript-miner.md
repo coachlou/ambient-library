@@ -2,11 +2,9 @@
 name: The Transcript Miner
 type: command
 description: Extract high-signal nuggets from any conversation transcript — the non-obvious insights, quotable moments, actionable techniques, and content seeds that would take hours to find manually. Turns raw transcripts into structured intellectual capital.
-source: multiple — Aug 14, 2025 AIMM session on transcript-to-thought-leadership pipeline
 trigger: /aimm:transcript-miner
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-08-14_Mastermind
+- 2025-08-14_Mastermind
 ---
 
 # The Transcript Miner
@@ -113,4 +111,4 @@ Revise extractions that don't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-08-14_Mastermind]] (multiple — transcript-to-thought-leadership pipeline)
+- 2025-08-14_Mastermind (multiple — transcript-to-thought-leadership pipeline)

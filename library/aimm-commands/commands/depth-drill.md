@@ -2,11 +2,9 @@
 name: The Depth Drill
 type: command
 description: Produce expert-level analysis by drilling beneath surface understanding to the mechanistic layer where non-obvious insight lives. Combines first-principles excavation, recursive depth drilling, and self-verified synthesis.
-source: Kasimir Hedstrom — Feb 5, 2026 AIMM session on layered context prompting framework
 trigger: /aimm:depth-drill
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-02-05_Mastermind
+- 2026-02-05_Mastermind
 ---
 
 # The Depth Drill
@@ -90,4 +88,4 @@ If verification reveals significant issues, revise before delivering.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-02-05_Mastermind]] (Kasimir Hedstrom — layered context prompting framework)
+- PowerUp AI Mastermind Recap — 2026-02-05 (Kasimir Hedstrom — layered context prompting framework)

@@ -2,11 +2,9 @@
 name: The Meta-Prompt Move
 type: command
 description: Give Claude the goal instead of the method — and have it design the optimal prompting strategy, interaction structure, and output format before producing any content. Turns you from a prompt writer into a prompt commissioner.
-source: Kasimir Hedstrom — Jun 19, 2025 AIMM session on infinite prompt engine, principle-first approach
 trigger: /aimm:meta-prompt
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-06-19_Mastermind
+- 2025-06-19_Mastermind
 ---
 
 # The Meta-Prompt Move
@@ -94,4 +92,4 @@ CONSTRAINTS:
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-06-19_Mastermind]] (Kasimir Hedstrom — infinite prompt engine, principle-first approach)
+- 2025-06-19_Mastermind (Kasimir Hedstrom — infinite prompt engine, principle-first approach)

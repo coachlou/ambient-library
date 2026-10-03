@@ -2,11 +2,9 @@
 name: The Investor Lens
 type: command
 description: Evaluate any business, offer, or strategy through a specific investor persona's lens — forcing a mode of analysis that your default thinking would never produce. The constraint isn't a limitation; it reshapes the entire search space for insight.
-source: multiple — Jul 17, 2025 AIMM session on role constraints and non-obvious analysis
 trigger: /aimm:investor-lens
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-07-17_Mastermind
+- 2025-07-17_Mastermind
 ---
 
 # The Investor Lens
@@ -82,4 +80,4 @@ Revise what fails the test.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-07-17_Mastermind]] (multiple — role constraints and non-obvious analysis)
+- 2025-07-17_Mastermind (multiple — role constraints and non-obvious analysis)

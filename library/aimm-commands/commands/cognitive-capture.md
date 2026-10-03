@@ -3,9 +3,8 @@ name: Cognitive Capture
 type: command
 description: Dual-capture prompt that extracts both operational knowledge (what you did) and cognitive knowledge (how you think) from a conversation or work session. Powers the cognitive twin — stores not just information but intelligence. Use at the end of any productive AI session to capture thinking patterns alongside task outputs.
 trigger: /aimm:cognitive-capture
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-04-16_Mastermind
+- 2026-04-16_Mastermind
 ---
 
 # Cognitive Capture
@@ -69,4 +68,4 @@ Don Back used this pattern with Opus analyzing his coaching interviews — it su
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-04-16_Mastermind]] (Lou — cognitive twin directive, Don Back — blind spot detection in coaching interviews)
+- PowerUp AI Mastermind Recap — 2026-04-16 (Lou — cognitive twin directive, Don Back — blind spot detection in coaching interviews)

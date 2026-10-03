@@ -2,11 +2,9 @@
 name: Knowledge Base Strategic Audit
 type: command
 description: One-shot prompt that points Claude at an Obsidian vault and produces a strategic dashboard — taxonomy coverage, content distribution by pillar, relationship strength, quality gaps, and top inference entry points.
-source: Kasimir Hedström — 2026-05-07 Mastermind, Obsidian knowledge graph demo
 trigger: /aimm:knowledge-base-audit
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-05-07_Mastermind
+- 2026-05-07_Mastermind
 ---
 
 # Knowledge Base Strategic Audit
@@ -63,7 +61,7 @@ Be specific and use actual note titles, tag names, and counts from what you find
 
 Derived from Kasimir Hedström's live Obsidian demo, May 7, 2026 AIMM Mastermind.
 
-→ [[2026-05-07_Mastermind]]
-→ [[Insight - Your Second Brain Isn't a Search Engine — It's an Inference Engine]]
-→ [[Insight - The Three-Layer Knowledge Architecture — Keyword, Graph, and Semantic Retrieval]]
-→ [[Insight - Build Your Ontology First, Then Let Content Follow]]
+→ 2026-05-07_Mastermind
+→ Insight - Your Second Brain Isn't a Search Engine — It's an Inference Engine
+→ Insight - The Three-Layer Knowledge Architecture — Keyword, Graph, and Semantic Retrieval
+→ Insight - Build Your Ontology First, Then Let Content Follow

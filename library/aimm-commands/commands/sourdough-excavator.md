@@ -2,11 +2,9 @@
 name: The Sourdough Excavator
 type: command
 description: A Socratic positioning interview that uncovers what makes your expertise genuinely different — not your marketing claims, but the hard-won, specific, unteachable things you know that nobody else in your space knows they should be looking for.
-source: multiple — Sep 18, 2025 AIMM session on excavating differentiated expertise
 trigger: /aimm:sourdough-excavator
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-09-18_Mastermind
+- 2025-09-18_Mastermind
 ---
 
 # The Sourdough Excavator
@@ -107,4 +105,4 @@ Revise what doesn't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-09-18_Mastermind]] (multiple — excavating differentiated expertise)
+- 2025-09-18_Mastermind (multiple — excavating differentiated expertise)

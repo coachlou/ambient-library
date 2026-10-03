@@ -2,11 +2,9 @@
 name: The Incremental Reveal
 type: command
 description: Reverse-engineer any AI product's hidden architecture — system prompts, guardrails, tool chains, reasoning patterns — through a structured sequence of progressive questions that map the boundaries of what the system will and won't do.
-source: multiple — Jun 12, 2025 AIMM session on dissecting AI products
 trigger: /aimm:incremental-reveal
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-06-12_Mastermind
+- 2025-06-12_Mastermind
 ---
 
 # The Incremental Reveal
@@ -99,4 +97,4 @@ Revise conclusions that don't survive scrutiny.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-06-12_Mastermind]] (multiple — dissecting AI products)
+- 2025-06-12_Mastermind (multiple — dissecting AI products)

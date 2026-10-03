@@ -1,16 +1,9 @@
 ---
 name: AI Adoption Diagnostic
-type: prompt
+type: command
 description: A structured prompt that assesses the AI adoption posture of a leader, team, or organization — identifying where they actually are on the adoption curve and what is blocking progress.
-use-when:
-  - individual: A leader or practitioner wants to understand their own AI adoption gaps
-  - team lead: A manager wants to assess their team's readiness before rolling out AI tools or workflows
-  - org consulting: A consultant or coach is doing discovery before designing an AI adoption program
-score: 78/100
-sessions: 4
-last_updated: 2026-04-06
 source-sessions:
-  - vault-wide
+- vault-wide
 ---
 
 # AI Adoption Diagnostic Prompt
@@ -190,4 +183,4 @@ Key principles for delivery:
 ## Related Artifacts
 
 - `wiki/mastermind/prompts/grounded-query-protocol.md` — for grounding any claims in the diagnostic in specific evidence
-- `wiki/mastermind/commands/multi-model-synthesis.md` — for deliberating on a client's situation across multiple AI perspectives before making recommendations
+- `Multi-Model Synthesis` — for deliberating on a client's situation across multiple AI perspectives before making recommendations

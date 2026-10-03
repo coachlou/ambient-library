@@ -2,11 +2,9 @@
 name: Brand-Consistent HTML Output
 type: command
 description: Two-stage workflow for producing branded, visually differentiated AI-generated documents — draft in Markdown for content quality, render in HTML with your brand CSS for visual consistency.
-source: Dirk Ohlmeier (Markdown→HTML workflow) + Lou (brand CSS extension) — 2026-05-07 Mastermind
 trigger: /aimm:brand-html-output
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-05-07_Mastermind
+- 2026-05-07_Mastermind
 ---
 
 # Brand-Consistent HTML Output
@@ -126,6 +124,6 @@ Usage: "Read my brand context file at [path] and apply it to this document."
 
 Derived from Dirk Ohlmeier and Lou's discussion of HTML output quality and brand differentiation, May 7, 2026 AIMM Mastermind.
 
-→ [[2026-05-07_Mastermind]]
-→ [[Insight - Brand-Consistent AI Output — Differentiate in a Homogeneous Feed]]
-→ [[Insight - AI as Ghostwriter, You as Editor-in-Chief]]
+→ 2026-05-07_Mastermind
+→ Insight - Brand-Consistent AI Output — Differentiate in a Homogeneous Feed
+→ Insight - AI as Ghostwriter, You as Editor-in-Chief

@@ -2,11 +2,9 @@
 name: The Brain Builder
 type: command
 description: Design an AI-powered product that packages your expertise into a scalable, interactive system — not a course or a PDF, but a "brain" that clients interact with directly. Architect the knowledge structure, interaction model, and delivery mechanism that turns what you know into something that works while you sleep.
-source: multiple — Sep 4, 2025 AIMM session on the "Brain" business model
 trigger: /aimm:brain-builder
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2025-09-04_Mastermind
+- 2025-09-04_Mastermind
 ---
 
 # The Brain Builder
@@ -108,4 +106,4 @@ Revise what doesn't survive the audit.
 
 ## Source
 
-- [[wiki/mastermind/sessions/2025-09-04_Mastermind]] (multiple — the "Brain" business model)
+- 2025-09-04_Mastermind (multiple — the "Brain" business model)

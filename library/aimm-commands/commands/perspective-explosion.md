@@ -2,11 +2,9 @@
 name: Perspective Explosion
 type: command
 description: Analyze an idea through multiple paradigmatic lenses to surface non-obvious insights at the intersections of contradicting worldviews. Based on Michael Simmons' perspective engine methodology.
-source: Michael Simmons — Mar 19, 2026 AIMM session on perspective engine methodology
 trigger: /aimm:perspective-explosion
-location: wiki/mastermind/commands/
 source-sessions:
-  - 2026-03-19_Mastermind
+- 2026-03-19_Mastermind
 ---
 
 # Perspective Explosion
@@ -31,4 +29,4 @@ Work through these steps in order:
 
 ## Source
 
-- [[wiki/mastermind/sessions/2026-03-19_Mastermind]] (Michael Simmons — perspective engine methodology)
+- PowerUp AI Mastermind Recap — 2026-03-19 (Michael Simmons — perspective engine methodology)

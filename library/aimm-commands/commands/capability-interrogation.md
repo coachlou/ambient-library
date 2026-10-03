@@ -1,6 +1,15 @@
+---
+name: Capability Interrogation
+type: command
+description: Before asking Claude to execute a complex or destructive task, ask it to map its own capabilities, edge-case failure modes, and limits first. The step most people skip, and the one that prevents half the failures. From Lou's drive-dedupe story, May 14 session.
+trigger: /aimm:capability-interrogation
+source-sessions:
+- 2026-05-14_Mastermind
+---
+
 # Capability Interrogation
 
-Before asking Claude to execute a complex or destructive task, ask it to map its own capabilities, edge-case failure modes, and limits first. The step most people skip — and the one that prevents half the failures. From Lou's drive-dedupe story, May 14 session.
+Before asking Claude to execute a complex or destructive task, ask it to map its own capabilities, edge-case failure modes, and limits first. The step most people skip, and the one that prevents half the failures. From Lou's drive-dedupe story, May 14 session.
 
 ---
 
