@@ -59,7 +59,7 @@ skills:
   voice-crm-pipeline: Builds a hands-free voice-to-database capture chain (Siri to Shortcut to GPT to Sheets); use for "I never update my CRM", "talk to my database", "voice-to-sheet workflow".
   voice-profile-trainer: Derives a reusable voice profile from authentic writing samples so AI output sounds like the user; use for "doesn't sound like me", "write in my voice", "set up my voice profile".
   wrap: Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for "wrap up", "close out", "export this conversation". For a plain .context/ checkpoint, prefer session.
-  aimm-commands: Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming an AIMM command.
+  aimm-commands: Library of 62 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming an AIMM command.
   trello-pipeline: Trello-based agentic product pipeline turning an idea into a PRD via staged AI agents on a live board; use for "run the Trello pipeline", "idea to PRD on my board", "set up the TrelloAgents board".
   editorial-desk: Senior-editor orchestrator running specialist contributors (strategist, angle, drafter, adversary, headline) over a shared blackboard; use for "run the editorial desk", a critiqued-and-revised opinion/POV essay, or a sharp argument piece with editorial review.
   to-issues: Breaks a plan, spec, or PRD into independently-grabbable tracer-bullet issues on the project's issue tracker; use for "turn this plan into issues", "break this PRD into tickets".

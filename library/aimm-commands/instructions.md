@@ -1,6 +1,6 @@
 # AIMM Commands
 
-A library of 54 named prompt commands from the AIMM mastermind — audits,
+A library of 62 named prompt commands from the AIMM mastermind — audits,
 adversarial reviews, thinking frameworks, and content operations. Each is a
 self-contained prompt protocol.
 
@@ -23,6 +23,7 @@ and ask.
 | `advisory-board` | The Advisory Board | Convene a multi-perspective AI advisory board — not generic "expert personas" but a structured hierarchy of advisors with different levels of authority, different domains, and genuine disagreement built in — to evaluate any decision, strategy, or challenge from angles your default thinking can't reach. |
 | `ai-adoption-diagnostic` | AI Adoption Diagnostic | A structured prompt that assesses the AI adoption posture of a leader, team, or organization — identifying where they actually are on the adoption curve and what is blocking progress. |
 | `authority-canon` | The Authority Canon Builder | Build your 3-layer authority architecture for Generative Engine Optimization — the canon (core beliefs that are always true), frameworks (how the canon becomes usable), and diagnostics (where your reader is right now). |
+| `authority-naming` | The Authority Naming Protocol | Systematically identify unnamed spaces at the leading edge of your field — emerging patterns, problems, or conversations that exist but haven't been formally labeled. |
 | `avatar-archaeologist` | The Avatar Archaeologist | Excavate the hidden psychographic patterns in your client data — the fears they won't say out loud, the identity shifts they're chasing, the language that signals readiness to buy — by mining transcripts, intake forms, reviews, and conversations for what lives beneath the demographic surface. |
 | `avatar-audit` | avatar-audit |  |
 | `belief-resistance` | The Belief Resistance Diagnostic | When every AI answer feels analytically sound but emotionally hollow, the problem isn't the answers — it's an unexamined belief, frame, or identity commitment you haven't surfaced. |
@@ -36,6 +37,7 @@ and ask.
 | `chat-to-script-extractor` | The Chat-to-Script Extractor | Extract a shareable narrative script and key decisions from a long AI work session — ready for NotebookLM, slides, or a team briefing. |
 | `cognitive-capture` | Cognitive Capture | Dual-capture prompt that extracts both operational knowledge (what you did) and cognitive knowledge (how you think) from a conversation or work session. |
 | `cognitive-fingerprint` | The Cognitive Fingerprint | Reverse-engineer your unique thinking patterns from how you engage with problems — surfacing cognitive axes, signature moves, and the intellectual property embedded in your process. |
+| `cohort-insight-engine` | The Cohort Insight Engine | Synthesize multiple participant assessments — personality frameworks, proprietary tools, and interview data — into two outputs per participant: private coaching notes for you, and a personalized profile insight to send directly to them. |
 | `constraint-first-audit` | constraint-first-audit |  |
 | `content-pipeline` | The Content Pipeline | Build a complete content system from psychographic foundations — audience psychology → content pillars → topic generation → multi-version drafts calibrated by platform. |
 | `context-carryover` | context-carryover | Generates a structured 9-section handover artifact + receiving prompt to transfer a Claude conversation to a new thread without information loss |
@@ -49,6 +51,8 @@ and ask.
 | `grounded-query-protocol` | Grounded Query Protocol | A parameterized prompt template that enforces evidence-grounded AI responses. |
 | `help` | help |  |
 | `incremental-reveal` | The Incremental Reveal | Reverse-engineer any AI product's hidden architecture — system prompts, guardrails, tool chains, reasoning patterns — through a structured sequence of progressive questions that map the boundaries of what the system will and won't do. |
+| `intelligence-transfer` | The Intelligence Transfer Protocol | Study a decision or process you just completed to extract the reasoning patterns behind it — not what you did, but how you think. |
+| `interview-to-skill` | The Interview-to-Skill Builder | Turn a one-off document or deliverable into a repeatable, self-improving skill by having Claude interview you first, then codify the whole process at the end. |
 | `investor-lens` | The Investor Lens | Evaluate any business, offer, or strategy through a specific investor persona's lens — forcing a mode of analysis that your default thinking would never produce. |
 | `iteration-compressor` | The Iteration Compressor | Map any creative or service delivery process as a cycle, identify the rinse-lather-repeat loops where time disappears, and determine exactly which loops AI can compress — so you go from blank page to shipped in days instead of weeks. |
 | `judgment-extraction-replay` | judgment-extraction-replay |  |
@@ -58,13 +62,17 @@ and ask.
 | `modal-subtraction` | modal-subtraction |  |
 | `multi-model-synthesis` | Multi-Model Synthesis | Run structured parallel model deliberation on any question or document. |
 | `ontology-architect` | The Ontology Architect | Run your entire body of work through ontology-building to extract the 3-7 pillars that organize everything you know — then use those pillars as an editorial filter so every piece of content connects to your core architecture or doesn't get published. |
+| `outside-the-modal` | Outside-the-Modal Ideation | Force three orthogonal ideas that step outside the probabilistic mean — no clichés, no variants, no familiar framings. |
 | `perspective-explosion` | Perspective Explosion | Analyze an idea through multiple paradigmatic lenses to surface non-obvious insights at the intersections of contradicting worldviews. |
 | `plan-audit-revise` | Plan-Audit-Revise | Three-step workflow that catches plan-level errors before they become implementation bugs. |
 | `predictive-client-profile` | The Predictive Client Onboarding Profile | Turn an onboarding interview transcript into a dual-output client profile — a private analysis with predicted friction points, and a warm onboarding letter that normalizes the journey ahead. |
 | `prompt-abstraction-ladder` | The Prompt Abstraction Ladder | Climb from task-level prompting to meta-level to meta-meta-level — three distinct altitudes of prompt design, each producing fundamentally different outputs. |
+| `quality-gates` | The Quality Gate Rubric | Force self-evaluation at every handoff: generate an artifact-specific rubric, score against it, revise up to 3 times until 9/10, or hand off with a flagged failure. |
 | `rewind-discipline` | rewind-discipline |  |
 | `second-order-cascade` | Second-Order Cascade | Map the cascading consequences of a development, trend, or event — surfacing what will be obvious in 6 months but almost no one is talking about today. |
+| `self-brief` | The Self-Brief Planner | Force Claude to think before it solves — surface the research, questions, decisions, and documents you actually need before diving into answers. |
 | `skeptic` | The Skeptic | Structured adversarial review of any AI output — identifying vulnerable assumptions, simulating failure scenarios, and producing a hardened revision. |
+| `source-lock` | The Source Lock | Constrain Claude to a specific authoritative source — kills hallucinated citations by treating one URL as ground truth. |
 | `sourdough-excavator` | The Sourdough Excavator | A Socratic positioning interview that uncovers what makes your expertise genuinely different — not your marketing claims, but the hard-won, specific, unteachable things you know that nobody else in your space knows they should be looking for. |
 | `symptom-layer` | The Symptom Layer Discovery | Map the gap between what you sell and what your clients actually experience before they know they need help — surfacing pre-awareness symptoms, client-language queries, and content blind spots. |
 | `sync-readme` | sync-readme | Regenerates the Commands and Skills tables in README.md from the actual files in commands/aimm/ and skills/*/SKILL.md. |

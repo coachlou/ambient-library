@@ -14,7 +14,7 @@
     {
       "name": "aimm-commands",
       "source": "./library/aimm-commands",
-      "description": "Library of 54 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for \"/aimm:<name>\", \"run the skeptic\", or any request naming an AIMM command."
+      "description": "Library of 62 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner, transcript-miner, ...); use for \"/aimm:<name>\", \"run the skeptic\", or any request naming an AIMM command."
     },
     {
       "name": "aimm-newsletter",

@@ -48,7 +48,7 @@ plugin in the same marketplace:
 /plugin install audit-mcp@aai-library
 ```
 
-Installing `aimm-commands` additionally registers all 54 AIMM prompts as real
+Installing `aimm-commands` additionally registers all 62 AIMM prompts as real
 slash commands (`/aimm-commands:skeptic`, `/aimm-commands:canon-lock`, ...) —
 user-triggered, so they add no standing context.
 

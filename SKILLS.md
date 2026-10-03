@@ -69,7 +69,7 @@ until the router reads one. Optionally scope which a project uses via
 | **voice-crm-pipeline** | Hands-free voice-to-database capture chain (Siri → Sheets) | *"Talk to my database"* |
 | **voice-profile-trainer** | Builds a reusable voice profile from writing samples | *"Write in my voice"* |
 | **wrap** | Full session close-out: commit, export, narrative, handoff, memories | *"Wrap up"*, *"Close out"* |
-| **aimm-commands** | Index of 54 named AIMM prompt commands, loaded one at a time | *"/aimm:skeptic"*, *"Run the skeptic"* |
+| **aimm-commands** | Index of 62 named AIMM prompt commands, loaded one at a time | *"/aimm:skeptic"*, *"Run the skeptic"* |
 | **trello-pipeline** | Trello-board agentic pipeline from product idea to PRD | *"Run the Trello pipeline"* |
 | **editorial-desk** | Senior-editor orchestrator: specialist contributors over a shared blackboard | *"Run the editorial desk"*, *"Write a sharp argument piece and have it critiqued"* |
 | **to-issues** | Plan/spec/PRD → tracer-bullet vertical-slice issues on the tracker | *"Turn this plan into issues"* |
