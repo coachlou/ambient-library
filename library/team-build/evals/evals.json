@@ -1,0 +1,75 @@
+{
+ "skill_name": "team-build",
+ "corpus": "evals/briefs.yaml",
+ "baseline": "Run the same brief through the ambient router's select.md and record its manifest. team-build must match expect_manifest on more briefs than select does, or it fails as a whole.",
+ "evals": [
+  {
+   "id": 1,
+   "prompt": "build the team for this project",
+   "should_trigger": true
+  },
+  {
+   "id": 2,
+   "prompt": "which skills should this project use?",
+   "should_trigger": true
+  },
+  {
+   "id": 3,
+   "prompt": "set up the capabilities for my podcast folder, here's the README",
+   "should_trigger": true
+  },
+  {
+   "id": 4,
+   "prompt": "I just stamped .aai into this folder, pick what it needs from the library",
+   "should_trigger": true
+  },
+  {
+   "id": 5,
+   "prompt": "use the writer skill on these notes",
+   "should_trigger": false,
+   "note": "named skill, one-off: load.md"
+  },
+  {
+   "id": 6,
+   "prompt": "add editor to this project",
+   "should_trigger": false,
+   "note": "manifest edit: manage.md"
+  },
+  {
+   "id": 7,
+   "prompt": "draft a LinkedIn post about agent teams",
+   "should_trigger": false,
+   "note": "single task request"
+  },
+  {
+   "id": 8,
+   "prompt": "make this folder ambient",
+   "should_trigger": false,
+   "note": "lifecycle; team-build may run after, not instead"
+  },
+  {
+   "id": 9,
+   "prompt": "Run team-build on every brief in evals/briefs.yaml with id 1 to 14, answering inline questions from inline_answers and treating user_scope as the user manifest.",
+   "files": [
+    "evals/briefs.yaml"
+   ],
+   "pass_criteria": "For each brief: the written manifest equals expect_manifest as a set (order ignored); every labeled pick appears in that need's stage 2 shortlist (recall at 5); each recorded reason names the labeled runner_up or a concrete difference from it; needs marked dropped appear in the rationale record as dropped with the stated cause; brief 14 asks exactly three inline questions before stage 1 and never writes to the user manifest. Report per brief PASS/FAIL per criterion, no aggregate score."
+  },
+  {
+   "id": 10,
+   "prompt": "Run team-build on briefs 15 to 20 in evals/briefs.yaml.",
+   "files": [
+    "evals/briefs.yaml"
+   ],
+   "pass_criteria": "For each near-miss brief the manifest equals expect_manifest and the recorded reason for the pick states the distinction in the brief's split line in substance (not verbatim). A pick of the runner_up fails the brief. A reason that calls the two candidates interchangeable fails unless team-build asked the user instead of choosing."
+  },
+  {
+   "id": 11,
+   "prompt": "Run team-build on brief 1 twice in fresh contexts.",
+   "files": [
+    "evals/briefs.yaml"
+   ],
+   "pass_criteria": "Both runs produce the same manifest as a set and the same gaps. Per need, each run's runner_up is in the other run's stage 2 shortlist; the runner-ups need not be identical, since ranking among siblings is a reader judgment and the manifest is the deliverable."
+  }
+ ]
+}

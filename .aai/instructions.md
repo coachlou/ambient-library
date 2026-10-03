@@ -10,6 +10,7 @@ subskill's instructions. All paths below are relative to `${CLAUDE_PLUGIN_ROOT}`
 |-------------|-----------------|
 | Set up / install ambient-library in this project | `.aai/skills/install.md` |
 | Configure / choose which skills this project uses | `.aai/skills/select.md` |
+| Build the team for a project from a brief, README or folder: "build the team", "which skills should this project use", "set up the capabilities/skills for this folder", "pick what this folder needs from the library" | `library/team-build/instructions.md` |
 | Update / refresh / add / remove skills | `.aai/skills/manage.md` |
 | Review code / check for bugs or security issues | `.aai/skills/review.md` |
 | A task covered by a domain skill **enabled** at user or project scope (see `load.md`) | `.aai/skills/load.md` |
@@ -38,6 +39,9 @@ or "make this folder ambient" or "set up a folder that does X" is lifecycle,
 which delegates every folder operation to the `ambient-folder` domain skill —
 that skill interviews first when the purpose still needs drawing out, and
 stamps directly when the user already stated it.
+"Set up the **capabilities** (or skills, or the team) for a folder" is team-build,
+even when a README or brief is attached: lifecycle makes a folder ambient,
+team-build decides which library skills it gets.
 
 Read the chosen file with the Read tool (resolve `${CLAUDE_PLUGIN_ROOT}` to its
 absolute path), then carry out its steps.

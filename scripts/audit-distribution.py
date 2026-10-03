@@ -26,6 +26,7 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 import sys
 
 # Repo root is this script's parent directory.
@@ -322,6 +323,17 @@ def main():
             errors.append(f"{name}: marketplace.json source {src} does not exist")
 
     # --- Report ----------------------------------------------------------
+    # --- team-index freshness (read only by team-build) ----------------
+    r = subprocess.run(
+        [sys.executable, os.path.join(ROOT, "scripts", "build-team-index.py"), "--check"],
+        capture_output=True, text=True,
+    )
+    if r.returncode:
+        errors.append(
+            f"team-index.yaml: {(r.stdout or r.stderr).strip()} "
+            "(rerun scripts/build-team-index.py)"
+        )
+
     if warnings and not quiet:
         print(f"warnings ({len(warnings)}) — not drift, review when convenient:")
         for w in warnings:

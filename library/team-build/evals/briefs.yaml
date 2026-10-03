@@ -1,0 +1,306 @@
+# team-build eval corpus. Each brief is labeled with the needs team-build
+# should extract, the expected pick per need, and the runner-up whose
+# difference the recorded reason must name. `expect_manifest` is the final
+# project manifest after set-cover; `user_scope` lists skills already enabled
+# at user scope for that case (must not appear in the manifest).
+# Briefs 15 to 20 are near-miss cases built to split neighbours.
+
+briefs:
+  - id: 1
+    title: aimm-kb-agent
+    brief: |
+      Knowledge base for the AIMM mastermind. Ingests session transcripts and
+      articles into an OKF bundle, publishes finished articles and collections
+      to aimmhub.coachlou.com, and sends recaps to members. Most sessions are
+      "process the inbox", "publish this article", "recap Tuesday's call",
+      and keeping context across long sessions.
+    needs:
+      - need: publish finished articles to the hub
+        pick: publish-article
+        runner_up: aimm-writing-team
+      - need: turn call transcripts into member recaps
+        pick: meeting-nuggets
+        runner_up: transcript-to-content-pipeline
+      - need: email recaps to the member group
+        pick: aimm-newsletter
+        runner_up: gmail-manager
+      - need: keep context across long sessions
+        pick: checkpoint
+        runner_up: session
+    expect_manifest: [publish-article, meeting-nuggets, aimm-newsletter, checkpoint]
+
+  - id: 2
+    title: thought-leadership blog, writer does own research
+    brief: |
+      My personal blog on AI for consultants. I do the research myself and
+      hand over notes; I want first drafts from those notes, then a tightening
+      pass on whatever I rewrite. I publish by hand on Substack.
+    needs:
+      - need: draft posts from research notes
+        pick: writer
+        runner_up: writing-team
+      - need: tighten drafts the user rewrote
+        pick: editor
+        runner_up: writer
+    expect_manifest: [writer, editor]
+
+  - id: 3
+    title: end-to-end article factory
+    brief: |
+      I want to give you a topic and get back a publish-ready article with
+      sources. I will not do research or editing myself.
+    needs:
+      - need: topic to publish-ready article with research and editing
+        pick: writing-team
+        runner_up: brand-writing-team
+    expect_manifest: [writing-team]
+
+  - id: 4
+    title: new Python CLI tool
+    brief: |
+      A command-line tool that dedupes photo libraries. Greenfield, I want the
+      standard dev layout, tests before code, and a loop where I describe a
+      change and you build, test and commit it.
+    needs:
+      - need: scaffold the folder into the dev standard
+        pick: init-dev-project
+        runner_up: software-dev-factory
+      - need: iterative describe-build-test-commit loop
+        pick: vibe
+        runner_up: software-dev-factory
+    expect_manifest: [init-dev-project, vibe]
+
+  - id: 5
+    title: client leadership program content (Leaderize)
+    brief: |
+      Content and session design for Leaderize, a program for mid-level
+      leaders. Weekly posts, workshop outlines, stories for live sessions.
+    needs:
+      - need: storytelling frameworks for the Leaderize audience
+        pick: leaderize-storytelling-framework
+        runner_up: brand-writing-team
+      - need: draft weekly posts from outlines
+        pick: writer
+        runner_up: brand-writing-team
+    expect_manifest: [leaderize-storytelling-framework, writer]
+
+  - id: 6
+    title: inbox zero project
+    brief: |
+      Folder for managing my three Gmail accounts. Daily sweep of junk, then
+      handle the real mail one by one; sometimes send or find a thread.
+    needs:
+      - need: daily inbox sweep and triage
+        pick: gmail-triage
+        runner_up: gmail-manager
+      - need: send and search mail outside triage
+        pick: gmail-manager
+        runner_up: gmail-triage
+    expect_manifest: [gmail-triage, gmail-manager]
+
+  - id: 7
+    title: multi-agent research product
+    brief: |
+      Three of us plus several agents work in this repo in parallel. We need a
+      shared continuity store, check-in and check-out per session, and a way
+      to break the spec into tickets people can grab.
+    needs:
+      - need: install shared multi-agent continuity
+        pick: context-mgr
+        runner_up: checkpoint
+      - need: per-session check-in and check-out
+        pick: session
+        runner_up: checkpoint
+      - need: spec into grabbable tickets
+        pick: to-issues
+        runner_up: wbs-toolkit
+    expect_manifest: [context-mgr, session, to-issues]
+
+  - id: 8
+    title: package my methodology
+    brief: |
+      Twenty years of turnaround consulting. I want to turn how I think into a
+      named, teachable framework and then find the angle where AI tools can't
+      replace me.
+    needs:
+      - need: tacit expertise into a branded framework
+        pick: eigenthinking
+        runner_up: conversation-ip-extractor
+      - need: find the irreplaceable edge against AI
+        pick: irreplaceable-edge
+        runner_up: eigenthinking
+    expect_manifest: [eigenthinking, irreplaceable-edge]
+
+  - id: 9
+    title: evaluate an MCP before installing
+    brief: |
+      Scratch folder where I vet third-party MCP servers and connectors before
+      wiring them into Claude Desktop, then resolve what each folder's
+      connectors.md needs against what the harness actually has.
+    needs:
+      - need: security audit of a third-party MCP repo
+        pick: audit-mcp
+        runner_up: audit-fix
+      - need: resolve declared connector needs against the harness
+        pick: connector-bridge
+        runner_up: ambient-folder
+    expect_manifest: [audit-mcp, connector-bridge]
+
+  - id: 10
+    title: GEO content program
+    brief: |
+      Build authority so AI assistants cite my firm. Need the strategy and
+      content architecture, then regular long-form pieces that fit it, and
+      a way to pressure-test the contrarian claims before they go out.
+    needs:
+      - need: AI-citation authority strategy and architecture
+        pick: geo-authority-architect
+        runner_up: knowledge-base-architect
+      - need: brand long-form pieces end to end
+        pick: brand-writing-team
+        runner_up: writing-team
+      - need: harden contrarian claims
+        pick: hot-take-forge
+        runner_up: gauntlet
+    expect_manifest: [geo-authority-architect, brand-writing-team, hot-take-forge]
+
+  - id: 11
+    title: documenting a working session for students
+    brief: |
+      After each build session with a client I want a publishable write-up
+      showing the real prompts, wrong turns and reasoning, with diagrams.
+      Occasionally the full bundle with chat export and brief.
+    needs:
+      - need: single teaching article from a session
+        pick: teaching-block-synthesized
+        runner_up: extract-codify-patterns
+      - need: full look-over-my-shoulder bundle
+        pick: extract-codify-patterns
+        runner_up: teaching-block-synthesized
+    expect_manifest: [teaching-block-synthesized, extract-codify-patterns]
+
+  - id: 12
+    title: skill library maintenance
+    brief: |
+      This folder holds my own skills. I need each one checked against the
+      library schema before publishing and its evals run after every change.
+    needs:
+      - need: schema audit of a skill
+        pick: skill-auditor
+        runner_up: audit-fix
+      - need: run a skill's evals
+        pick: skill-evals
+        runner_up: fresh-eyes
+    expect_manifest: [skill-auditor, skill-evals]
+
+  - id: 13
+    title: product idea to PRD on Trello
+    brief: |
+      I manage product ideas on a Trello board and want staged agents to carry
+      an idea through to a PRD there, then an agent process spec for the
+      build pipeline.
+    needs:
+      - need: idea to PRD on the Trello board
+        pick: trello-pipeline
+        runner_up: harness-prd
+      - need: spec the agent build pipeline
+        pick: harness-prd
+        runner_up: wbs-toolkit
+    expect_manifest: [trello-pipeline, harness-prd]
+
+  - id: 14
+    title: thin brief with user-scope overlap
+    brief: |
+      Notes folder.
+    thin: true
+    inline_answers:
+      produces: "weekly recap emails for a mastermind, from call transcripts"
+      for: "the paying members"
+      tasks: "recap the call, send it, publish the good ones to the hub"
+    user_scope: [publish-article, checkpoint]
+    needs:
+      - need: call transcript to recap
+        pick: meeting-nuggets
+        runner_up: transcript-to-content-pipeline
+      - need: send recap to the group
+        pick: aimm-newsletter
+        runner_up: gears-broadcast
+      - need: publish the good ones to the hub
+        pick: publish-article
+        runner_up: aimm-writing-team
+        dropped: already enabled at user scope
+    expect_manifest: [meeting-nuggets, aimm-newsletter]
+
+  # Near-miss cases
+
+  - id: 15
+    title: near miss, draft only vs full pipeline
+    brief: |
+      Ghostwriting for an exec who sends me voice memos transcribed to text
+      plus links she already read. I draft; her comms lead edits and posts.
+    needs:
+      - need: draft from transcribed memos and supplied links
+        pick: writer
+        runner_up: writing-team
+    expect_manifest: [writer]
+    split: "research and editing are done by humans, so the pipeline skill would duplicate work"
+
+  - id: 16
+    title: near miss, checkpoint vs session vs context-mgr
+    brief: |
+      Solo project, one agent at a time, but sessions run long and get
+      compacted. I need to hand off cleanly to the next window.
+    needs:
+      - need: preserve context across compaction and windows
+        pick: checkpoint
+        runner_up: session
+    expect_manifest: [checkpoint]
+    split: "no shared store and no multi-agent work, so session and context-mgr are overbuilt"
+
+  - id: 17
+    title: near miss, audit-fix vs gauntlet vs skill-auditor
+    brief: |
+      I write migration plans for client systems. Before each goes out I want
+      it attacked for omissions and blind spots and the plan fixed at root.
+    needs:
+      - need: adversarial audit of a plan with fixes
+        pick: audit-fix
+        runner_up: gauntlet
+    expect_manifest: [audit-fix]
+    split: "gauntlet runs criteria and revision loops on ambitious work; audit-fix is the six-lens pass on a plan"
+
+  - id: 18
+    title: near miss, publish-article vs aimm-newsletter vs gears-broadcast
+    brief: |
+      GEARS licensee communications. Announcements go to all licensees by
+      email from raw HTML I already have.
+    needs:
+      - need: email licensees from ready HTML
+        pick: gears-broadcast
+        runner_up: aimm-newsletter
+    expect_manifest: [gears-broadcast]
+    split: "recipients are the gears_owners list on Resend, not a Google Contacts group"
+
+  - id: 19
+    title: near miss, transcript pipelines
+    brief: |
+      Podcast. Each episode transcript should become an article, LinkedIn
+      variants, a summary and an audio script.
+    needs:
+      - need: transcript into a multi-format content package
+        pick: transcript-to-content-pipeline
+        runner_up: meeting-nuggets
+    expect_manifest: [transcript-to-content-pipeline]
+    split: "meeting-nuggets produces a newsletter-style recap of a meeting, not a content package"
+
+  - id: 20
+    title: near miss, prototype vs grill
+    brief: |
+      I have a fuzzy app idea and want to be interviewed one question at a
+      time until there is a spec. No mockups, I will design screens later.
+    needs:
+      - need: converge on a spec by interview
+        pick: grill
+        runner_up: grill-with-prototype
+    expect_manifest: [grill]
+    split: "the user said no mockups; grill-with-prototype only applies when a prototype is asked for"

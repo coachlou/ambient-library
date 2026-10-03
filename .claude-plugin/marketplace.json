@@ -179,7 +179,7 @@
     {
       "name": "grill-with-prototype",
       "source": "./library/grill-with-prototype",
-      "description": "Builds a clickable prototype of an app's screens live in a local dashboard while interviewing for requirements, ending in a SPEC.md; use only when the user asks for a prototype, mockup, clickable demo or wireframes. Without that ask, \"grill me\"/\"interview me\" — even about building an app — is grill."
+      "description": "Builds a clickable prototype of an app's screens live in a local dashboard while interviewing for requirements, ending in a SPEC.md; use only when the user asks for a prototype, mockup, clickable demo or wireframes. Without that ask, \"grill me\"/\"interview me\" \u2014 even about building an app \u2014 is grill."
     },
     {
       "name": "harness-prd",
@@ -290,6 +290,11 @@
       "name": "teaching-block-synthesized",
       "source": "./library/teaching-block-synthesized",
       "description": "Writes one publishable teaching-block article from a working session \u2014 real prompts, real outputs, wrong turns, reasoning, diagrams, and rendered HTML; use for \"write this up as a teaching block\", \"field guide this\", \"debrief this session\", \"turn this session into an article\". Any domain. For the full look-over-my-shoulder bundle (README, brief, chat export, vault artifacts) use extract-codify-patterns instead."
+    },
+    {
+      "name": "team-build",
+      "source": "./library/team-build",
+      "description": "Builds a project's skills-manifest.yaml from a brief: turns the brief into needs, shortlists candidates from the team index, picks one skill per need with a reason and runner-up, then writes the manifest plus a rationale record; use for \"build the team for this project\", \"which skills should this project use\", \"set up the capabilities for this folder\", \"pick what this folder needs from the library\". Not for adding one named skill (manage) or running a skill (load)."
     },
     {
       "name": "to-issues",

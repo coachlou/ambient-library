@@ -23,6 +23,7 @@ until the router reads one. Optionally scope which a project uses via
 | Skill | What it does | How to invoke |
 |-------|-------------|---------------|
 | **init-dev-project** | Scaffolds a folder into the dev-and-deploy standard (four make verbs, spec/src/tests/deploy/docs, `.aai/`, git init + v0.0.0) | *"Init a dev project"*, *"Scaffold a new project"*, *"Set up a repo for X"* |
+| **team-build** | Builds a project's `skills-manifest.yaml` from a brief: needs, shortlist, one pick per need with reason and runner-up, rationale record | *"Build the team for this project"*, *"Which skills should this project use"* |
 | **project-brief** | Creates a one-page project overview anyone can read and share | *"Write a project brief"*, *"Summarize this project"* |
 | **project-index** | Scans a folder of project folders into an at-a-glance inventory — markdown table + searchable HTML page | *"Index my GitHub folder"*, *"What have I been working on"*, *"Status of everything in this directory"* |
 | **researcher** | Gathers sources into a structured research dossier | *"Research this topic"*, *"Find sources on X"* |
