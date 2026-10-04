@@ -15,6 +15,10 @@ If a brand voice file (e.g. `direct-authoritative.md`) suggests em-dashes are fi
 
 **One carve-out: Lou's voice.** When the selected voice is `lou-aimm-voice` (writing as Lou, in his voice), em-dashes are allowed, because they are part of his idiolect. This covers em-dashes only. The exclamation-point rule and every other rule in this file still apply. Anyone dispatching Lou-voiced work should know the carve-out is on.
 
+## Reader stance
+
+Never assert the reader's experience, feelings, or history as fact. "You wake up and…", "You already know this from the inside", "You've been doing X for years": a reader who doesn't recognize the description leaves; a reader who does feels diagnosed. Instead, describe the pattern in the third person or as "us" ("a lot of us"), invite recognition conditionally ("if that sounds familiar"), ask directly ("recognize it?"), or confess it in the first person. Addressing the reader as "you" for invitations, questions, and hypotheticals is fine.
+
 ## Disallowed words and phrases
 
 Delete these from any draft. If the sentence stops working when you delete them, rewrite the sentence — do not put them back.
