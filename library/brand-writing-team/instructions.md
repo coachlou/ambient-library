@@ -81,7 +81,7 @@ Use these if intake didn't capture an explicit number:
 
 | Piece type | Default length |
 |---|---|
-| Newsletter | ~600 words (max 1,000) |
+| Newsletter | ~600 words |
 | Blog post | ~900 words |
 | Thought-leadership article | ~1,200 words |
 | Personal story | ~1,000 words |
