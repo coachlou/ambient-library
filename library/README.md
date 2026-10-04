@@ -9,10 +9,15 @@ Claude Code skills, so they add nothing to context until the router reads one.
 ```
 library/
 ├── catalog.yaml             # cheap index: skill name → one-line description
+├── _shared/                 # dev-only source for assets 3+ skills carry; never ships
 └── <skill-name>/
-    ├── instructions.md      # required — the skill logic
+    ├── instructions.md      # required — the skill logic, never shared
+    ├── shared/              # byte-identical copies from _shared/, audit-checked
     └── references/ etc.     # optional sibling files the skill reads
 ```
+
+Sharing rules (procedure stays per skill, only context-free assets pool, rule of
+three with copies) live in `.aai/skills/admin.md` → "Shared assets".
 
 Sibling files resolve at runtime as `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/<file>`
 — reference them that way inside `instructions.md`, never with repo-relative or

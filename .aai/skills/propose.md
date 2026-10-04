@@ -44,7 +44,8 @@ All paths below are relative to that clone.
    domain skill: a name/what-it-does opening, then imperative steps. Reference
    any sibling files as `${CLAUDE_PLUGIN_ROOT}/library/<name>/<file>` (the path
    it will have once promoted, not the in-progress path) — never repo-relative or
-   absolute.
+   absolute. Never point into `library/_shared/`; reusing a pooled file is
+   decided at promotion (`admin.md` → **Shared assets: three rules**).
 4. Write `in-progress/<name>/PROPOSAL.md` with exactly these fields:
    - **Proposed description** — the one-line catalog entry it would get, phrased
      as *when it applies* (user intent, not implementation).

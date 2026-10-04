@@ -36,6 +36,8 @@ which script they meant.
 | "throw it away", "abandon X" | delete `in-progress/<name>/` | Nothing references it. |
 | "update X", "change X's instructions" | edit `library/<name>/` directly | Small edits do not need the in-progress round trip. Bump the version; production is stale until rebuilt. |
 | "delete the X skill" | `admin.md` → **Delete a domain skill** | Confirm first. Four files to remove, plus `RELEASE.yaml` if released. |
+| "share this across skills", "X, Y and Z all carry the same file", "dedupe this" | `admin.md` → **Share an asset** | Only at three real users, never procedure. |
+| "update the shared X" | edit `library/_shared/<file>` → `python3 scripts/audit-distribution.py --sync-shared` | Every carrier changes — name them, bump each one's version. |
 
 **A phrasing not in this table is still this table's job.** These are examples,
 not an allowlist. If the request is about the library itself — building,
@@ -86,6 +88,47 @@ user has rather than 47 siblings.
 
 Verify with `python3 scripts/audit-distribution.py` (exit 0 = no drift).
 
+## Shared assets: three rules
+
+Skills stay self-contained. Sharing is allowed only within these rules, and
+`audit-distribution.py` enforces all three, so the build refuses a violation:
+
+1. **Procedure stays per skill.** `instructions.md` and `SKILL.md` are never
+   shared. Instructions get their meaning from the text around them, and a
+   shared one silently re-routes every skill that reads it. For "same steps,
+   different context", branch inside one skill, or have a thin variant's
+   `instructions.md` say "follow `${CLAUDE_PLUGIN_ROOT}/library/<base>/instructions.md`,
+   with these overrides".
+2. **Only context-free assets are pooled.** Scripts, schemas, templates, and
+   reference docs that read the same in any skill go in `library/_shared/`.
+3. **Rule of three, copied in.** A file moves to `_shared/` only once three
+   catalog skills really carry it. Each skill keeps a byte-identical copy in
+   its own `shared/` and references it as
+   `${CLAUDE_PLUGIN_ROOT}/library/<name>/shared/<file>`, never
+   `library/_shared/`. `_shared/` is dev-only and does not ship, so every
+   install stays self-contained.
+
+### Share an asset
+
+1. Confirm at least three catalog skills carry the same file, and that it is
+   not procedure (rule 1). Fewer than three: leave the duplicates alone.
+2. Put the source in `library/_shared/<file>`. Copy it to each
+   `library/<name>/shared/<file>`, delete the skill's old copy, and repoint its
+   references to `${CLAUDE_PLUGIN_ROOT}/library/<name>/shared/<file>`.
+3. Bump each touched skill's `plugin.json` version and the wrapper versions.
+4. Run `python3 scripts/audit-distribution.py`. It must exit 0.
+
+**Editing a shared asset changes every carrier.** Edit the `_shared/` source
+only, then run `python3 scripts/audit-distribution.py --sync-shared`, tell the
+user which skills it touched, and bump each one's version. A hand edit to one
+skill's `shared/` copy is drift. If one skill needs a different version, the
+file isn't context-free: delete that skill's `shared/` copy and give it its own
+file outside `shared/`.
+
+**Dropping below three** (a skill deleted, or a carrier forked its copy out)
+fails the audit. Move the file back into the remaining skills, outside `shared/`,
+and delete the `_shared/` source.
+
 ## Operations
 
 ### List / inspect
@@ -107,7 +150,9 @@ it. Never overwrite on a create/save request.
    (`references/`, `scripts/`) only as needed. Inside `instructions.md`,
    reference siblings as `${CLAUDE_PLUGIN_ROOT}/library/<name>/<file>` — never
    repo-relative or absolute paths — so the skill works from both the
-   installed plugin and a pointer-adapter clone.
+   installed plugin and a pointer-adapter clone. To reuse a file from
+   `library/_shared/`, copy it into `library/<name>/shared/` (see **Shared
+   assets: three rules**). Never reference `_shared/` directly.
 3. Write `library/<name>/SKILL.md` — frontmatter `name:` (must equal the folder
    name) and `description:`, then the two standard body paragraphs. Copy a
    sibling's exactly; the path note is what makes a standalone install resolve
@@ -250,7 +295,9 @@ Finish by running `python3 scripts/audit-distribution.py`.
 
 Confirm with the user first, then: remove the skill folder (which takes its
 `SKILL.md` and `plugin.json` with it), its `catalog.yaml` line, its
-`marketplace.json` entry, and its `SKILLS.md` entry; bump wrapper versions. A
+`marketplace.json` entry, and its `SKILLS.md` entry; bump wrapper versions. If
+it carried a `shared/` file, the pool may drop below three carriers (see
+**Shared assets: three rules**). A
 left-behind marketplace entry points at a missing source and breaks the
 marketplace for every skill in it, so run
 `python3 scripts/audit-distribution.py` to confirm nothing dangles.

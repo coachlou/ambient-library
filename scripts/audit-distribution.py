@@ -12,9 +12,10 @@ checked it. This does — deterministic set arithmetic, no judgment calls.
   .claude-plugin/marketplace.json    -> installable plugin catalog
 
 A skill that opted in to project values (contract.yaml) is also held to its
-contract: see check_contract.
+contract: see check_contract. Shared assets are held to admin.md's three rules:
+see check_shared.
 
-Usage:  scripts/audit-distribution.py [--quiet | --self-test]
+Usage:  scripts/audit-distribution.py [--quiet | --self-test | --sync-shared]
 
 Exit codes:
   0  no drift (warnings may still be printed)
@@ -26,6 +27,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -180,6 +182,85 @@ def check_contract(skill_dir):
     return problems
 
 
+MIN_SHARERS = 3  # rule of three: a file is shared only once three skills carry it
+NOT_SHAREABLE = {"instructions.md", "SKILL.md"}  # procedure stays per skill
+
+
+def check_shared(lib_root, skills):
+    """-> [problems] for library/_shared/ and the shared/ copies skills carry.
+
+    _shared/ is the dev-only source; it never ships. Each skill vendors what it
+    uses into its own shared/, byte-identical, so every install is self-contained.
+    """
+    src_root = os.path.join(lib_root, "_shared")
+    problems, users = [], {}
+    for name in sorted(skills):
+        skill_dir = os.path.join(lib_root, name)
+        sdir = os.path.join(skill_dir, "shared")
+        for dirpath, _, files in os.walk(sdir):
+            for f in files:
+                copy = os.path.join(dirpath, f)
+                rel = os.path.relpath(copy, sdir)
+                src = os.path.join(src_root, rel)
+                users.setdefault(rel, []).append(name)
+                if not os.path.exists(src):
+                    problems.append(
+                        f"{name}: shared/{rel} has no source at library/_shared/{rel}"
+                    )
+                elif open(copy, "rb").read() != open(src, "rb").read():
+                    problems.append(
+                        f"{name}: shared/{rel} differs from library/_shared/{rel} — "
+                        "edit the source, then audit-distribution.py --sync-shared"
+                    )
+        for dirpath, _, files in os.walk(skill_dir):
+            for f in files:
+                try:
+                    text = open(os.path.join(dirpath, f), encoding="utf-8").read()
+                except (UnicodeDecodeError, OSError):
+                    continue
+                if "library/_shared" in text:
+                    rel = os.path.relpath(os.path.join(dirpath, f), skill_dir)
+                    problems.append(
+                        f"{name}: {rel} points into library/_shared/, which does not ship — "
+                        f"reference ${{CLAUDE_PLUGIN_ROOT}}/library/{name}/shared/<file>"
+                    )
+    for dirpath, _, files in os.walk(src_root):
+        for f in files:
+            rel = os.path.relpath(os.path.join(dirpath, f), src_root)
+            if f in NOT_SHAREABLE:
+                problems.append(
+                    f"_shared/{rel}: instructions stay per skill — only context-free assets are shared"
+                )
+            n = len(users.get(rel, []))
+            if n < MIN_SHARERS:
+                problems.append(
+                    f"_shared/{rel}: carried by {n} skill(s), needs {MIN_SHARERS} — "
+                    "move it back into the skill(s) that use it"
+                )
+    return problems
+
+
+def sync_shared(lib_root):
+    """Refresh every skill's shared/ copy from library/_shared/. -> files rewritten."""
+    src_root, n = os.path.join(lib_root, "_shared"), 0
+    for name in os.listdir(lib_root):
+        sdir = os.path.join(lib_root, name, "shared")
+        for dirpath, _, files in os.walk(sdir):
+            for f in files:
+                copy = os.path.join(dirpath, f)
+                src = os.path.join(src_root, os.path.relpath(copy, sdir))
+                if (
+                    os.path.exists(src)
+                    and open(copy, "rb").read() != open(src, "rb").read()
+                ):
+                    shutil.copy2(src, copy)
+                    print(
+                        f"  synced library/{name}/shared/{os.path.relpath(copy, sdir)}"
+                    )
+                    n += 1
+    return n
+
+
 def self_test():
     """The one runnable check for check_contract. Run: audit-distribution.py --self-test"""
     import tempfile
@@ -206,12 +287,38 @@ def self_test():
     assert pair_hash("a", "bc") != pair_hash(
         "ab", "c"
     )  # separator keeps the pair unambiguous
+
+    lib = tempfile.mkdtemp()
+
+    def lput(rel, text):
+        os.makedirs(os.path.dirname(os.path.join(lib, rel)), exist_ok=True)
+        with open(os.path.join(lib, rel), "w") as f:
+            f.write(text)
+
+    lput("_shared/ref.md", "v1")
+    for s in ("a", "b", "c"):
+        lput(f"{s}/shared/ref.md", "v1")
+    assert check_shared(lib, "abc") == [], check_shared(lib, "abc")
+    lput("_shared/ref.md", "v2")  # source edited, copies stale
+    assert len(check_shared(lib, "abc")) == 3
+    assert sync_shared(lib) == 3 and check_shared(lib, "abc") == []
+    os.remove(os.path.join(lib, "c/shared/ref.md"))  # below the rule of three
+    lput("_shared/instructions.md", "x")  # procedure in the pool
+    lput("a/instructions.md", "see library/_shared/ref.md")  # won't ship
+    got = check_shared(lib, "abc")
+    assert len(got) == 4, (
+        got
+    )  # ref.md 2<3, instructions.md not shareable + 0<3, a's path
     print("self-test passed")
 
 
 def main():
     if "--self-test" in sys.argv:
         self_test()
+        return 0
+    if "--sync-shared" in sys.argv:
+        n = sync_shared(os.path.join(ROOT, "library"))
+        print(f"synced {n} shared file(s) — bump each touched skill's version")
         return 0
     quiet = "--quiet" in sys.argv
     if "--help" in sys.argv or "-h" in sys.argv:
@@ -310,6 +417,9 @@ def main():
             errors.append(
                 f"{name}: marketplace.json description does not match catalog.yaml"
             )
+
+    # --- Shared assets: per-skill procedure, context-free pool, rule of three
+    errors += check_shared(lib_root, [n for n in catalog if n in dirs])
 
     # --- Marketplace vs routing -----------------------------------------
     for name in sorted(set(mp_lib) - set(catalog)):
