@@ -6,7 +6,7 @@ The Drafter consults this list while writing. The Line Editor consults it as a f
 
 ## Hard punctuation rules
 
-These are absolute. No exceptions, even if a brand voice file recommends them.
+These are absolute, even if a brand voice file recommends otherwise. The one exception is the em-dash carve-out below.
 
 - **No em-dashes (`—`).** Replace with a period, a comma, parentheses, or a colon, depending on the relationship between the clauses. If a sentence feels like it needs an em-dash, it usually wants to be two sentences.
 - **No exclamation points (`!`).** Period. Even in headlines. Even in "exciting" announcements. The only exception is inside a verbatim quote from another source.
@@ -102,4 +102,4 @@ If you cannot find the specific thing the banned word was gesturing at, the sent
 
 ## How the Line Editor should score this in self-evaluation
 
-The "Voice profile compliance" criterion in the Line Editor's rubric covers brand voice violations. The Line Editor should add an additional informal check: zero `—`, zero `!`, zero entries from the disallowed list. If any of those are present in the final piece, the Line Editor's overall score is automatically capped at 7 until they are removed.
+The "Voice profile compliance" criterion in the Line Editor's rubric covers brand voice violations. The Line Editor should add an additional informal check: zero `—` (unless the carve-out applies), zero `!`, zero entries from the disallowed list. If any of those are present in the final piece, the Line Editor's overall score is automatically capped at 7 until they are removed.

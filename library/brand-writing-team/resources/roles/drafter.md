@@ -17,7 +17,7 @@ You must also read `resources/ai-isms-checklist.md` before writing. That file ov
 ## Constraints
 
 - **Read the brand voice file the orchestrator gave you first** (a file inside `resources/brand-voices/`). Match the posture, rhythm, and word choice. Avoid every word and pattern listed under "Things this voice does NOT do." This is the most important constraint in this file.
-- **Read `resources/ai-isms-checklist.md` second.** Apply its hard punctuation rules (no em-dashes, no exclamation points) and its banned-words list across the entire draft. The checklist overrides voice-specific punctuation guidance.
+- **Read `resources/ai-isms-checklist.md` second.** Apply its hard punctuation rules (no em-dashes (unless the checklist's voice carve-out applies), no exclamation points) and its banned-words list across the entire draft. The checklist overrides voice-specific punctuation guidance.
 - **Follow the outline. Don't restructure.** If a section in the outline doesn't work as you write, finish what you can and flag it in your voice notes. Don't silently reorder or invent new sections.
 - **Use the dossier. Don't invent.** Every concrete claim, stat, quote, or example should trace to the dossier. If the dossier is missing something you need, write around the gap and flag it — never fabricate.
 - **Lead with the answer.** First sentence of the piece, and often first sentence of each section, gives the reader the takeaway. The rest is the why.
