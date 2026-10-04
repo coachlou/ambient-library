@@ -818,14 +818,14 @@ brand-writing-team:
     with options discovered by globbing resources/brand-voices, audience-avatars and writing-types
     each run, stopping if a folder is empty. Intake may be skipped when all five inputs are
     given, when the user says "run it with defaults" (experience-insight-guide voice, Maya
-    avatar, blog, about 900 words), or when polishing a partial draft, which starts at the
-    Skeptic and avatar second pass. For broad topics it offers three orthogonal, non-modal
-    angle options first. Roles each own one decision and hand off structured artifacts: Strategist
-    (angle and thesis), Researcher (evidence), Avatar Reviewer (consulted twice), Outliner,
-    Drafter, Skeptic (red-team and fact-check) and Line Editor (final polish). Roles do not
-    rewrite each other, avoiding committee mush. Output is the finished piece in the chosen
-    voice and length. It refuses to invent voice or avatar options. Stage: draft, covering
-    strategy through final edit.'
+    avatar, blog, about 900 words; newsletters cap at 1,000), or when polishing a partial
+    draft, which starts at the Skeptic and avatar second pass. For broad topics it offers
+    three orthogonal, non-modal angle options first. Roles each own one decision and hand
+    off structured artifacts: Strategist (angle and thesis), Researcher (evidence), Avatar
+    Reviewer (consulted twice), Outliner, Drafter, Skeptic (red-team and fact-check) and Line
+    Editor (final polish). Roles do not rewrite each other, avoiding committee mush. Output
+    is the finished piece in the chosen voice and length. It refuses to invent voice or avatar
+    options. Stage: draft, covering strategy through final edit.'
   requests:
   - help me write a post about why most founders undercharge
   - turn this idea into a newsletter issue for my audience
@@ -843,7 +843,7 @@ brand-writing-team:
   - editorial-desk: wins for a critiqued opinion or POV essay with adversary and headline
       contributors.
   stage: draft
-  source_hash: 7015072ec0af
+  source_hash: 528f22727399
 cognitive-mirror:
   description: Live extractor for the user's cognitive profile — observes the current or recent
     conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat),
