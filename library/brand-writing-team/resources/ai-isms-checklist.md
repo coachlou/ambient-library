@@ -11,7 +11,9 @@ These are absolute. No exceptions, even if a brand voice file recommends them.
 - **No em-dashes (`—`).** Replace with a period, a comma, parentheses, or a colon, depending on the relationship between the clauses. If a sentence feels like it needs an em-dash, it usually wants to be two sentences.
 - **No exclamation points (`!`).** Period. Even in headlines. Even in "exciting" announcements. The only exception is inside a verbatim quote from another source.
 
-If a brand voice file (e.g. `direct-authoritative.md`) suggests em-dashes are fine, **this file overrides it**. The em-dash rule is global.
+If a brand voice file (e.g. `direct-authoritative.md`) suggests em-dashes are fine, **this file overrides it**. The em-dash rule is global, except for the carve-out below.
+
+**One carve-out: Lou's voice.** When the selected voice is `lou-aimm-voice` (writing as Lou, in his voice), em-dashes are allowed, because they are part of his idiolect. This covers em-dashes only. The exclamation-point rule and every other rule in this file still apply. Anyone dispatching Lou-voiced work should know the carve-out is on.
 
 ## Disallowed words and phrases
 

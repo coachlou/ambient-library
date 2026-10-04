@@ -4,7 +4,7 @@
 A short, regular dispatch from the writer to a subscribed audience. Reads like a letter from someone who knows things and is sharing them with you specifically. More personal cadence, more direct address, less formal structure than a blog post.
 
 ## Default length
-400–700 words.
+400–1,000 words. Hard max 1,000.
 
 ## Structure
 - Opens like a conversation, not an essay
@@ -13,7 +13,7 @@ A short, regular dispatch from the writer to a subscribed audience. Reads like a
 - Closes with a thought that lingers, not a summary
 
 ## Voice
-Personal and direct. First person throughout. Reader is addressed as "you." Conversational rhythm — short sentences mixed with the occasional longer one. Comfortable being a little vulnerable.
+Personal and direct. First person throughout. Address the reader as "you" for invitations, questions, and hypotheticals. Never for assertions about their experience, history, or feelings: describe the pattern, or use "a lot of us," and let them opt in. Conversational rhythm — short sentences mixed with the occasional longer one. Comfortable being a little vulnerable.
 
 ## What success looks like
 The reader feels they got something useful AND they feel like the writer is a real person they know. They open the next one when it arrives.
