@@ -810,40 +810,48 @@ brand-writing-team:
   description: Multi-role team for brand-building long-form content with structured intake,
     end to end; use for "help me write a post about X", "turn this idea into a piece" when
     the goal is personal/company brand.
-  summary: 'An orchestrator that coordinates a small specialist team to take a raw idea to
-    a publishable brand-building long-form piece: blog post, newsletter, thought-leadership
-    article, personal story or how-to tutorial. The orchestrator coordinates and never writes
-    prose; only the Drafter does. Step 0 is a mandatory structured intake via AskUserQuestion:
-    topic (taken inline), type of writing, audience avatar, brand voice and target length,
-    with options discovered by globbing resources/brand-voices, audience-avatars and writing-types
-    each run, stopping if a folder is empty. Intake may be skipped when all five inputs are
-    given, when the user says "run it with defaults" (experience-insight-guide voice, Maya
-    avatar, blog, about 900 words; newsletters cap at 1,000), or when polishing a partial
-    draft, which starts at the Skeptic and avatar second pass. For broad topics it offers
-    three orthogonal, non-modal angle options first. Roles each own one decision and hand
-    off structured artifacts: Strategist (angle and thesis), Researcher (evidence), Avatar
-    Reviewer (consulted twice), Outliner, Drafter, Skeptic (red-team and fact-check) and Line
-    Editor (final polish). Roles do not rewrite each other, avoiding committee mush. Output
-    is the finished piece in the chosen voice and length. It refuses to invent voice or avatar
-    options. Stage: draft, covering strategy through final edit.'
+  summary: 'Orchestrator-only skill (no prose-writing by the orchestrator itself) that runs
+    a six-role team — Strategist, Researcher, Avatar Reviewer (2 passes), Outliner, Drafter,
+    Skeptic, Line Editor — to turn a raw idea into a publish-ready personal/company brand
+    piece. Inputs: a raw idea or angle plus a structured intake (topic, writing type, audience
+    avatar, voice, target length) resolved via AskUserQuestion against installed resource
+    folders (resources/brand-voices, resources/audience-avatars, resources/writing-types).
+    Produces: a final polished piece, chosen headline plus runners-up, a quality summary with
+    the Line Editor''s self-eval score, and collapsed process notes (thesis, outline, dossier,
+    skeptic report, avatar reactions). Refuses to let any role but the Drafter write prose,
+    refuses to merge or skip roles to save time, refuses to proceed past a weak Researcher
+    source-verification score, and refuses to silently deliver a sub-9 final score. Enforces
+    an AI-isms checklist that overrides voice files on punctuation. Supports partial entry
+    (draft-only, outline-only, single role) and an optional pre-step offering 3 orthogonal
+    angles when given a broad topic. This is an end-to-end pipeline skill, not a single stage
+    — it is the brand-specific sibling of writing-team, swapping generic quality gates for
+    brand-voice/avatar-resonance gates and adding the two avatar-reviewer passes writing-team
+    lacks.'
   requests:
-  - help me write a post about why most founders undercharge
-  - turn this idea into a newsletter issue for my audience
-  - I have an idea for a thought-leadership piece, run the team on it
-  - draft a how-to tutorial on setting up my first automation, just use defaults
-  - make this into a personal-story post in my brand voice
-  - give me three angle options on AI for coaches, then write the best one
+  - help me write a blog post about why solopreneurs should stop chasing virality
+  - turn this idea into a LinkedIn thought-leadership piece in my voice
+  - I have a personal story about losing my first client — help me shape it into something
+    I'd publish under my name
+  - draft a newsletter about pricing confidence for my brand, aimed at my coaching audience
+  - take this rough idea and run it through the full team — strategist, research, draft, edit,
+    all of it
+  - polish this draft I already wrote, make sure it sounds like me and survives scrutiny
+  - give me 3 angle options on 'AI and trust' before we write anything
   not_for:
-  - aimm-writing-team: wins for an AIMM-branded thought-leadership run with explicit role
-      commands like "Use Strategist mode" and reflection scoring.
-  - writing-team: wins for a plain research, draft, edit pipeline when no voice and avatar
-      intake is needed.
-  - writer: wins when a brief already exists and only a first draft is needed.
-  - editor: wins when a draft exists and only surgical edits are wanted.
-  - editorial-desk: wins for a critiqued opinion or POV essay with adversary and headline
-      contributors.
+  - writing-team: generic end-to-end research→draft→edit pipeline with no brand-voice/avatar
+      intake or dual avatar-resonance passes; use when the goal isn't personal/company brand
+      building specifically.
+  - writer: single-stage drafting only from an existing brief/dossier, no team orchestration,
+      intake, or quality-gate loop.
+  - editor: single-stage surgical polish of an existing draft, no strategist/research/outline
+      stages or avatar resonance checks.
+  - researcher: produces only a research dossier, no drafting or voice/brand framing.
+  - aimm-writing-team: a different fixed-role pipeline (Researcher/Strategist/Writer/Editor/Publisher)
+      tuned for AIMM thought-leadership output, not brand-voice/avatar-driven personal branding.
+  - editorial-desk: blackboard-style critiqued opinion/argument essay with an adversary and
+      headline specialist, not a brand-voice/avatar-resonance pipeline.
   stage: draft
-  source_hash: 528f22727399
+  source_hash: 7015072ec0af
 cognitive-mirror:
   description: Live extractor for the user's cognitive profile — observes the current or recent
     conversations to model how they think, decide, and evaluate; 5 modes /loms (current chat),
