@@ -96,9 +96,15 @@ has no real trace to draft from, it declines rather than inventing one.
 The `ambient` skill is always available (one description in context per
 runtime). Core capabilities (install, select, manage, review) are always
 available. Domain skills are opt-in: when a request matches a skill **enabled**
-at some scope, the router reads that skill's instructions on demand — nothing
-else loads until it's needed. A skill that isn't enabled runs only when you name
+at some scope, that skill's instructions are read on demand — nothing else
+loads until it's needed. A skill that isn't enabled runs only when you name
 it.
+
+An enabled skill is matched by the harness itself, from its own skill list:
+enabling installs the skill's plugin (`<skill>@aai-library`) at that scope, or
+on clone-only installs writes a one-file stub into the native skill folder.
+That is one skill description of standing context per enabled skill. The
+manifest below is the cross-harness record of what is enabled.
 
 ## The Manifest
 

@@ -107,9 +107,16 @@ Domain skills are project-specific tools that extend the core system — documen
 
 To add one: see [docs/MANAGEMENT.md](docs/MANAGEMENT.md).
 
-To activate one in your project, add it to `skills-manifest.yaml`:
+To activate one in your project, add it to `skills-manifest.yaml` and install
+its plugin at that scope so the harness matches it on its own:
 
 ```yaml
 domain_skills:
   - your-skill-name
 ```
+
+```
+claude plugin install your-skill-name@aai-library --scope project
+```
+
+Or just say *"add your-skill-name to this project"* and both happen.

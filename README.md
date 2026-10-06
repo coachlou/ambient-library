@@ -48,9 +48,12 @@ Claude Code, on top of that:
 
 Codex:
 
-Install `~/.ailib` (the clone above) as a Codex plugin through your Codex
-plugin workflow. Its `.codex-plugin/plugin.json` exposes one Codex skill from
-`codex-skills/`.
+```bash
+codex plugin marketplace add https://github.com/coachlou/aai-library
+codex plugin add ambient@aai-library
+```
+
+Codex reads the same marketplace and plugin manifests Claude Code does.
 
 Other harnesses (Gemini CLI, etc.):
 
@@ -62,7 +65,7 @@ into the project's `AGENTS.md` so future requests route automatically. See
 
 Updating is two steps: `git pull` in `~/.ailib` (the library every harness
 reads), then the harness wrapper — `/plugin update ambient` in Claude Code, or
-the Codex plugin update flow. Pointer-adapter installs need only the `git pull`.
+`codex plugin upgrade` in Codex. Pointer-adapter installs need only the `git pull`.
 
 ## Use
 
@@ -110,6 +113,12 @@ Domain skills are opt-in. One runs on its own only where it is enabled: in
 `skills-manifest.yaml`, or by being vendored into the project's `.ailib/`. The
 scopes add up. Enabling records a name — nothing is copied. Any skill still runs
 when you name it.
+
+The manifest is the record; the harness's own skill list is the trigger. Every
+library skill is also its own plugin (`<name>@aai-library`), so enabling a
+skill installs that plugin at the same scope — Claude Code and Codex then
+match it like any native skill. Clone-only installs get the same effect from a
+one-file stub written by `scripts/sync-skill-stubs.py`.
 
 The library also grows from real work: after a task no skill covered, *"save this
 as a skill"* drafts one from the session trace into `in-progress/`, where a

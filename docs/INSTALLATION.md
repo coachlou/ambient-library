@@ -38,10 +38,12 @@ a named library skill, or a task an [enabled](#enabling-skills) skill covers
 every project, but carries the pointer tradeoff described under
 [Other harnesses](#other-harnesses-pointer-adapter).
 
-## À-la-carte skill installs
+## Per-skill plugins
 
 Every domain skill in the library is also published as its own single-skill
-plugin in the same marketplace:
+plugin in the same marketplace. This is how an [enabled](#enabling-skills)
+skill triggers on its own — the `ambient` plugin alone does not reliably route
+indirect domain requests:
 
 ```
 /plugin install grill@aai-library
@@ -57,12 +59,11 @@ Bundles install a themed set in one command — e.g.
 toolkit (researcher, writer, editor, project-brief, voice-profile-trainer,
 writing-team).
 
-Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Tradeoff:
-a standalone install registers that skill's description in standing context
-(reliable direct triggering, small per-skill cost), while the `ambient` plugin
-keeps every library skill at zero standing cost behind the router. Installing both is
-harmless — the standalone skill simply wins direct triggers. A standalone
-install is always live in every project; it ignores the skill manifests below.
+Browse the full list with `/plugin` or in [SKILLS.md](../SKILLS.md). Cost: a
+per-skill plugin registers one skill description in standing context; the
+`ambient` plugin keeps everything else behind the router at zero cost. Install
+a skill's plugin at the scope where you enable it (`--scope user` for every
+project, `--scope project` for one), so the two stay in step.
 
 ## Installation scopes
 
@@ -95,9 +96,16 @@ The Codex wrapper is defined by:
 codex-skills/ambient/SKILL.md
 ```
 
-Install the `~/.ailib` clone as a Codex plugin through your Codex plugin
-workflow. The Codex plugin registers one `ambient` skill and delegates to the
-canonical router and `library/` at the clone's root.
+```bash
+codex plugin marketplace add https://github.com/coachlou/aai-library
+codex plugin add ambient@aai-library
+```
+
+Codex reads the same `marketplace.json` and plugin manifests Claude Code does.
+Per-skill plugins install the same way (`codex plugin add grill@aai-library`).
+Codex plugins are user-scope only — there is no project scope flag. The plugin
+registers one `ambient` skill and delegates to the canonical router and
+`library/` at the plugin root.
 
 ## Other harnesses (pointer adapter)
 
@@ -172,6 +180,18 @@ Enabling records a name, so the skill still resolves from `~/.ailib` and picks
 up updates. To pin a fixed copy instead, ask to vendor it into the project's
 `.ailib/` — a vendored skill counts as enabled there.
 
+The manifest is the record; the harness's own skill list is the trigger.
+Enabling a skill also installs it at that scope, which the conversational
+flow does for you:
+
+| Harness | Trigger |
+|---|---|
+| Claude Code | `claude plugin install <skill>@aai-library --scope user\|project` |
+| Codex | `codex plugin add <skill>@aai-library` (user scope) |
+| Clone-only install (pointer adapter, or no plugin system) | `python3 ~/.ailib/scripts/sync-skill-stubs.py` in the project, or `--user` — writes one plain `SKILL.md` per enabled skill into `.claude/skills/` and `.agents/skills/` |
+
+Don't do both for one skill — that lists it twice.
+
 ## Updating
 
 The library and the wrappers update separately. First the library:
@@ -186,8 +206,11 @@ Then the wrapper — Claude Code:
 /plugin update ambient
 ```
 
-Codex follows the Codex plugin update flow for the installed plugin.
-Pointer-adapter installs need only the `git pull`.
+Codex: `codex plugin upgrade`. Pointer-adapter installs need only the
+`git pull`. Per-skill plugins update like `ambient` (`/plugin update <skill>`).
+Where stubs are in use, an update moves the library to a new versioned folder
+and the stubs still point at the old one — re-run `sync-skill-stubs.py` for
+the user scope and for each project.
 
 ## Uninstalling
 
@@ -204,6 +227,13 @@ Update Claude Code to the latest version, then retry.
 Say *"set up ambient-library in this project"* — if Claude doesn't respond to
 that, the plugin isn't active. Re-run the install commands and start a fresh
 session.
+
+### An enabled skill doesn't trigger
+A manifest entry alone is invisible to the harness. Check the skill is in its
+native skill list: `claude plugin list` should show `<skill>@aai-library` at
+that scope, or `.claude/skills/<skill>/SKILL.md` should exist (clone installs).
+If neither, run the trigger step under [Enabling skills](#enabling-skills) and
+start a fresh session.
 
 ### Marketplace add fails
 Check the repo is reachable: you need access to `coachlou/aai-library`. You can

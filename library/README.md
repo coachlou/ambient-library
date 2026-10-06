@@ -19,6 +19,11 @@ library/
 Sharing rules (procedure stays per skill, only context-free assets pool, rule of
 three with copies) live in `.aai/skills/admin.md` → "Shared assets".
 
+Each skill folder is also its own plugin (`<skill-name>@aai-library`). The root
+`SKILL.md` is the dev source for that; the production build copies its
+frontmatter to `skills/<skill-name>/SKILL.md`, the only path plugin loaders
+register. Don't add that folder here by hand.
+
 Sibling files resolve at runtime as `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/<file>`
 — reference them that way inside `instructions.md`, never with repo-relative or
 absolute paths, so the skill works from both the installed plugin and a

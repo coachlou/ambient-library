@@ -25,9 +25,10 @@ for a specific project or team instead, see [INSTALLATION.md](INSTALLATION.md).
 
 Codex:
 
-Install `~/.ailib` as a Codex plugin. Its manifest is
-`.codex-plugin/plugin.json`, which registers the adapter skill in
-`codex-skills/`.
+```bash
+codex plugin marketplace add https://github.com/coachlou/aai-library
+codex plugin add ambient@aai-library
+```
 
 Other harnesses (Gemini CLI, etc.) need no plugin — see
 [INSTALLATION.md](INSTALLATION.md#other-harnesses-pointer-adapter).
@@ -39,9 +40,10 @@ Open Claude Code or Codex in any project and say:
 > "Set up ambient-library in this project"
 
 Claude asks what your project does and writes a `skills-manifest.yaml`
-enabling the domain skills the project uses. Domain skills are opt-in: only
-enabled ones run on their own, though any skill runs when you name it. Core
-capabilities (install, select, manage, review) always work.
+enabling the domain skills the project uses, then installs each one's plugin
+at project scope so the harness matches it on its own. Domain skills are
+opt-in: only enabled ones run on their own, though any skill runs when you
+name it. Core capabilities (install, select, manage, review) always work.
 
 For skills you want in every project, say *"enable <skill> everywhere"* — that
 writes `~/.aai/skills-manifest.yaml` instead.
@@ -65,8 +67,8 @@ Just talk:
 ## Updating
 
 Run `git pull` in `~/.ailib` to update the library itself. Then update the
-wrapper: `/plugin update ambient` in Claude Code, or the Codex plugin update
-flow.
+wrapper: `/plugin update ambient` in Claude Code, or `codex plugin upgrade`
+in Codex.
 
 ## Next Steps
 

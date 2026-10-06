@@ -13,8 +13,8 @@ About a minute in Claude Code:
 
 Then say *"set up ambient-library in this project"* in any project.
 
-For Codex, install this repository as a Codex plugin from the plugin root. The
-Codex wrapper is `.codex-plugin/plugin.json`.
+For Codex: `codex plugin marketplace add https://github.com/coachlou/aai-library`
+then `codex plugin add ambient@aai-library`. Codex reads the same marketplace.
 
 ### Does this work on harnesses without plugins (Gemini CLI, etc.)?
 
@@ -56,13 +56,24 @@ Check [../SKILLS.md](../SKILLS.md), or ask *"what skills are available?"*
 
 ### Do I activate skills each session?
 
-No. The `ambient` skill is always available. Domain skills load automatically
-when a request matches one — nothing to invoke manually.
+No. The `ambient` skill is always available. An enabled domain skill is
+installed as its own plugin (or a one-file stub) at that scope, so the harness
+matches it on its own — nothing to invoke manually.
+
+### I enabled a skill and it never triggers
+
+The manifest records what is enabled; it is not what the harness reads to
+match a request. Check `claude plugin list` shows `<skill>@aai-library` at
+that scope (or `.claude/skills/<skill>/SKILL.md` exists on a clone install).
+If not: *"add <skill> to this project"* again, or
+`claude plugin install <skill>@aai-library --scope project`, then a fresh
+session.
 
 ### Can I use skills without a manifest?
 
-Yes. Core capabilities (install, select, manage, review) always work. A
-`skills-manifest.yaml` only scopes which domain skills the router considers.
+Yes. Core capabilities (install, select, manage, review) always work, and any
+domain skill runs when you name it. A `skills-manifest.yaml` records which
+domain skills are enabled to run on their own.
 
 ### What's the difference between core skills and domain skills?
 
@@ -97,8 +108,8 @@ optional.
 
 ### What if it doesn't exist?
 
-Everything still works. The router can use any domain skill in `library/`; the
-manifest just narrows the set.
+Core capabilities still work, and any domain skill runs when you name it. No
+domain skill runs on its own until it is enabled.
 
 ---
 
@@ -113,8 +124,7 @@ The plugin may not be installed. Run:
 ```
 Then start a fresh session.
 
-In Codex, verify the Codex plugin is installed and that `.codex-plugin/plugin.json`
-points at `codex-skills/`.
+In Codex, `codex plugin list` should show `ambient@aai-library`.
 
 ### The `/plugin` command doesn't exist
 
@@ -127,7 +137,7 @@ of Claude Code's `/plugin` command.
 /plugin update ambient
 ```
 
-In Codex, use the Codex plugin update flow for the installed plugin.
+In Codex, `codex plugin upgrade`.
 
 ### A skill edit isn't showing
 

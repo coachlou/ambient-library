@@ -74,5 +74,6 @@ Read and execute `select.md` to choose domain skills for the project.
 - Project artifacts are `skills-manifest.yaml` and, on pointer
   harnesses only, the AGENTS.md pointer block.
 - On plugin harnesses: no clone, no submodule, no scripts, no dotfile edits.
-  The plugin is the install.
+  The plugin is the install; enabled skills are their own plugins
+  (`manage.md` → **Enable a domain skill**, step 3).
 - Keep output minimal.

@@ -34,7 +34,8 @@ repo root (the agentic folder)
 │       ├── instructions.md         ← the sub-folder's behavior
 │       ├── contract.yaml           ← optional: the values it needs, left empty
 │       ├── scripts/resolve.py      ←   build-copied: finds the project and values
-│       ├── SKILL.md                ← standalone-plugin shim
+│       ├── SKILL.md                ← standalone-plugin shim (dev source)
+│       ├── skills/<skill>/SKILL.md ←   build output: where plugin loaders look
 │       └── .claude-plugin/plugin.json
 ├── bundles/                        ← meta-plugins: symlinked skill sets
 ├── .claude-plugin/
@@ -80,9 +81,21 @@ This is the property that drove the design:
 | Any subskill | Only when the router reads it |
 | Any domain skill in `library/` | Only when the router reads it |
 
-Domain skills are **not** registered skills, so they contribute **zero**
-frontmatter to context — globally or per project. They're inert files until read.
-This is why everything can be bundled in one plugin without context bloat.
+Domain skills are **not** registered skills in the `ambient` plugin, so they
+contribute **zero** frontmatter to context — globally or per project. They're
+inert files until read. This is why everything can be bundled in one plugin
+without context bloat.
+
+The flip side: a harness only routes a request to a skill it has in its own
+skill list. The `ambient` description covers setup, management, and review,
+but an indirect domain request ("write me a project brief") does not reliably
+reach the router through it (measured 2026-10-05: 0/4 across Claude Code and
+Codex via the pointer alone, 6/6 once the skill was in the native list). So an
+*enabled* skill pays one description of standing context, by design — its own
+per-skill plugin (`<name>@aai-library`) installed at the scope where it is
+enabled, or, on clone installs, a one-file stub in `.claude/skills/` /
+`.agents/skills/` written by `scripts/sync-skill-stubs.py`. The manifest
+records what is enabled; the plugin or stub makes it trigger.
 
 ## How a request flows
 
@@ -131,7 +144,12 @@ domain loading.
 **Why are domain skills plain files, not skills/ entries?**
 Registered skill paths are runtime-specific. Domain skills are project-specific
 and potentially numerous, so they live in the canonical `library/` as
-`instructions.md` files — read on demand, zero standing cost.
+`instructions.md` files — read on demand, zero standing cost in the `ambient`
+plugin. The skill's own plugin is the registration: the production build
+(`scripts/release_filter.py`) writes `library/<name>/skills/<name>/SKILL.md`
+because Claude Code and Codex plugin loaders register `skills/*/SKILL.md` only
+— a `SKILL.md` at the plugin root is listed but never chosen. The dev tree
+keeps the single root `SKILL.md`; the layout fix is build-time.
 
 **Why do proposed skills go to `in-progress/` instead of straight into the catalog?**
 Self-extension (`propose.md`) lets the library grow from real work, but a skill
@@ -152,6 +170,8 @@ domain skill is routable only where it's enabled: the union of
 `~/.aai/skills-manifest.yaml`, the project's `skills-manifest.yaml`, and skills
 vendored or forked into the project (`load.md` defines it). Enabling records a
 name rather than a copy, so updates still flow; naming a skill runs it anywhere.
+Enabling also installs the skill's plugin (or stub) at that scope — see
+*Context cost* above for why the manifest alone does not trigger.
 
 **Why a contract instead of letting users edit the skill?**
 A canonical skill that needs your group name, sender address, or brand used to

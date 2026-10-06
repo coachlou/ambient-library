@@ -48,7 +48,10 @@ Ask: "Does this look right, or anything to add or remove?"
 
 ### 4. Write the manifest
 
-On confirmation, write the manifest for the chosen scope.
+On confirmation, write the manifest for the chosen scope, then make each
+listed skill trigger — `manage.md` → **Enable a domain skill**, step 3 (plugin
+install at that scope, or **Refresh native stubs** on a clone install). The
+manifest is the record; the harness matches skills from its own list.
 
 Confirm: "Your skills are set. I'll use these for this project." / "…in every project."
 

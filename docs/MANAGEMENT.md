@@ -72,8 +72,15 @@ Users receive it on their runtime's next plugin update.
 
 ### 5. Activate in a project
 
-Add it to the project's `skills-manifest.yaml`, or from your agent:
-*"Add my-skill to this project"*.
+From your agent: *"Add my-skill to this project"*. That writes it to the
+project's `skills-manifest.yaml` (the record) and installs
+`my-skill@aai-library` at project scope (the trigger). By hand, do both.
+
+The per-skill plugin needs a `SKILL.md` at `library/my-skill/` (frontmatter:
+`name`, `description`, then a one-line pointer to `instructions.md`) and a
+`.claude-plugin/plugin.json`; the admin flow scaffolds both. The production
+build copies that frontmatter to `skills/my-skill/SKILL.md`, the only path
+plugin loaders register — don't add it in the dev tree.
 
 ---
 
