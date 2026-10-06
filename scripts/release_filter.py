@@ -84,12 +84,11 @@ for d in KEEP_DIRS:
     if os.path.isdir(p):
         shutil.copytree(p, os.path.join(stage, d), symlinks=True)
 
-# the one script a user of an installed library runs: is my folder compliant?
+# the two scripts a user of an installed library runs: is my folder compliant,
+# and expose my enabled skills to the harness's native skill list
 os.makedirs(os.path.join(stage, "scripts"))
-shutil.copy2(
-    os.path.join(src, "scripts", "audit-compliance.py"),
-    os.path.join(stage, "scripts", "audit-compliance.py"),
-)
+for f in ("audit-compliance.py", "sync-skill-stubs.py"):
+    shutil.copy2(os.path.join(src, "scripts", f), os.path.join(stage, "scripts", f))
 
 # docs/ — consumer guides only
 os.makedirs(os.path.join(stage, "docs"))
