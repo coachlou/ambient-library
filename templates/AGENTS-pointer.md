@@ -33,6 +33,10 @@ router first. Where those instructions mention `${CLAUDE_PLUGIN_ROOT}`, treat it
 as `{{LIBRARY_ROOT}}`. Do not read subskill or domain skill files until the
 router directs you to one.
 
+Enabled skills trigger from this harness's own skill folder, not from the
+manifest: after enabling one, run
+`python3 {{LIBRARY_ROOT}}/scripts/sync-skill-stubs.py` (project) or `--user`.
+
 ---
 
 <!-- The redirect — written to BOTH CLAUDE.md (Claude Code) and GEMINI.md

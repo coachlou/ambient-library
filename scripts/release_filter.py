@@ -120,6 +120,23 @@ for s in released:
         os.path.join(stage, "library", s),
         symlinks=True,
     )
+    # Each library/<s> is also the per-skill plugin in marketplace.json. Plugin
+    # loaders (Claude, Codex) register skills/<name>/SKILL.md only, so a plugin
+    # whose SKILL.md sits at its root is listed but never triggers (tested
+    # 2026-10-05: 0/5 at root, 6/6 under skills/). Relative pointer: same file
+    # on every machine.
+    sk = os.path.join(src, "library", s, "SKILL.md")
+    if os.path.exists(sk):
+        text = open(sk, encoding="utf-8").read()
+        end = text.find("\n---", 3)
+        if text.startswith("---") and end > 0:
+            d = os.path.join(stage, "library", s, "skills", s)
+            os.makedirs(d)
+            open(os.path.join(d, "SKILL.md"), "w", encoding="utf-8").write(
+                text[: end + 4]
+                + "\n\nRead `instructions.md` two directories up from this file"
+                " (the plugin root, `${CLAUDE_PLUGIN_ROOT}`) and follow it.\n"
+            )
     # opted-in skills (contract.yaml) carry the resolver their block calls; one
     # source in scripts/, copied here so vendored and standalone installs have it
     if os.path.exists(os.path.join(stage, "library", s, "contract.yaml")):

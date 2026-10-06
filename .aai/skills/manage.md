@@ -51,9 +51,10 @@ Updates are handled by Claude Code's plugin system. Tell the user to run:
 library. Confirm: "Once you run /plugin update ambient, you'll have the latest."
 Pointer installs (no plugin) update with `git -C ~/.ailib pull` instead.
 
-An update moves the library to a new versioned folder, so the native stubs
-(below) point at the old one until refreshed. After the update, run
-**Refresh native stubs** for the user scope and for the current project.
+Per-skill plugins update the same way (`/plugin update <skill-name>`). Where
+native stubs are in use (below), an update moves the library to a new versioned
+folder and the stubs point at the old one until refreshed — run **Refresh
+native stubs** for the user scope and for the current project.
 
 ### Enable a domain skill
 
@@ -67,8 +68,15 @@ enabled set is defined in `load.md`). Pick the manifest by scope:
 
 1. Verify it exists: `${CLAUDE_PLUGIN_ROOT}/library/<skill-name>/instructions.md`.
 2. Add its name to `domain_skills` in that manifest, creating the file as
-   `domain_skills: []` first if it is missing.
-3. Run **Refresh native stubs** for that scope.
+   `domain_skills: []` first if it is missing. The manifest is the
+   cross-harness record of what is enabled; it does not by itself make the
+   skill trigger.
+3. Make it trigger. Every library skill is also its own plugin in the
+   `aai-library` marketplace, and a plugin-installed skill triggers natively:
+   - Claude Code: `claude plugin install <skill-name>@aai-library --scope user|project`
+   - Codex: `codex plugin add <skill-name>@aai-library` (user scope)
+   - No plugin system (clone install), or a harness not listed: run
+     **Refresh native stubs** for that scope.
 
 Enabling writes a name, never a copy — the skill still resolves from the
 library, so updates reach it. Pinning a copy into the project's `.ailib/` is
@@ -80,17 +88,21 @@ Confirm: "Enabled [skill-name] for this project." / "…in every project."
 
 Remove it from the manifest for the scope the user named. Scopes are a union,
 so a skill enabled in the other manifest (or vendored into the project) keeps
-running — say so, and offer to remove it there too. Then run **Refresh native
-stubs** for that scope; it removes the stub. Confirm: "Disabled [skill-name]."
+running — say so, and offer to remove it there too. Then undo step 3 of
+enabling: `claude plugin uninstall <skill-name>@aai-library` /
+`codex plugin remove <skill-name>@aai-library`, or **Refresh native stubs** for
+that scope (it removes the stub). Confirm: "Disabled [skill-name]."
 
 ### Refresh native stubs
 
+For installs without a plugin system (a `~/.ailib` clone, a vendored `.ailib/`).
 The harness routes a request to a skill only if that skill is in its own skill
 list; a manifest entry alone is invisible to it. This step writes one plain
 `SKILL.md` per enabled skill (the library skill's frontmatter plus a pointer to
 its `instructions.md`) into the native skill folders, so enabled skills trigger
 like any other skill in Claude Code (`.claude/skills/`) and Codex
-(`.agents/skills/`). Plain files, not symlinks (Windows, zip/copy).
+(`.agents/skills/`). Plain files, not symlinks (Windows, zip/copy). Skip it
+where the per-skill plugin is installed — two listings of one skill.
 
 ```
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/sync-skill-stubs.py"          # project
