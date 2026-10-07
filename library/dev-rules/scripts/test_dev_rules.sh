@@ -68,6 +68,6 @@ check "publish is idempotent" 'HOME="$F" bash "$HERE/publish.sh" | grep -q "alre
 
 # ── paste: for surfaces without file access ──────────────────────────────────
 check "paste prints the owner's rules" 'HOME="$F" bash "$HERE/paste.sh" 2>/dev/null | grep -q "extra rule"'
-check "paste falls back to the snapshot" 'HOME="$TMP/nobody" bash "$HERE/paste.sh" 2>/dev/null | grep -q "^# Coding rules"'
+check "paste falls back to the snapshot" 'HOME="$TMP/nobody" bash "$HERE/paste.sh" 2>/dev/null | grep -qF "$(head -1 "$SNAPSHOT")"'
 
 [ $FAILS = 0 ] && echo "all passed" || { echo "$FAILS failed"; exit 1; }
