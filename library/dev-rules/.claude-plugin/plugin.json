@@ -1,0 +1,11 @@
+{
+  "name": "dev-rules",
+  "description": "Applies one global set of coding rules — deep modules, one owner per concern, minimal tested changes — to every conversation that writes or reviews code, in any folder, harness, or capability; installs and publishes ~/.aai/rules/coding.md; use for \"set up the coding rules\", \"make the rules global\", \"publish my coding rules\", or before writing code.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}

@@ -1169,6 +1169,50 @@ deep-mirror:
       auditing the cognitive profile.
   stage: audit
   source_hash: b060d64fe60a
+dev-rules:
+  description: Applies one global set of coding rules — deep modules, one owner per concern,
+    minimal tested changes — to every conversation that writes or reviews code, in any folder,
+    harness, or capability; installs and publishes ~/.aai/rules/coding.md; use for "set up
+    the coding rules", "make the rules global", "publish my coding rules", or before writing
+    code.
+  summary: 'dev-rules makes a single global set of coding rules (deep modules, one owner per
+    concern, minimal tested changes) apply to every conversation that writes, changes, or
+    reviews code, in any folder, harness, or capability. The authority is the owner''s file
+    ~/.aai/rules/coding.md, edited only there with owner approval. Four operations. Apply:
+    read the first rules file found (~/.aai, then vendored .ailib/dev-rules/rules/coding.md,
+    then the plugin''s library copy) and follow it; project instructions may tighten but never
+    silently loosen. Install: scripts/install.sh with --check plan shown first. It seeds the
+    rules file, adds a trigger row to ~/.aai/context.md, puts ~/.aai under local git, and
+    appends a pointer (never the rules text) to each harness''s global file (Claude Code,
+    Codex, opencode; shells inherit). Paste: scripts/paste.sh emits text for claude.ai chat
+    and Cowork, which lack file access; the pasted copy goes stale until re-pasted. Publish:
+    scripts/publish.sh, run only in the library dev workspace (never .aai/PRODUCTION), refuses
+    uncommitted rules edits, snapshots into library/dev-rules/rules/coding.md; then bump plugin.json
+    and release via admin.md. Vendor: ambient-folder install for folders (cloud sessions,
+    collaborators) without ~/.aai. It refuses hand-editing snapshots, vendored copies, or
+    harness files, never edits core.md, never overwrites owned files. Setup/operate stage,
+    run before writing code; other capabilities point here instead of carrying their own copy
+    of the rules.'
+  requests:
+  - set up the coding rules
+  - make my coding rules global so every harness follows them
+  - publish my coding rules to the library
+  - give me the text to paste into claude.ai settings so chat follows my coding rules
+  - make sure Codex and opencode follow the same coding rules as Claude Code
+  - I'm about to write some code, apply my coding rules first
+  - make the coding rules work in this folder in a cloud container with no ~/.aai
+  - update the library's coding rules from my edits
+  not_for:
+  - ambient-folder: wins when the goal is making a folder ambient, scaffolding .aai/, or generically
+      vendoring or re-syncing capabilities rather than the coding-rules file.
+  - init-dev-project: wins when scaffolding a new project folder (lanes, make verbs, spec/src/tests
+      layout) rather than installing global coding rules.
+  - distro-kit: wins when packaging an app repo as an ambient-library capability and publishing
+      it, not publishing the coding-rules file.
+  - skill-auditor: wins when linting a skill's SKILL.md, catalog projection, or evals against
+      the library schema.
+  stage: setup
+  source_hash: d8a31c0d8cbb
 deep-field:
   description: Integrated insight system combining Eigenthinking, latent-space cartography,
     and wisdom-of-crowds validation; use for "run deep field", frontier-quality insight beyond
