@@ -55,6 +55,13 @@ check "--no-git leaves ~/.aai unversioned" '[ ! -d "$O/.aai/.git" ]'
 HOME="$O" bash "$HERE/install.sh" --no-git >/dev/null
 check "re-run routes once" '[ "$(count rules/coding.md "$O/.aai/context.md")" = 1 ]'
 
+# ── design-section note: any heading style counts ────────────────────────────
+D="$TMP/design"; mkdir -p "$D/.aai/rules"
+printf '# Coding Rules\n\n## Design: deep modules, one owner per concern\n' > "$D/.aai/rules/coding.md"
+check "no merge note when an unnumbered Design heading exists" '! HOME="$D" bash "$HERE/install.sh" --no-git | grep -q "no design section"'
+printf '# Coding Rules\n\n## Testing\n' > "$D/.aai/rules/coding.md"
+check "merge note when the design section is missing" 'HOME="$D" bash "$HERE/install.sh" --no-git | grep -q "no design section"'
+
 # ── publish: authority flows home → library ──────────────────────────────────
 cp "$SNAPSHOT" "$TMP.snap"
 echo "- extra rule" >> "$F/.aai/rules/coding.md"
