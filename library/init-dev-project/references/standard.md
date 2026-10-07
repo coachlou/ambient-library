@@ -228,3 +228,9 @@ anything the root `.gitignore` names, so caches never reach the candidate.
 10. v0.3.7 (2026-10-02): a project with screens specs by prototype. The SPEC
    template names `grill-with-prototype` (workspace `spec/`, project
    `prototype`), whose `prd` writes SPEC.md. Same gate; piloted on Porch Light.
+11. v0.4.0 (2026-10-07): the scaffold writes `CLAUDE.md`/`AGENTS.md` discovery
+   anchors. Before this, a scaffolded folder's `.aai/` was invisible to agents
+   that weren't already globally routed to it. The canonical block goes in
+   `AGENTS.md`, `CLAUDE.md` redirects to it, and both carry the phrase
+   "ambient folder" so `ambient-folder/install.sh` sees an anchor already
+   present and writes no duplicate.

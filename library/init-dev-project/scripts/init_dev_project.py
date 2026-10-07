@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Scaffold a folder into the dev-and-deploy standard and make it a git repo.
 
-Creates root files, Makefile and .aai/ from templates/project/. Never overwrites:
-existing files are skipped, so re-running is safe. If the folder is not inside
+Creates root files, Makefile and .aai/ from templates/project/, plus the
+CLAUDE.md / AGENTS.md discovery anchors that point an agent at .aai/. Never
+overwrites: existing files are skipped and an anchorless adapter file is
+appended to, so re-running is safe. If the folder is not inside
 any git repo, runs `git init -b main`, commits the scaffold and tags v0.0.0.
 Inside an existing repo (its own or a parent's, like the incubator) git is left
 untouched: no nested repo, no commit. Never adds a remote, never pushes.
@@ -26,6 +28,33 @@ KINDS = {
     "tool": ("{tool}", ["VERSION", "{tool}"]),
 }
 WEB = ("src/", ["VERSION", "src/", "docs/"])
+
+# A scaffolded folder's .aai/ is invisible to an agent unless an auto-loaded file
+# points at it. The canonical block goes in AGENTS.md (Codex, opencode, DeepSeek
+# Harness); CLAUDE.md redirects there because Claude Code auto-loads CLAUDE.md,
+# not AGENTS.md. Both carry the phrase "ambient folder", which is what
+# ambient-folder/install.sh greps for — so neither tool duplicates the other's
+# anchor. Convention: templates/AGENTS-pointer.md in the library root.
+ANCHOR_PHRASE = "ambient folder"
+ANCHORS = {
+    "AGENTS.md": """## Ambient folder
+
+This folder is an ambient folder: its behavior lives in `.aai/`.
+
+**Read `.aai/instructions.md` and follow it before acting.** It routes to the
+dev-and-deploy standard (`.aai/references/dev-standard.md`), the spec in
+`spec/`, and the `make` pipeline that owns every stage.
+
+"Ambient folder" means a folder with an `.aai/` behavior layer — it has nothing
+to do with Node.js. Do not scaffold or run `npm init`; read `.aai/` first.
+""",
+    "CLAUDE.md": """## Ambient folder
+
+**Read `AGENTS.md` in this folder, then `.aai/instructions.md`, and follow it
+before doing anything.** This folder is an ambient folder — its behavior lives
+in `.aai/`, which is not Node.js. Do not scaffold or run `npm init` first.
+""",
+}
 
 # First match wins; skill-app before skill because an app also has SKILL.md.
 DETECT = [
@@ -108,7 +137,7 @@ def main():
     stamp = f"<!-- init-dev-project v{values['skill_version']} · stamped {values['date']} · canonical: references/standard.md in the init-dev-project skill -->\n"
     files.append((os.path.join(".aai", "references", "dev-standard.md"), stamp + std))
 
-    created, skipped = [], []
+    created, appended, skipped = [], [], []
     for rel, content in sorted(files):
         dst = os.path.join(root, rel)
         if os.path.exists(dst):
@@ -119,6 +148,25 @@ def main():
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             with open(dst, "w") as f:
                 f.write(content)
+
+    # Anchors differ from template files: an adapter file the owner already keeps
+    # gets the block appended rather than being left without one.
+    for fn, block in sorted(ANCHORS.items()):
+        dst = os.path.join(root, fn)
+        exists = os.path.exists(dst)
+        if exists:
+            with open(dst) as f:
+                if ANCHOR_PHRASE in f.read():
+                    skipped.append(fn)
+                    continue
+            appended.append(fn)
+            block = "\n" + block
+        else:
+            created.append(fn)
+        if not a.dry_run:
+            os.makedirs(root, exist_ok=True)
+            with open(dst, "a") as f:
+                f.write(block)
 
     git = "skipped"
     repo = None if a.no_git else enclosing_repo(root)
@@ -143,16 +191,20 @@ def main():
         git = "would initialize"
 
     summary = {"path": root, "name": name, "kind": a.kind, "kind_reason": kind_reason, "dry_run": a.dry_run,
-               "created": created, "skipped": skipped, "git": git}
+               "created": created, "appended": appended, "skipped": skipped, "git": git}
     if a.json:
         print(json.dumps(summary, indent=2))
     else:
         verb = "would create" if a.dry_run else "created"
+        appended_verb = "would append" if a.dry_run else "appended"
         print(f"{name} ({a.kind}) at {root}")
         print(f"  kind: {a.kind} ({kind_reason})")
-        print(f"  {verb}: {len(created)}  skipped (exists): {len(skipped)}  git: {git}")
+        print(f"  {verb}: {len(created)}  {appended_verb}: {len(appended)}"
+              f"  skipped (exists): {len(skipped)}  git: {git}")
         for r in created:
             print(f"  + {r}")
+        for r in appended:
+            print(f"  ~ {r}")
         print("  next: cd there and run `make`")
     return 0
 

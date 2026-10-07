@@ -16,6 +16,7 @@ with tempfile.TemporaryDirectory() as tmp:
     p = os.path.join(tmp, "demo-app")
     out = json.loads(sh(sys.executable, SCRIPT, p, "--kind", "web", "--description", "Demo.", "--json"))
     for f in ["README.md", "VERSION", "CHANGELOG.md", "Makefile", ".gitignore",
+              "CLAUDE.md", "AGENTS.md",
               ".aai/instructions.md", ".aai/identity.md", ".aai/purpose.md", ".aai/context.md",
               ".aai/HANDOFF.md", ".aai/checkpoint.md", ".aai/references/dev-standard.md",
               "deploy/SHIPLIST", "spec/SPEC.md"]:
@@ -23,12 +24,20 @@ with tempfile.TemporaryDirectory() as tmp:
         assert "{{" not in open(os.path.join(p, f)).read(), f"unrendered placeholder in {f}"
     assert "demo-app" in open(os.path.join(p, "README.md")).read()
     assert open(os.path.join(p, ".aai/references/dev-standard.md")).read().startswith("<!-- init-dev-project v")
+    # the anchors are what makes .aai/ discoverable: AGENTS.md carries the canonical
+    # block, CLAUDE.md redirects to it, and both carry the phrase install.sh greps for
+    assert "ambient folder" in open(os.path.join(p, "AGENTS.md")).read()
+    claude = open(os.path.join(p, "CLAUDE.md")).read()
+    assert "ambient folder" in claude and "AGENTS.md" in claude and ".aai/instructions.md" in claude
+    assert "CLAUDE.md" in out["created"] and "AGENTS.md" in out["created"], out["created"]
     assert sh("git", "tag", cwd=p).strip() == "v0.0.0"
     assert sh("git", "status", "--porcelain", cwd=p) == ""
     assert sh("git", "branch", "--show-current", cwd=p).strip() == "main"
     # idempotent: second run creates nothing, touches git nothing
     again = json.loads(sh(sys.executable, SCRIPT, p, "--json"))
     assert again["created"] == [] and "untouched" in again["git"]
+    assert again["appended"] == [] and "CLAUDE.md" in again["skipped"], again
+    assert open(os.path.join(p, "CLAUDE.md")).read() == claude, "anchor written twice"
     # the four verbs: help works, closed gates fail, deploy refuses when untagged
     help_out = sh("make", cwd=p)
     assert "make release" in help_out and "1 SPEC" in help_out and "4 SHIP" in help_out
@@ -91,6 +100,17 @@ with tempfile.TemporaryDirectory() as tmp:
     assert open(os.path.join(e, "deploy", "SHIPLIST")).read() == "VERSION\nworker/\n"
     assert open(os.path.join(e, "deploy", "docker", "compose.yaml")).read() == "services: {}\n"
     assert sh("git", "status", "--porcelain", cwd=e) == ""   # owner's files are in the first commit
+    # an adapter file the owner already keeps: content kept, the block appended once
+    c = os.path.join(tmp, "has-claude-md")
+    os.makedirs(c)
+    open(os.path.join(c, "CLAUDE.md"), "w").write("# notes\n\nRun the thing.\n")
+    r = json.loads(sh(sys.executable, SCRIPT, c, "--json"))
+    assert r["appended"] == ["CLAUDE.md"] and "AGENTS.md" in r["created"], r
+    body = open(os.path.join(c, "CLAUDE.md")).read()
+    assert body.startswith("# notes\n\nRun the thing.\n") and "ambient folder" in body
+    assert json.loads(sh(sys.executable, SCRIPT, c, "--json"))["appended"] == []
+    assert open(os.path.join(c, "CLAUDE.md")).read() == body, "anchor appended twice"
+
     # ship list entries with spaces: one line is one path, never split on whitespace
     os.makedirs(os.path.join(p, "user guide"))
     open(os.path.join(p, "user guide", "intro.md"), "w").write("# intro\n")
@@ -144,4 +164,9 @@ with tempfile.TemporaryDirectory() as tmp:
     q = os.path.join(tmp, "dry")
     d = json.loads(sh(sys.executable, SCRIPT, q, "--dry-run", "--json"))
     assert d["created"] and not os.path.exists(q)
+    assert "CLAUDE.md" in d["created"] and "AGENTS.md" in d["created"], d["created"]
+    # dry run over an existing adapter file reports the append without writing it
+    d = json.loads(sh(sys.executable, SCRIPT, c, "--dry-run", "--json"))
+    assert d["appended"] == [] and d["skipped"].count("CLAUDE.md") == 1, d
+    assert open(os.path.join(c, "CLAUDE.md")).read() == body
 print("ok")

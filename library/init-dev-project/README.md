@@ -11,9 +11,12 @@ makes it a git repo. The standard is [references/standard.md](references/standar
 python3 scripts/init_dev_project.py ~/GitHub/my-thing --kind web --description "One sentence."
 ```
 
-Creates `README.md`, `VERSION`, `CHANGELOG.md`, `Makefile`, `.gitignore`, `spec/SPEC.md`, and
-`.aai/` (instructions, identity, purpose, context, HANDOFF, checkpoint, and a
-version-stamped copy of the standard). Then, unless the folder is already inside a
+Creates `README.md`, `VERSION`, `CHANGELOG.md`, `Makefile`, `.gitignore`, `spec/SPEC.md`,
+the `AGENTS.md` / `CLAUDE.md` discovery anchors that point an agent at `.aai/`, and
+`.aai/` itself (instructions, identity, purpose, context, HANDOFF, checkpoint, and a
+version-stamped copy of the standard). An adapter file that already exists keeps its
+content and gets the anchor appended; one that already carries the phrase
+"ambient folder" is left alone. Then, unless the folder is already inside a
 git repo, `git init -b main`, one commit, tag `v0.0.0`. Never overwrites, never
 adds a remote.
 
