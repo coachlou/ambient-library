@@ -143,6 +143,6 @@ while IFS='|' read -r name file; do
   { [ -s "$file" ] && echo; pointer; } >> "$file"
 done < <(targets)
 
-grep -q '^## 1\. Design' "$RULES" || \
+grep -qiE '^#+ *([0-9]+\. *)?design' "$RULES" || \
   say note "$RULES has no design section; merge it from $SNAPSHOT"
 echo "dev-rules: coding conversations in every wired harness now load $RULES"
