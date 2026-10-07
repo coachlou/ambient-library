@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.0 — 2026-10-07
+- The scaffold writes the `AGENTS.md` canonical block and the `CLAUDE.md` redirect, so a scaffolded folder's `.aai/` is discoverable by agents that aren't already routed to it. Existing adapter files are appended to, never overwritten; the shared "ambient folder" phrase keeps `ambient-folder/install.sh` from writing a second anchor. Standard decision 11.
+
 ## v0.3.7 — 2026-10-02
 - The SPEC template points projects with screens at `grill-with-prototype` (workspace `spec/`, project `prototype`). Its `prd` step writes `spec/SPEC.md` and keeps the scaffold's dated decisions. The gate is unchanged. Piloted on Porch Light.
 

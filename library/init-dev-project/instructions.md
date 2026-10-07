@@ -9,13 +9,16 @@ from then on.
 
 - The script never overwrites. It fills missing files only, so re-running on an
   existing folder is safe. If a file looks wrong, edit it; do not delete and
-  re-scaffold.
+  re-scaffold. The one exception is the `CLAUDE.md` / `AGENTS.md` discovery
+  anchors: an existing file keeps its content and gets the block appended, and
+  a file already carrying the phrase "ambient folder" is skipped, so no anchor
+  is ever written twice.
 - It does `git init -b main`, one commit, and tag `v0.0.0` only when the folder
   is not already inside a git repo (its own or a parent's). Inside one, git is
   left untouched and the report names the repo; commit there. It never adds a
   remote and never pushes.
-- Only the root files, `Makefile`, `deploy/SHIPLIST`, `spec/SPEC.md`, and `.aai/`
-  are created. `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
+- Only the root files, `Makefile`, `CLAUDE.md`, `AGENTS.md`, `deploy/SHIPLIST`,
+  `spec/SPEC.md`, and `.aai/` are created. `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
   folder is the first sign of a template that is too heavy.
 
 ## Process
@@ -49,6 +52,8 @@ from then on.
 ```
 <path>/
 ├── README.md  VERSION (0.0.0)  CHANGELOG.md  Makefile  .gitignore
+├── AGENTS.md                the canonical discovery anchor: read .aai/instructions.md
+├── CLAUDE.md                redirect to AGENTS.md (Claude Code auto-loads this, not AGENTS.md)
 ├── deploy/SHIPLIST          picked by --kind (standard §4); edit to match the real layout
 ├── spec/SPEC.md             TODO: placeholders; `make check` fails until they are filled
 └── .aai/
@@ -72,5 +77,11 @@ from then on.
   filled in by hand when `make run` is first needed.
 - `make check` fails until the project defines it. A gate that passes with
   nothing behind it is a false green; do not "fix" the stub to exit 0.
+- The anchors are what makes `.aai/` discoverable: without one, an agent whose
+  harness isn't already routed to the folder never reads it. The canonical block
+  lives in `AGENTS.md` (Codex, opencode, DeepSeek Harness) and `CLAUDE.md`
+  redirects to it, per `templates/AGENTS-pointer.md`. Both carry the phrase
+  "ambient folder", which `ambient-folder/install.sh` greps for, so the two
+  tools never stack duplicate anchors in the same folder.
 - Do not run the ambient-folder **Stamp** operation on a scaffolded folder. It
   would try to write a second `.aai/instructions.md`.

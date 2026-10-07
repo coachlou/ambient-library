@@ -13,6 +13,8 @@ FAILS=0
 ok() { echo "ok    $1"; }
 bad() { echo "FAIL  $1"; FAILS=$((FAILS + 1)); }
 check() { if eval "$2"; then ok "$1"; else bad "$1"; fi; }
+# Match output with grep on a captured string, never `cmd | grep -q`: grep exits on
+# the first match, the writer takes SIGPIPE, and pipefail then fails a passing check.
 count() { grep -cF "$1" "$2" 2>/dev/null || true; }
 
 # ── fresh user: no ~/.aai, no harness files ──────────────────────────────────
@@ -21,7 +23,7 @@ HOME="$F" bash "$HERE/install.sh" --check >/dev/null
 check "--check writes nothing" '[ ! -e "$F/.aai" ] && [ ! -e "$F/.claude" ]'
 HOME="$F" bash "$HERE/install.sh" >/dev/null
 check "seeds coding.md from the snapshot" 'cmp -s "$SNAPSHOT" "$F/.aai/rules/coding.md"'
-check "puts ~/.aai under git" 'git -C "$F/.aai" log --oneline | grep -q dev-rules'
+check "puts ~/.aai under git" 'grep -qF dev-rules <<<"$(git -C "$F/.aai" log --oneline)"'
 check "never creates core.md" '[ ! -e "$F/.aai/rules/core.md" ]'
 check "anchors Claude Code" '[ "$(count dev-rules:begin "$F/.claude/CLAUDE.md")" = 1 ]'
 check "skips harnesses not installed" '[ ! -e "$F/.codex" ] && [ ! -e "$F/.config/opencode" ]'
@@ -58,9 +60,9 @@ check "re-run routes once" '[ "$(count rules/coding.md "$O/.aai/context.md")" = 
 # ── design-section note: any heading style counts ────────────────────────────
 D="$TMP/design"; mkdir -p "$D/.aai/rules"
 printf '# Coding Rules\n\n## Design: deep modules, one owner per concern\n' > "$D/.aai/rules/coding.md"
-check "no merge note when an unnumbered Design heading exists" '! HOME="$D" bash "$HERE/install.sh" --no-git | grep -q "no design section"'
+check "no merge note when an unnumbered Design heading exists" '! grep -qF "no design section" <<<"$(HOME="$D" bash "$HERE/install.sh" --no-git)"'
 printf '# Coding Rules\n\n## Testing\n' > "$D/.aai/rules/coding.md"
-check "merge note when the design section is missing" 'HOME="$D" bash "$HERE/install.sh" --no-git | grep -q "no design section"'
+check "merge note when the design section is missing" 'grep -qF "no design section" <<<"$(HOME="$D" bash "$HERE/install.sh" --no-git)"'
 
 # ── publish: authority flows home → library ──────────────────────────────────
 cp "$SNAPSHOT" "$TMP.snap"
@@ -71,10 +73,10 @@ HOME="$F" bash "$HERE/publish.sh" --check >/dev/null
 check "publish --check writes nothing" 'cmp -s "$TMP.snap" "$SNAPSHOT"'
 HOME="$F" bash "$HERE/publish.sh" >/dev/null
 check "publish copies the committed source" 'grep -q "extra rule" "$SNAPSHOT"'
-check "publish is idempotent" 'HOME="$F" bash "$HERE/publish.sh" | grep -q "already published"'
+check "publish is idempotent" 'grep -qF "already published" <<<"$(HOME="$F" bash "$HERE/publish.sh")"'
 
 # ── paste: for surfaces without file access ──────────────────────────────────
-check "paste prints the owner's rules" 'HOME="$F" bash "$HERE/paste.sh" 2>/dev/null | grep -q "extra rule"'
-check "paste falls back to the snapshot" 'HOME="$TMP/nobody" bash "$HERE/paste.sh" 2>/dev/null | grep -qF "$(head -1 "$SNAPSHOT")"'
+check "paste prints the owner's rules" 'grep -qF "extra rule" <<<"$(HOME="$F" bash "$HERE/paste.sh" 2>/dev/null)"'
+check "paste falls back to the snapshot" 'grep -qF "$(head -1 "$SNAPSHOT")" <<<"$(HOME="$TMP/nobody" bash "$HERE/paste.sh" 2>/dev/null)"'
 
 [ $FAILS = 0 ] && echo "all passed" || { echo "$FAILS failed"; exit 1; }

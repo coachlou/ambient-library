@@ -2673,38 +2673,33 @@ init-dev-project:
     spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the standard as a
     reference) and makes it a git repo; use for "init a dev project", "scaffold a new project",
     "set up a repo for X", "new skill/tool/app folder", "start a project the standard way".
-  summary: Scaffolds a folder into the dev-and-deploy standard and makes it a git repo, via
-    scripts/init_dev_project.py. Input is a target path (created if missing, else the current
-    folder), plus name (default folder basename), a one-sentence description taken from the
-    request, and an optional kind (skill, skill-app, tool, web) passed only if the request
-    names one; otherwise the script detects kind from existing files (SKILL.md, manifest.json
-    with bridge/, wrangler, Dockerfile, vercel.json) and falls back to the web layout. It
-    asks the user nothing. Output is README.md, VERSION 0.0.0, CHANGELOG.md, Makefile with
-    four verbs and gates, .gitignore, deploy/SHIPLIST picked by kind, spec/SPEC.md full of
-    TODO placeholders so make check fails until filled, and an .aai/ folder with instructions,
-    identity, purpose, context, checkpoint, HANDOFF and a version-stamped copy of the standard
-    at references/dev-standard.md. It never overwrites existing files, so re-runs are safe,
-    runs git init -b main with one commit and tag v0.0.0 only when not already inside a repo,
-    and never adds a remote or pushes. src, tests, docs and tools are not pre-created. An
-    opt-in interview runs ambient-folder Incept afterwards to rewrite identity and purpose.
-    It will not make a stub check pass falsely. Stage is setup.
+  summary: 'Scaffolds an empty or partially-populated folder into the "dev-and-deploy" standard
+    and turns it into a git repo. Inputs: a target path (created if missing, else the cwd),
+    a project name (defaults to folder basename), a one-sentence description, and an optional
+    `--kind` (`skill`, `skill-app`, `tool`, `web`/`service`/`project`) — passed only when
+    the user''s words name one; otherwise the script sniffs `SKILL.md`, `manifest.json`, `bridge/`,
+    `wrangler.*`, `Dockerfile`, `vercel.json` and falls back to the web layout. Runs `scripts/init_dev_project.py`
+    (flags: `--dry-run`, `--no-git`, `--json`) and emits README, VERSION (0.0.0), CHANGELOG,
+    Makefile (four verbs, gates), .gitignore, `AGENTS.md` + `CLAUDE.md` discovery anchors,
+    `deploy/SHIPLIST` (kind-selected), `spec/SPEC.md` with TODO placeholders that make `make
+    check` fail by design, and a `.aai/` scaffold — instructions, identity, purpose, context,
+    checkpoint, HANDOFF, plus a version-stamped `references/dev-standard.md` that governs
+    the project thereafter. Then `git init -b main`, one commit, tag `v0.0.0` — only outside
+    an existing repo; inside one it leaves git alone and names the repo. Refuses to overwrite
+    (fills missing files only, re-runnable), never adds a remote or pushes, never stacks a
+    duplicate anchor, never creates empty `src/`, `tests/`, `docs/`, `tools/`, never runs
+    ambient-folder''s Stamp. Interviewing is opt-in: with `--interview` it hands off to ambient-folder''s
+    Incept to rewrite identity and purpose. Stage zero — the first command before any code,
+    spec, or WBS.'
   requests:
-  - init a dev project in ~/code/invoice-tool
-  - scaffold a new project for a CLI that renames files
-  - set up a repo for my new web app the standard way
-  - new skill folder with the standard layout
-  - start a project with lanes, make verbs and spec/src/tests/deploy
-  - turn this existing folder into a proper git repo with the dev standard
-  not_for:
-  - ambient-folder: wins when the user wants a folder made ambiently intelligent through an
-      interview about purpose, or maintained afterwards, rather than given the dev layout.
-  - context-mgr: wins when the user wants only the multi-agent .context/ continuity system
-      installed into an existing project.
-  - distro-kit: wins when an existing app repo must be packaged as an ambient-library capability
-      with an install standard.
-  - software-dev-factory: wins when the user wants to install and operate a governed SDLC
-      controller, not just the folder scaffold.
-  - grill-with-prototype: wins when the spec has to be produced through a live prototype interview
-      before any scaffolding matters.
+  - init a dev project here
+  - scaffold a new project for a Slack digest tool
+  - set up a repo for this folder the standard way
+  - new skill folder called gears-reporter
+  - start a CLI tool project in ~/code/tsv-sort
+  - make this an actual repo with a Makefile and a ship list
+  - I'm starting a web app from scratch — give me the standard layout
+  - stamp the dev standard on this directory and git init it
+  not_for: []
   stage: setup
-  source_hash: 69be7d991365
+  source_hash: 7d611f308486
