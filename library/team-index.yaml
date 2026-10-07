@@ -1175,44 +1175,43 @@ dev-rules:
     harness, or capability; installs and publishes ~/.aai/rules/coding.md; use for "set up
     the coding rules", "make the rules global", "publish my coding rules", or before writing
     code.
-  summary: 'dev-rules makes a single global set of coding rules (deep modules, one owner per
-    concern, minimal tested changes) apply to every conversation that writes, changes, or
-    reviews code, in any folder, harness, or capability. The authority is the owner''s file
-    ~/.aai/rules/coding.md, edited only there with owner approval. Four operations. Apply:
-    read the first rules file found (~/.aai, then vendored .ailib/dev-rules/rules/coding.md,
-    then the plugin''s library copy) and follow it; project instructions may tighten but never
-    silently loosen. Install: scripts/install.sh with --check plan shown first. It seeds the
-    rules file, adds a trigger row to ~/.aai/context.md, puts ~/.aai under local git, and
-    appends a pointer (never the rules text) to each harness''s global file (Claude Code,
-    Codex, opencode; shells inherit). Paste: scripts/paste.sh emits text for claude.ai chat
-    and Cowork, which lack file access; the pasted copy goes stale until re-pasted. Publish:
-    scripts/publish.sh, run only in the library dev workspace (never .aai/PRODUCTION), refuses
-    uncommitted rules edits, snapshots into library/dev-rules/rules/coding.md; then bump plugin.json
-    and release via admin.md. Vendor: ambient-folder install for folders (cloud sessions,
-    collaborators) without ~/.aai. It refuses hand-editing snapshots, vendored copies, or
-    harness files, never edits core.md, never overwrites owned files. Setup/operate stage,
-    run before writing code; other capabilities point here instead of carrying their own copy
-    of the rules.'
+  summary: 'Installs and applies one global set of coding rules, held in the owner''s self-scope
+    file ~/.aai/rules/coding.md (deep modules, one owner per concern, minimal tested changes),
+    to any conversation that writes, changes, or reviews code, in any folder, harness, or
+    capability (chat-n-build, solofactory, vibe, software-dev-factory, or none). Apply reads
+    the first existing copy: ~/.aai, then vendored .ailib/dev-rules/rules/coding.md, then
+    the plugin library snapshot. Project instructions may tighten the rules but never loosen
+    them silently. Operations: Install (install.sh --check, then run) seeds the rules file,
+    adds a routing row to ~/.aai/context.md, puts ~/.aai under local git, and appends pointers
+    (never rules text) to harness global files for Claude Code, Codex, opencode, dsh and Orca;
+    it never edits core.md or overwrites owned files. Paste (paste.sh) outputs text for claude.ai
+    chat and Cowork Settings → Instructions, which do not update and must be re-pasted after
+    each publish; Wave AI has no hook. Publish (publish.sh --check, then run) copies committed
+    ~/.aai edits into library/dev-rules/rules/coding.md, only in the library dev workspace
+    (never .aai/PRODUCTION), refusing while there are uncommitted changes. Vendor puts a copy
+    in folders that must work without ~/.aai, such as cloud sessions. Refuses hand-edits to
+    the snapshot, vendored copies or harness files; rule edits happen only in ~/.aai/rules/coding.md
+    with owner approval. Method-specific capabilities defer to it. Run scripts/test_dev_rules.sh
+    after script changes. Setup and operate stage, standing across all coding work.'
   requests:
   - set up the coding rules
   - make my coding rules global so every harness follows them
   - publish my coding rules to the library
-  - give me the text to paste into claude.ai settings so chat follows my coding rules
-  - make sure Codex and opencode follow the same coding rules as Claude Code
-  - I'm about to write some code, apply my coding rules first
-  - make the coding rules work in this folder in a cloud container with no ~/.aai
-  - update the library's coding rules from my edits
+  - I'm about to write some code, apply my rules first
+  - give me the coding rules text to paste into claude.ai settings
+  - make Codex and Claude Code both follow my coding rules
+  - vendor the coding rules into this folder so cloud sessions can read them
+  - how do I get my coding rules into opencode
   not_for:
-  - ambient-folder: wins when the goal is making a folder ambient, scaffolding .aai/, or generically
-      vendoring or re-syncing capabilities rather than the coding-rules file.
-  - init-dev-project: wins when scaffolding a new project folder (lanes, make verbs, spec/src/tests
-      layout) rather than installing global coding rules.
-  - distro-kit: wins when packaging an app repo as an ambient-library capability and publishing
-      it, not publishing the coding-rules file.
-  - skill-auditor: wins when linting a skill's SKILL.md, catalog projection, or evals against
-      the library schema.
+  - ambient-folder: wins when making a folder ambient, writing its .aai/ scaffold, or vendoring
+      or re-syncing arbitrary capabilities, not specifically the coding rules.
+  - init-dev-project: wins when scaffolding a new project folder in the dev-and-deploy standard
+      (lanes, make verbs, layout) rather than applying coding rules.
+  - skill-auditor: wins when checking a skill's SKILL.md and catalog schema before publishing
+      it, rather than publishing coding rules.
+  - vibe: wins when running a persistent test-first build loop for a local web app or CLI.
   stage: setup
-  source_hash: d8a31c0d8cbb
+  source_hash: 0fbc176170a3
 deep-field:
   description: Integrated insight system combining Eigenthinking, latent-space cartography,
     and wisdom-of-crowds validation; use for "run deep field", frontier-quality insight beyond

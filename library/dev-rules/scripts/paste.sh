@@ -3,8 +3,8 @@
 #
 #   bash paste.sh [--source FILE]
 #
-# claude.ai chat (Settings → Profile → personal preferences, or a Project's
-# instructions) and Cowork's settings take pasted text, not a file path. This
+# claude.ai chat and Cowork share one field (Settings → Instructions for
+# Claude, or a Project's instructions) that takes pasted text, not a path. This
 # prints the owner's ~/.aai/rules/coding.md (else the published snapshot)
 # framed for pasting, with its character count. Re-paste after each publish:
 # a pasted copy does not update itself.

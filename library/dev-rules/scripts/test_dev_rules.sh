@@ -8,7 +8,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"; [ -f "$TMP.snap" ] && mv "$TMP.snap" "$SNAPSHOT"' EXIT
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@localhost
 export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@localhost
-unset CODEX_HOME XDG_CONFIG_HOME
+unset CODEX_HOME XDG_CONFIG_HOME OPENCODE_CONFIG_DIR DSH_HOME OPENCODE_DISABLE_CLAUDE_CODE OPENCODE_DISABLE_CLAUDE_CODE_PROMPT
 FAILS=0
 ok() { echo "ok    $1"; }
 bad() { echo "FAIL  $1"; FAILS=$((FAILS + 1)); }
@@ -29,7 +29,7 @@ HOME="$F" bash "$HERE/install.sh" >/dev/null
 check "re-run adds no second pointer" '[ "$(count dev-rules:begin "$F/.claude/CLAUDE.md")" = 1 ]'
 
 # ── owner: existing bootstrap adapter, context.md, other harnesses ───────────
-O="$TMP/owner"; mkdir -p "$O/.aai/rules" "$O/.claude" "$O/.codex" "$O/.config/opencode"
+O="$TMP/owner"; mkdir -p "$O/.aai/rules" "$O/.claude" "$O/.codex" "$O/.config/opencode" "$O/.dsh"
 printf '# Core\n' > "$O/.aai/rules/core.md"
 printf '# My coding rules\n' > "$O/.aai/rules/coding.md"
 printf '# Context\n\n| Trigger | Load |\n|---|---|\n' > "$O/.aai/context.md"
@@ -41,7 +41,16 @@ check "leaves core.md untouched" '[ "$(cat "$O/.aai/rules/core.md")" = "# Core" 
 check "routes coding in context.md" '[ "$(count rules/coding.md "$O/.aai/context.md")" = 1 ]'
 check "keeps an adapter already wired to ~/.aai" '! grep -q dev-rules "$O/.claude/CLAUDE.md"'
 check "appends to an existing Codex file" 'grep -q "my codex notes" "$O/.codex/AGENTS.md" && grep -q dev-rules:begin "$O/.codex/AGENTS.md"'
-check "anchors opencode" 'grep -q dev-rules:begin "$O/.config/opencode/AGENTS.md"'
+check "never creates opencode's AGENTS.md (it falls back to CLAUDE.md)" '[ ! -e "$O/.config/opencode/AGENTS.md" ]'
+check "anchors DeepSeek Harness" 'grep -q dev-rules:begin "$O/.dsh/AGENTS.md"'
+
+# ── harness precedence: existing opencode file, Codex override ───────────────
+P="$TMP/prec"; mkdir -p "$P/.codex" "$P/.config/opencode"
+printf '# override\n' > "$P/.codex/AGENTS.override.md"
+printf '# opencode rules\n' > "$P/.config/opencode/AGENTS.md"
+HOME="$P" bash "$HERE/install.sh" --no-git >/dev/null
+check "Codex override gets the pointer" 'grep -q dev-rules:begin "$P/.codex/AGENTS.override.md" && [ ! -e "$P/.codex/AGENTS.md" ]'
+check "existing opencode file gets the pointer" 'grep -q dev-rules:begin "$P/.config/opencode/AGENTS.md"'
 check "--no-git leaves ~/.aai unversioned" '[ ! -d "$O/.aai/.git" ]'
 HOME="$O" bash "$HERE/install.sh" --no-git >/dev/null
 check "re-run routes once" '[ "$(count rules/coding.md "$O/.aai/context.md")" = 1 ]'

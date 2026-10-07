@@ -53,11 +53,13 @@ never overwrites an owned file.
 | Harness | How it gets the rules |
 |---|---|
 | Claude Code (CLI, desktop Code tab, IDE) | `~/.claude/CLAUDE.md` pointer, or the existing `~/.aai` bootstrap |
-| Codex | `$CODEX_HOME/AGENTS.md` (default `~/.codex/AGENTS.md`) |
-| opencode | `~/.config/opencode/AGENTS.md` |
-| Orca, Wave, and other shells that host these CLIs | inherit from the CLI they run |
-| claude.ai chat, Cowork | no file access: paste once (below) |
-| Any other file-based harness | add its global file to `HARNESSES` in `install.sh` |
+| Codex | `$CODEX_HOME/AGENTS.md` (default `~/.codex/`); `AGENTS.override.md` instead when it exists, because Codex then ignores `AGENTS.md` |
+| opencode | Reads `~/.claude/CLAUDE.md` while it has no `AGENTS.md` of its own, so nothing is created; an existing `$OPENCODE_CONFIG_DIR` or `~/.config/opencode/AGENTS.md` gets the pointer |
+| DeepSeek Harness (`dsh`) | `$DSH_HOME/AGENTS.md` (default `~/.dsh/`) |
+| Orca | Runs the CLIs above, each loading its own global file; nothing to write |
+| claude.ai chat and Cowork | One shared UI field, Settings → Instructions for Claude; no file access, so paste once (below) |
+| Wave AI | No instruction hook (hard-coded system prompt); use the CLIs above inside Wave's terminal |
+| Any other file-based harness | Add its global file to `HARNESSES` in `install.sh` |
 
 ### Paste: chat surfaces without file access
 
@@ -65,9 +67,9 @@ never overwrites an owned file.
 bash ${CLAUDE_PLUGIN_ROOT}/library/dev-rules/scripts/paste.sh
 ```
 
-Give the user the output and where it goes: claude.ai Settings → Profile →
-personal preferences (or a Project's instructions), and Cowork's instructions
-setting. Say plainly that a pasted copy does not update; re-paste after each
+Give the user the output and where it goes: Settings → Instructions for
+Claude, one field shared by claude.ai chat and Cowork (or a Project's
+instructions). Say plainly that a pasted copy does not update; re-paste after each
 publish.
 
 ### Publish: "publish my coding rules", "update the library's coding rules"

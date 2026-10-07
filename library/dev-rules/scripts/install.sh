@@ -15,8 +15,8 @@
 #      pointer block to its global instruction file, unless that file already
 #      sends the agent to ~/.aai: an existing bootstrap adapter reaches
 #      coding.md through context.md, and a second pointer would duplicate it.
-# Chat surfaces without file access (claude.ai chat, Cowork settings) cannot
-# be written by a script; run paste.sh and paste its output once.
+# claude.ai chat and Cowork share one UI field (Settings → Instructions for
+# Claude) that no script can write; run paste.sh and paste its output once.
 # Re-running is safe: every step is skipped when already done.
 set -euo pipefail
 
@@ -43,12 +43,29 @@ END="<!-- dev-rules:end -->"
 say() { printf '  %-7s %s\n' "$1" "$2"; }
 
 # File-based harnesses: "<name>|<global instruction file>|<installed when this dir exists>".
-# An empty third field means always (the primary harness).
+# An empty third field means always (the primary harness). Orca runs these CLIs
+# and has no file of its own; Wave AI has no instruction hook at all.
+CODEX_DIR="${CODEX_HOME:-$H/.codex}"
+CODEX_FILE="$CODEX_DIR/AGENTS.md"
+# Codex reads AGENTS.override.md instead of AGENTS.md when the override exists.
+[ -f "$CODEX_DIR/AGENTS.override.md" ] && CODEX_FILE="$CODEX_DIR/AGENTS.override.md"
+OPENCODE_DIR="${OPENCODE_CONFIG_DIR:-${XDG_CONFIG_HOME:-$H/.config}/opencode}"
+DSH_DIR="${DSH_HOME:-$H/.dsh}"
 HARNESSES="
 claude-code|$H/.claude/CLAUDE.md|
-codex|${CODEX_HOME:-$H/.codex}/AGENTS.md|${CODEX_HOME:-$H/.codex}
-opencode|${XDG_CONFIG_HOME:-$H/.config}/opencode/AGENTS.md|${XDG_CONFIG_HOME:-$H/.config}/opencode
+codex|$CODEX_FILE|$CODEX_DIR
+opencode|$OPENCODE_DIR/AGENTS.md|$OPENCODE_DIR
+deepseek-harness|$DSH_DIR/AGENTS.md|$DSH_DIR
 "
+
+# opencode reads ~/.claude/CLAUDE.md only while its own AGENTS.md is absent, so
+# creating that file would silently drop the owner's Claude instructions there.
+# Write it only when it already exists or the Claude fallback is switched off.
+opencode_uses_claude() {
+  [ ! -f "$OPENCODE_DIR/AGENTS.md" ] &&
+    [ -z "${OPENCODE_DISABLE_CLAUDE_CODE:-}" ] &&
+    [ -z "${OPENCODE_DISABLE_CLAUDE_CODE_PROMPT:-}" ]
+}
 
 pointer() {
   printf '%s\n' "$BEGIN" \
@@ -77,6 +94,7 @@ targets() {
   echo "$HARNESSES" | while IFS='|' read -r name file when; do
     [ -n "$name" ] || continue
     [ -z "$when" ] || [ -d "$when" ] || continue
+    [ "$name" = opencode ] && opencode_uses_claude && continue
     echo "$name|$file"
   done
 }
@@ -96,7 +114,9 @@ while IFS='|' read -r name file; do
   if wired "$file"; then say keep "$file ($name, already points to ~/.aai)"
   else say anchor "$file ($name)"; fi
 done < <(targets)
-say paste "claude.ai chat, Cowork: run paste.sh and paste once (no file access)"
+[ -d "$OPENCODE_DIR" ] && opencode_uses_claude && \
+  say keep "opencode (reads ~/.claude/CLAUDE.md while it has no AGENTS.md of its own)"
+say paste "claude.ai chat and Cowork: Settings → Instructions for Claude (run paste.sh)"
 [ $CHECK = 1 ] && { echo "nothing written."; exit 0; }
 
 # ── seed and route ───────────────────────────────────────────────────────────
