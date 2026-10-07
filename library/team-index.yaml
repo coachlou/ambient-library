@@ -1169,6 +1169,49 @@ deep-mirror:
       auditing the cognitive profile.
   stage: audit
   source_hash: b060d64fe60a
+dev-rules:
+  description: Applies one global set of coding rules — deep modules, one owner per concern,
+    minimal tested changes — to every conversation that writes or reviews code, in any folder,
+    harness, or capability; installs and publishes ~/.aai/rules/coding.md; use for "set up
+    the coding rules", "make the rules global", "publish my coding rules", or before writing
+    code.
+  summary: 'Installs and applies one global set of coding rules, held in the owner''s self-scope
+    file ~/.aai/rules/coding.md (deep modules, one owner per concern, minimal tested changes),
+    to any conversation that writes, changes, or reviews code, in any folder, harness, or
+    capability (chat-n-build, solofactory, vibe, software-dev-factory, or none). Apply reads
+    the first existing copy: ~/.aai, then vendored .ailib/dev-rules/rules/coding.md, then
+    the plugin library snapshot. Project instructions may tighten the rules but never loosen
+    them silently. Operations: Install (install.sh --check, then run) seeds the rules file,
+    adds a routing row to ~/.aai/context.md, puts ~/.aai under local git, and appends pointers
+    (never rules text) to harness global files for Claude Code, Codex, opencode, dsh and Orca;
+    it never edits core.md or overwrites owned files. Paste (paste.sh) outputs text for claude.ai
+    chat and Cowork Settings → Instructions, which do not update and must be re-pasted after
+    each publish; Wave AI has no hook. Publish (publish.sh --check, then run) copies committed
+    ~/.aai edits into library/dev-rules/rules/coding.md, only in the library dev workspace
+    (never .aai/PRODUCTION), refusing while there are uncommitted changes. Vendor puts a copy
+    in folders that must work without ~/.aai, such as cloud sessions. Refuses hand-edits to
+    the snapshot, vendored copies or harness files; rule edits happen only in ~/.aai/rules/coding.md
+    with owner approval. Method-specific capabilities defer to it. Run scripts/test_dev_rules.sh
+    after script changes. Setup and operate stage, standing across all coding work.'
+  requests:
+  - set up the coding rules
+  - make my coding rules global so every harness follows them
+  - publish my coding rules to the library
+  - I'm about to write some code, apply my rules first
+  - give me the coding rules text to paste into claude.ai settings
+  - make Codex and Claude Code both follow my coding rules
+  - vendor the coding rules into this folder so cloud sessions can read them
+  - how do I get my coding rules into opencode
+  not_for:
+  - ambient-folder: wins when making a folder ambient, writing its .aai/ scaffold, or vendoring
+      or re-syncing arbitrary capabilities, not specifically the coding rules.
+  - init-dev-project: wins when scaffolding a new project folder in the dev-and-deploy standard
+      (lanes, make verbs, layout) rather than applying coding rules.
+  - skill-auditor: wins when checking a skill's SKILL.md and catalog schema before publishing
+      it, rather than publishing coding rules.
+  - vibe: wins when running a persistent test-first build loop for a local web app or CLI.
+  stage: setup
+  source_hash: 0fbc176170a3
 deep-field:
   description: Integrated insight system combining Eigenthinking, latent-space cartography,
     and wisdom-of-crowds validation; use for "run deep field", frontier-quality insight beyond

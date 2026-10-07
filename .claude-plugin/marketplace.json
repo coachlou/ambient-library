@@ -107,6 +107,11 @@
       "description": "Lifecycle operator for the cognitive-mirror database (not the live extractor) \u2014 bootstrap deep-mine of raw agent session logs, weekly Mine/Harvest maintenance, quarterly blind audit; use for \"bootstrap the mirror\", \"deep mine my session logs\", \"audit the mirror\", \"mirror status\", \"is my profile still accurate\". Prefer over cognitive-mirror when maintaining/auditing/bulk-mining logs rather than extracting from the current conversation."
     },
     {
+      "name": "dev-rules",
+      "source": "./library/dev-rules",
+      "description": "Applies one global set of coding rules \u2014 deep modules, one owner per concern, minimal tested changes \u2014 to every conversation that writes or reviews code, in any folder, harness, or capability; installs and publishes ~/.aai/rules/coding.md; use for \"set up the coding rules\", \"make the rules global\", \"publish my coding rules\", or before writing code."
+    },
+    {
       "name": "distro-kit",
       "source": "./library/distro-kit",
       "description": "Package any app repo as an ambient-library capability with one install standard (init/validate/publish); use for \"make a distro\", \"package this for ambient-library\", \"publish capability\", \"distro-kit\""
