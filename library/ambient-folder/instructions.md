@@ -219,6 +219,12 @@ stating the folder is ambient and the agent should read `.aai/instructions.md`
 and follow it, into every adapter file the folder uses. If the file exists,
 append — never replace existing project instructions.
 
+When `dev-rules` is in the installed closure, `install.sh` also appends a short
+`## Coding rules` pointer to the same files (read `~/.aai/rules/coding.md`, else
+`.ailib/dev-rules/rules/coding.md`), unless a file already names
+`rules/coding.md`. It rides on the anchors, so existing folders get it on their
+next refresh; `.aai/` is never edited for it.
+
 ## Rules
 
 - Confirm the target path before writing. Never stamp or install into the
