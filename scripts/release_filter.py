@@ -154,6 +154,28 @@ with open(os.path.join(stage, "library", "catalog.yaml"), "w") as fh:
             continue
         fh.write(line)
 
+# team-build recalls from team-index.yaml; ship it trimmed to what shipped.
+# Text-level, like the catalog: drop unreleased entries, and not_for items
+# that name an unreleased skill (an item runs until the next "  - " or key).
+ti = os.path.join(src, "library", "team-index.yaml")
+if os.path.exists(ti):
+    out, keep, drop_item = [], True, False
+    for line in open(ti, encoding="utf-8"):
+        top = re.match(r"^([a-z0-9][a-z0-9-]*):\s*$", line)
+        if top:
+            keep, drop_item = top.group(1) in released, False
+        if not keep:
+            continue
+        item = re.match(r"^  - ([a-z0-9][a-z0-9-]*): ", line)
+        if item:
+            drop_item = item.group(1) not in released
+        elif not line.startswith("      "):
+            drop_item = False
+        if not drop_item:
+            out.append(line)
+    text = re.sub(r"^  not_for:\n(?=  [a-z_]+:)", "  not_for: []\n", "".join(out), flags=re.M)
+    open(os.path.join(stage, "library", "team-index.yaml"), "w", encoding="utf-8").write(text)
+
 mp = os.path.join(stage, ".claude-plugin", "marketplace.json")
 if os.path.exists(mp):
     m = json.load(open(mp))
