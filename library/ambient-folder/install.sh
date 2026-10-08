@@ -14,6 +14,9 @@
 # Appends a discovery anchor to <target>/CLAUDE.md, AGENTS.md and GEMINI.md, and to
 # any other agent-adapter instruction file already present (.cursorrules,
 # .github/copilot-instructions.md, .windsurfrules, .clinerules, CONVENTIONS.md, QWEN.md).
+# When dev-rules is in the closure, also appends a coding-rules pointer to those same
+# files unless they already name rules/coding.md, so the global rules reach folders
+# without the owner's ~/.aai. .aai/ is never edited for this.
 # Re-running is the update path: .ailib/ refreshed, .aai/ untouched.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -67,8 +70,14 @@ ANCHOR_FILES="CLAUDE.md AGENTS.md GEMINI.md"
 for f in QWEN.md CONVENTIONS.md .cursorrules .windsurfrules .clinerules .github/copilot-instructions.md; do
   [ -f "$TARGET/$f" ] && ANCHOR_FILES="$ANCHOR_FILES $f"
 done
+# The coding-rules pointer rides on the anchors whenever dev-rules is vendored here.
+RULES=0; case " $CAPS " in *" dev-rules "*) RULES=1 ;; esac
+rules_named() { [ -f "$TARGET/$1" ] && grep -qF 'rules/coding.md' "$TARGET/$1"; }
 for f in $ANCHOR_FILES; do
   if [ -f "$TARGET/$f" ] && grep -q 'ambient folder' "$TARGET/$f"; then plan keep "$f (anchor present)"; else plan anchor "$f"; fi
+  if [ $RULES = 1 ]; then
+    if rules_named "$f"; then plan keep "$f (coding rules named)"; else plan rules "$f (coding-rules pointer)"; fi
+  fi
 done
 [ -f "$CAP_DIR/install.d/post.sh" ] && plan run "$CAP/install.d/post.sh"
 [ $CHECK = 1 ] && { say "nothing written."; exit 0; }
@@ -124,6 +133,15 @@ This folder is an ambient folder: \`$CAP\` is its agentic function.
 **Read \`.aai/instructions.md\` and follow it before acting.** "Ambient folder"
 means a folder with an \`.aai/\` behavior layer. Do not scaffold a project here
 unless \`.aai/instructions.md\` says to.
+MD
+  fi
+  if [ $RULES = 1 ] && ! rules_named "$f"; then
+    cat >> "$TARGET/$f" <<'MD'
+
+## Coding rules
+
+When writing, changing, or reviewing code here, read `~/.aai/rules/coding.md`,
+else `.ailib/dev-rules/rules/coding.md`. Never copy the rules into this folder.
 MD
   fi
 done

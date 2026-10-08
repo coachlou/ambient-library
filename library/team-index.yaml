@@ -470,40 +470,43 @@ ambient-folder:
     forks them, re-syncs; use for "make this folder ambient", "set up an agentic folder for
     X", "stamp .aai here", "interview me about this folder", "add a capability to this folder",
     "re-sync my vendored skills".
-  summary: 'Makes a folder ambiently intelligent and keeps it that way. An ambient folder
-    carries an owned .aai/ directory (instructions.md required, plus identity.md, context.md,
-    optional memory/, references/, skills/) and a vendored .ailib/ of pristine canonical capabilities
-    with a manifest.yaml. The skill performs exactly ONE operation per request: Incept (interview
-    for a purpose the user cannot yet state, then stamp), Stamp (write the scaffold directly
-    from a stated purpose), Install (vendor a canonical capability, with dependency closure),
-    Personalize (fork a capability into .aai/skills), Learn (promote recurring memory into
-    a reference rule), and Update (re-sync .ailib/ without touching .aai/). Inputs are a target
-    folder path plus either interview answers or a purpose sentence; Match reads only catalog.yaml
-    to propose capabilities, never skill bodies. Outputs are plain editable files, plus anchors
-    appended to CLAUDE.md, AGENTS.md and any existing adapter files. Rules: confirm the absolute
-    target first, never overwrite an existing .aai/instructions.md, never stamp into the library
-    repo, invent no purpose or layout, refuse to stamp when the purpose is still a vague noun,
-    and resolve capabilities by name with .aai/ shadowing .ailib/. Stage: setup, the first
-    step that makes a folder usable by other skills.'
+  summary: 'Lifecycle operator for the ambient-folder scaffold: incept → stamp → install →
+    personalize → learn → update. Makes a folder "ambient" by writing `.aai/` (instructions.md
+    contract, identity.md, context.md routing map, optional memory/references/skills) so any
+    agent landing there follows the folder''s own behavior. Inputs: a target folder path plus
+    either a one-sentence purpose or an interview (purpose, inputs/outputs, disposition, contents,
+    inheritance). Produces `.aai/` files (owned, never overwritten), `.ailib/` vendored pristine
+    capability copies with `manifest.yaml` and dependency closure (via `install.sh`, `--check`
+    to plan), forks into `.aai/skills/<cap>/`, `overrides.md`, `project.yaml`/`environment.yaml`
+    values, promoted `.aai/references/` rules, and CLAUDE.md/AGENTS.md (plus existing adapter-file)
+    anchors. Resolution order: `.aai/skills` → `.ailib` → library. Matches at most 3 catalog
+    capabilities from `catalog.yaml` only, never reading bodies. Refuses: overwriting an existing
+    `.aai/instructions.md`; stamping a vague-noun purpose after one follow-up; inventing purpose,
+    disposition or layout; editing inside `.ailib/`; stamping into the library repo by accident;
+    chaining unrequested operations (one per request). Stage: setup/maintenance of a folder,
+    upstream of the capabilities it installs.'
   requests:
   - make this folder ambient
-  - set up a .aai folder for my client-proposals directory
-  - I want this folder to act as my research assistant but I'm not sure how, interview me
-  - install the writing-team capability into this folder
-  - update the vendored skills in .ailib from the canonical library
-  - fork the researcher skill for this folder so I can customize it
-  - turn what keeps going wrong here into a standing rule for this folder
+  - set up an agentic folder for my client proposals
+  - stamp .aai here, this folder is for weekly podcast show notes
+  - interview me about what this folder should do
+  - add the researcher capability to this folder
+  - re-sync my vendored skills from the library
+  - fork the writer skill for this folder so I can change it
+  - the same correction keeps coming up, turn it into a standing rule for this folder
   not_for:
   - init-dev-project: wins when the folder is a code project needing the dev-and-deploy standard
-      with lanes, make verbs and a git repo.
-  - context-mgr: wins when the need is the multi-agent .context/ continuity store, not an
-      .aai/ scaffold.
-  - connector-bridge: wins when the task is resolving a folder's connectors.md against available
-      MCP tools.
-  - distro-kit: wins when packaging an app repo as a capability for publication to the library.
-  - trigger-runner: wins when running a folder's standing intentions from triggers.md.
+      (lanes, make verbs, spec/src/tests layout, git repo), not just an ambient scaffold.
+  - context-mgr: wins when the user wants the multi-agent `.context/` continuity system installed
+      rather than `.aai/`.
+  - connector-bridge: wins when the task is resolving a folder's already-declared connectors.md
+      needs against the harness's tools.
+  - grill: wins when the user wants a decision or spec interview with no folder scaffold to
+      be written.
+  - solofactory: wins when the folder should become a software factory with its install and
+      operate flow.
   stage: setup
-  source_hash: 16f13e0031ad
+  source_hash: 32182c246891
 context-mgr:
   description: Installs the multi-agent .context/ continuity system into a project; use for
     "install context-mgr", "set up multi-agent context here", "scaffold .context/", "add the
