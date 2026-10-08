@@ -505,6 +505,8 @@ ambient-folder:
       be written.
   - solofactory: wins when the folder should become a software factory with its install and
       operate flow.
+  - distro-kit: wins when packaging an app repo as a capability for publication to the library.
+  - trigger-runner: wins when running a folder's standing intentions from triggers.md.
   stage: setup
   source_hash: 32182c246891
 context-mgr:
@@ -1213,6 +1215,8 @@ dev-rules:
   - skill-auditor: wins when checking a skill's SKILL.md and catalog schema before publishing
       it, rather than publishing coding rules.
   - vibe: wins when running a persistent test-first build loop for a local web app or CLI.
+  - distro-kit: wins when packaging an app repo as an ambient-library capability and publishing
+      it, not publishing the coding-rules file.
   stage: setup
   source_hash: 0fbc176170a3
 deep-field:
@@ -2703,6 +2707,16 @@ init-dev-project:
   - make this an actual repo with a Makefile and a ship list
   - I'm starting a web app from scratch — give me the standard layout
   - stamp the dev standard on this directory and git init it
-  not_for: []
+  not_for:
+  - ambient-folder: wins when the user wants a folder made ambiently intelligent through an
+      interview about purpose, or maintained afterwards, rather than given the dev layout.
+  - context-mgr: wins when the user wants only the multi-agent .context/ continuity system
+      installed into an existing project.
+  - distro-kit: wins when an existing app repo must be packaged as an ambient-library capability
+      with an install standard.
+  - software-dev-factory: wins when the user wants to install and operate a governed SDLC
+      controller, not just the folder scaffold.
+  - grill-with-prototype: wins when the spec has to be produced through a live prototype interview
+      before any scaffolding matters.
   stage: setup
   source_hash: 7d611f308486
