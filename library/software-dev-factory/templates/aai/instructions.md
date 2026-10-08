@@ -13,6 +13,7 @@ repositories under `projects/` are its output.
 | File | Kind | Load when |
 |------|------|-----------|
 | `~/.aai/identity.md`, `purpose.md`, `context.md`, `memory.md` | reference — the owner's global ambient home | always, **if `~/.aai/` exists**; then `~/.aai/rules/core.md`. Skip silently if absent. |
+| `~/.aai/rules/coding.md`, else `.ailib/dev-rules/rules/coding.md` | reference — global coding rules | before writing, changing, or reviewing code; never copy them into this folder |
 | `.aai/references/*.md` | reference — folder-level rules | always, if present |
 | `.ailib/software-dev-factory/` | vendored — resolve `.aai/skills/software-dev-factory/` first (shadowing) | any factory operation |
 | `.ailib/software-dev-factory/app/docs/user-guide.md` | reference — specs, the owner's four decisions, the CLI surface | before writing a spec or starting a run |
