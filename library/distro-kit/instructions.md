@@ -57,7 +57,7 @@ Re-running publish for a new app version is the whole update flow: bump
 
 - `distro/app/` is never hand-written; sync-distro builds it from `APP_FILES`.
 - Alternate source folder name (e.g. `ambient-distro/`): pass `--src`.
-- Warnings from sync-distro about a dirty app repo are real: the synced `app/VERSION`
-  records a sha that does not match the files.
+- sync-distro exports committed content at `--ref` (default `HEAD`); if the app repo has
+  uncommitted changes in the synced paths, it notes them on stderr but does not sync them.
 - Self-check: `bash selfcheck.sh` in this directory. Fails if validate stops catching a
   broken APP_FILES.
