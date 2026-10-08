@@ -1,20 +1,65 @@
 # Checkpoint — ambient-library
 
 ## Current state
-**Next objective:** none queued. Released and tagged **v2.7.3**; `~/.ailib` is
-on v2.7.3 with a clean `git status`; the audit runs with zero warnings.
+**Next objective:** none queued. Released and tagged **v2.14.2**; `~/.ailib` is
+on v2.14.2.
 
-**Parked:** AIMM newsletter migration, no test send yet — see the 2026-09-17
-section for how to resume.
+**Parked:**
+- AIMM newsletter migration, no test send yet; see the 2026-09-17 section.
+- soloFactory `wip/feature-slice-recovery` (commit a097426): local only, never
+  pushed. It holds the feature-slice-recovery work.
 
 **Open, Lou's call:**
 - gears-* rollout steps 5–6; scrub gears-broadcast's segment ID from history;
   collapse gears-* into one capability.
-- Docs gaps from the 2.2.2 review (links to `MANAGEMENT.md`, which doesn't ship,
-  etc.) — listed in the 2026-09-17 section.
+- Docs gaps from the 2.2.2 review; see the 2026-09-17 section.
 - 27 `in-progress/` candidates still unreviewed (`in-progress/CANDIDATES.md`).
-- `~/.claude/stats-cache.json` stopped updating at 2026-08-30, so the token
-  graph shows no data after that date. Cause not investigated.
+- `~/.claude/stats-cache.json` stopped updating at 2026-08-30. Cause not
+  investigated.
+- `dev-factory` (Downloads/softwareFactoryAlphaTesting): not reinstalled. It
+  isn't a git repo, and is probably a stale test install.
+
+---
+
+## 2026-10-08 checkpoint: global coding rules (dev-rules), v2.11.0 → v2.14.2
+
+**Done since last:**
+- **dev-rules capability** (`library/dev-rules/`):
+  - The authority is `~/.aai/rules/coding.md`; `publish.sh` copies it into the
+    library snapshot.
+  - `install.sh` adds a coding trigger to `~/.aai/context.md` and points each
+    harness's global file at the rules: Claude Code, Codex (or its override
+    file), opencode, and DeepSeek Harness.
+  - `paste.sh` covers claude.ai chat and Cowork, which can't read files.
+  - Lou's merged `coding.md` is published.
+- **Rules reach installs and projects:**
+  - wbs-toolkit 0.3.0 adds `## Module Boundaries` and module-design checks, and
+    lists dev-rules in DEPENDS.
+  - soloFactory 0.9.8 and software-dev-factory 0.3.4-alpha list dev-rules in
+    DEPENDS and have a template Inputs row for the rules.
+  - init-dev-project writes `CLAUDE.md`/`AGENTS.md` pointer files.
+  - ambient-folder 1.2.0 appends a `## Coding rules` pointer whenever dev-rules
+    is vendored. That runs on every install and refresh, and never edits `.aai/`.
+- **Tooling fixes:**
+  - `sync-distro.sh` copies committed content via git archive at `--ref`, not
+    the working tree. Why: uncommitted WIP and ignored files used to ship.
+  - `build-team-index.py` merges `not_for` lists instead of replacing them.
+    Why: rebuilds dropped routing; PR #11 restored the lost entries.
+  - `release_filter.py` now ships `team-index.yaml`, trimmed to released skills.
+    Why: team-build was released without its index.
+  - software-dev-factory's plugin version now moves with its package (1.1.0).
+- **Projects reinstalled** with the pointer: `photo-library-prototype`,
+  `soloFactory/my-folder`. A paused my-folder run resumed fine on 1.7.5.
+
+**Touched:** library/{dev-rules,ambient-folder,init-dev-project,wbs-toolkit,
+solofactory,software-dev-factory}/, scripts/{sync-distro.sh,release_filter.py,
+build-team-index.py,test_*.py}, library/team-index.yaml, RELEASE.yaml.
+PRs #3–#14.
+
+**Open:** none from this work. The cloud session's proxy refuses tag pushes and
+branch deletes, so Lou pushes tags from `~/.ailib`.
+
+**Next:** nothing queued.
 
 ---
 
