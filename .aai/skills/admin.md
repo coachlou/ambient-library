@@ -337,12 +337,22 @@ the folder already has them — it never creates an adapter file the owner has n
 chosen.
 
 The loop after an app change: commit in the app repo → `scripts/sync-distro.sh
-<cap> <repo> [src-dir]` (lands in `library/<cap>/`, or `in-progress/<cap>/` the
-first time, then promote) → audit → commit here → RELEASE.yaml if new → build →
-push. `src-dir` defaults to `distro`; pass it when the app repo already uses
-`distro/` for something else — `software-dev-factory` keeps its controller
-snapshot there and packages for the library from `ambient-distro/`. The sync
-warns when the app repo is dirty, because `app/VERSION` records its HEAD sha.
+[--ref <rev>] <cap> <repo> [src-dir]` (lands in `library/<cap>/`, or
+`in-progress/<cap>/` the first time, then promote) → audit → commit here →
+RELEASE.yaml if new → build → push. `src-dir` defaults to `distro`; pass it when
+the app repo already uses `distro/` for something else — `software-dev-factory`
+keeps its controller snapshot there and packages for the library from
+`ambient-distro/`.
+
+The sync **exports committed content at a ref** — `git archive`, never the
+working tree — so uncommitted edits, untracked files and git-ignored build
+output (`node_modules/`, `__pycache__/`) cannot leak into the library. `--ref`
+defaults to `HEAD`; pass `--ref v<version>` to sync a release tag. A dirty app
+repo is therefore safe to sync from: the script prints a note naming how many
+uncommitted paths stayed behind and which sha it synced, and `app/VERSION`
+records that sha, which is always what `app/` holds. Commit first if you meant
+those edits to ship. Same rule as `build-production.sh`: the library builds from
+committed content only.
 
 ## Releasing
 
