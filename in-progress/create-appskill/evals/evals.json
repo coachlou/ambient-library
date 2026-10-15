@@ -1,0 +1,29 @@
+{
+  "skill_name": "create-appskill",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "create an appskill that lets me chat with an orchestrator about my meeting notes: it should pull action items with a script, have a subagent summarize each meeting, and format a weekly digest with a sub-skill",
+      "expected_output": "Routes to app-skill at Step 0 and states why; fills Skill Brief and App Brief; classifies steps including at least one delegate; scaffolds with scripts/scaffold_appskill.py; builds parts before the orchestrator; runs scripts/validate_appskill.py; adds >=3 evals including a no-delegation near-miss.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "make a skill that formats commit messages in conventional-commit style",
+      "expected_output": "Step 0 routes to a plain skill (or a one-liner), not an app-skill: no agents/ or skills/ folders, no routing table. Authors under in-progress/ in the dev clone, not ~/.claude/skills.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "I need something that decides between three of my existing agents and arbitrates their answers, with its own model and tool allowlist",
+      "expected_output": "Step 0 routes to a standalone agent (.claude/agents/<name>.md), not an app-skill, explaining the tool allowlist / model / identity reason.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "audit and improve the skill at ./my-skill",
+      "expected_output": "Enters --improve mode, runs the rubric audit and packaging checks, applies fixes only to flagged criteria, reports before/after scores. Does not run the creation flow.",
+      "files": []
+    }
+  ]
+}
