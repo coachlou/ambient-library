@@ -59,7 +59,7 @@
     {
       "name": "checkpoint",
       "source": "./library/checkpoint",
-      "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows \u2014 distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\"."
+      "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows \u2014 distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, writes a verified handoff note for the next session, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"handoff\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\"."
     },
     {
       "name": "cognitive-mirror",

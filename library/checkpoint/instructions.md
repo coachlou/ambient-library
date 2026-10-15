@@ -1,9 +1,12 @@
 # Checkpoint — context continuity
 
-Two modes. **Compact mode is the default** — run it for `/checkpoint`,
-`/checkpoint:compact`, or any pre-compact/pre-clear save. Run **session mode**
-only for `/checkpoint:session` or explicit check-in/check-out language on a
-project with a `.context/` store.
+Three modes. **Compact mode is the default** — run it for `/checkpoint`,
+`/checkpoint:compact`, or any pre-compact/pre-clear save. Run **handoff mode**
+for `/checkpoint:handoff` or "hand this off", "write a handoff", "end of session
+handoff" — a durable note for the *next* session, not this one. Run **session
+mode** only for `/checkpoint:session` or explicit check-in/check-out language on
+a project with a `.context/` store. For a full close-out (commit, export,
+teaching narrative, memory harvest) use the `wrap` skill instead.
 
 ---
 
@@ -395,3 +398,66 @@ Only after Lou confirms. Then:
 
 The full architecture and known limitations are in each project's
 `.context/CHARTER.md`.
+
+---
+
+# Mode 3: Handoff — a note for the next session
+
+Compact mode keeps *this* conversation alive; handoff mode briefs a *different*
+session (or agent) that starts cold, possibly days later. Write it when work
+stops with something still in flight: a run, a server, an unpushed branch, an
+approval pending.
+
+## Gotchas (read first)
+
+- **Verify live state before writing it down.** Pids, ports, running builds,
+  branch tips, and "pushed" claims go stale in minutes. Check them with a
+  command (`git log -1`, `git status`, `pgrep`, a health URL) and record what you
+  saw plus the time — never what you remember. Mark anything unchecked as
+  *unverified*.
+- **Exact beats summarized.** A resume list the next session can run line by line
+  ("1. `cmd` — expect X") beats a paragraph. Include the commands, paths, and
+  the one thing NOT to do (a destructive endpoint, a broad `pkill`).
+- **Record decisions and approvals as given.** Note what the user approved or
+  refused, in their words, so the successor doesn't re-ask or re-litigate.
+- **One live handoff per project.** A new handoff supersedes the previous one —
+  update or delete the old file; never leave two handoffs that disagree.
+
+## Flow
+
+**1. Find where it goes.**
+- Harness with a persistent memory directory and a `MEMORY.md` index (Claude
+  Code auto-memory): write `session-<YYYY-MM-DD>-handoff.md` there as a
+  `type: project` memory, with a one-line pointer added to `MEMORY.md`.
+- Otherwise: `<project-root>/.aai/handoff.md` (overwrite — it describes *now*).
+
+**2. Retire the previous handoff.** Read the existing one. Carry forward only its
+still-open items; delete or overwrite it (memory index: remove its line).
+
+**3. Gather facts** by command: branch and tip sha, pushed or not, dirty files
+(by name), any running process or server (pid, port, which build), the active
+run or job id and its state.
+
+**4. Write the note** with these sections, omitting any that are empty:
+
+```markdown
+**State** (checked <time>): <branch @ sha, pushed? ; live processes; run/job state>
+**Done this session:** <commits/changes, one line each, with sha>
+**Open — user asked, not finished:** <the ask, then numbered, runnable steps>
+**Decisions & approvals:** <what was approved/refused, and gates still in force>
+**Do NOT:** <known dead ends, destructive actions, constraints>
+**Unverified:** <anything stated but not checked>
+**First move:** <the single specific first action for the next session>
+```
+
+For a memory file, frontmatter `description` is one line that carries the
+headline state (what's pushed, what's running, what's pending) — it is what the
+next session sees in the index before opening the file.
+
+**5. Report** in two lines: where the note is, and the first move.
+
+## Test
+
+Could a fresh agent with zero conversation memory read only this note and
+continue correctly, without re-asking anything the user already decided? If not,
+add what's missing; if a line is re-derivable from the repo, cut it.

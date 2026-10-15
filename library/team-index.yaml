@@ -587,32 +587,36 @@ session:
 checkpoint:
   description: Preserves conversation context across compaction and hands off work across
     sessions, agents, and CLI windows — distills since-last-checkpoint state into the project's
-    .aai/checkpoint.md before /compact or /clear, or runs the .context/ store check-in/check-out
-    protocol; use for "checkpoint", "checkpoint before compact", "save context before clearing",
-    "session check-in", "wrap up".
-  summary: 'Preserves context across compaction and hands off work across sessions, agents
-    and CLI windows, in two modes. Compact mode is the default (/checkpoint, /checkpoint:compact,
-    any pre-compact or pre-clear save): it locates or creates <project-root>/.aai/checkpoint.md
-    (moving a legacy root checkpoint.md in), reads what is already captured, distills only
-    the delta since the last checkpoint into conclusions rather than transcripts (decisions
-    with a one-line why, state, file paths touched, open questions, exact next steps), rewrites
-    the 5 to 15 line Current state header, appends a dated section newest first, never rewrites
-    dated history, and ends by telling the user to run /compact or /clear since it cannot.
-    Session mode (/checkpoint:session or check-in and check-out language) runs the multi-agent
-    protocol against a project''s .context/ store: verify CHARTER.md exists and ask before
-    bootstrapping, check and briefly hold a lock only around mutations, treat every check-in
-    as a stranger arriving by re-reading STATE and recent LOG, append to LOG.md and DECISIONS.md,
-    share one .context/ across worktrees, and require a commit SHA before marking a task Ready-for-Review.
-    Output is an updated checkpoint file or updated store entries. It does not archive transcripts
-    or close sessions with commits. Stage: operate, run mid-session or at session boundaries.'
+    .aai/checkpoint.md before /compact or /clear, writes a verified handoff note for the next
+    session, or runs the .context/ store check-in/check-out protocol; use for "checkpoint",
+    "handoff", "checkpoint before compact", "save context before clearing", "session check-in",
+    "wrap up".
+  summary: 'Keeps work alive across context loss in three modes. Compact mode is the default
+    and runs on "/checkpoint" or before /compact or /clear. It takes the conversation since
+    the last checkpoint and turns it into conclusions, not a transcript: decisions with a
+    one-line reason, current state, files touched, open questions and the exact next step
+    (file:line). It writes these to <project-root>/.aai/checkpoint.md. It creates .aai/ if
+    needed and moves a legacy root checkpoint.md into it. Each run rewrites a 5–15 line "Current
+    state" header and adds a dated section beneath it, newest first. Older dated sections
+    are never edited. It then tells the user to run /compact or /clear, which it cannot run
+    itself. Handoff mode writes a checked note for the next session. Session mode runs the
+    .context/ store protocol (CHARTER, STATE, LOG, DECISIONS): check-in with a short-lived
+    lock, flagging stale Doing tasks and claiming a task by role or focus; a mid-session checkpoint
+    that adds a progress line and a LOG entry; check-out that commits code first, needs a
+    SHA for Ready-for-Review, pairs a review task and asks whether any decisions should be
+    promoted; a read-only status view; and blind reviewer discipline. It will not create .context/
+    without confirmation, rewrite append-only history, or do the full close-out of commit,
+    export, narrative and memory harvest. Inputs are the live conversation and the repo root.
+    Stage: continuity, used mid-session or at the end of a session.'
   requests:
   - checkpoint before I compact
-  - save context before clearing
-  - /checkpoint
-  - session check-in, what should I work on?
-  - checkpoint where I am so another agent can pick this up
-  - log this and check out of the session
-  - write a handoff for the next window
+  - save the context, I'm about to /clear this chat
+  - write a handoff note so tomorrow's session can pick this up
+  - session check-in — what should I work on?
+  - quick save where I am on T-014
+  - check out, this task is ready for review
+  - what's happening on this project's board right now?
+  - the context window is getting long, distill what we've decided so far
   not_for:
   - session: wins as the dedicated check-in and check-out skill for a project's .context/
       store when the user wants only that protocol.
@@ -621,8 +625,10 @@ checkpoint:
   - capture-chat: wins when the user wants the verbatim conversation saved as a markdown file,
       not a distilled brief.
   - context-mgr: wins when installing the .context/ system into a project for the first time.
+  - teaching-block-synthesized: the session should become a publishable article showing reasoning
+      and wrong turns, not an internal handoff.
   stage: operate
-  source_hash: 1492250736ea
+  source_hash: b67e5f275fbd
 aimm-newsletter:
   description: Sends a newsletter email to all members of a named Google Contacts group; use
     for "send this to [group]", "send the newsletter", "email the group". Previews recipients

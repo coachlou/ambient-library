@@ -1,7 +1,7 @@
 {
   "name": "checkpoint",
-  "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows — distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\".",
-  "version": "1.0.0",
+  "description": "Preserves conversation context across compaction and hands off work across sessions, agents, and CLI windows — distills since-last-checkpoint state into the project's .aai/checkpoint.md before /compact or /clear, writes a verified handoff note for the next session, or runs the .context/ store check-in/check-out protocol; use for \"checkpoint\", \"handoff\", \"checkpoint before compact\", \"save context before clearing\", \"session check-in\", \"wrap up\".",
+  "version": "1.1.0",
   "author": {
     "name": "Coach Lou"
   },
