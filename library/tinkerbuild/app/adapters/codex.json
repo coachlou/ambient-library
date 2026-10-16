@@ -1,0 +1,5 @@
+{"cmd": ["codex", "exec", "--full-auto", "-"],
+ "model_flag": ["-m", "{model}"],
+ "effort_flag": ["-c", "model_reasoning_effort={effort}"],
+ "skip_patterns": ["usage limit", "rate limit", "429", "not logged in", "codex login", "incorrect api key"],
+ "note": "Codex CLI headless; '-' reads the prompt from stdin. ChatGPT subscription login unless OPENAI_API_KEY is set; set inference.api.key_env to OPENAI_API_KEY if codex is your API fallback."}

@@ -1,0 +1,1 @@
+{"cmd": ["orca"], "verified": false, "note": "Stub. Orca's non-interactive CLI could not be exercised when this was written. Set cmd to the command that reads a prompt on stdin and runs one agent task in the cwd, then remove 'verified'."}

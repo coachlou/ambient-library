@@ -1,0 +1,5 @@
+{"cmd": ["claude", "-p", "--permission-mode", "acceptEdits", "--allowedTools", "Bash,Read,Edit,Write,Glob,Grep"],
+ "model_flag": ["--model", "{model}"],
+ "effort_flag": ["--effort", "{effort}"],
+ "skip_patterns": ["usage limit", "rate limit", "429", "not logged in", "please run /login", "invalid api key"],
+ "note": "Claude Code headless; prompt on stdin. Bash must be allowed: the loop requires the builder to run the app, and acceptEdits alone blocks it. Subscription unless ANTHROPIC_API_KEY is in the env, which tb.py strips except on API fallback. skip_patterns are matched case-insensitively on stdout+stderr of a failed run; fix them here if the CLI's wording changes."}

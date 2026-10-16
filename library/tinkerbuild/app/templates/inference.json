@@ -1,0 +1,14 @@
+{
+  "chain": ["claude", "codex"],
+  "roles": {
+    "default": {"model": "", "effort": ""}
+  },
+  "api": {"approved": false, "key_env": "ANTHROPIC_API_KEY"},
+  "cooldown_s": 3600,
+  "adapters": {
+    "claude": {"cmd": ["claude", "-p"], "model_flag": ["--model", "{model}"], "effort_flag": ["--effort", "{effort}"],
+               "skip_patterns": ["usage limit", "rate limit", "429", "not logged in", "please run /login", "invalid api key"]},
+    "codex":  {"cmd": ["codex", "exec", "--full-auto", "-"], "model_flag": ["-m", "{model}"], "effort_flag": ["-c", "model_reasoning_effort={effort}"],
+               "skip_patterns": ["usage limit", "rate limit", "429", "not logged in", "codex login", "incorrect api key"]}
+  }
+}

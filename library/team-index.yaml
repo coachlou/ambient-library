@@ -2730,3 +2730,49 @@ init-dev-project:
       before any scaffolding matters.
   stage: setup
   source_hash: 7d611f308486
+tinkerbuild:
+  description: 'Personal-app software factory: idea to UI to walking skeleton, then a no-HITL
+    build/check loop for features and fixes, light testing, and a pre-release QA pass; harness-agnostic
+    with Claude Code, Codex and Orca adapters; use for "tinkerbuild", "tinker build", "add
+    a feature", "fix this", "new personal app", "run the tickets", "release my app".'
+  summary: 'Personal-app software factory for a single builder. It installs into a folder
+    through the ambient-folder bootstrap (`bootstrap.sh tinkerbuild [target]`, Python 3.10+).
+    The canonical code is vendored under `.ailib/tinkerbuild/` and the user-owned scaffold
+    lives in `.aai/`. Re-running the install updates the vendored code, and `--check` reports
+    drift without writing. `./tb.sh init` creates a `.tinker/` ticket store. The workflow
+    in `.ailib/tinkerbuild/app/instructions.md` then takes an idea through UI mockups to a
+    walking skeleton. After that comes a no-human-in-the-loop build/check loop: `./tb.sh ticket
+    add --kind feature|fix --title "..."` queues work and `./tb.sh run` works through the
+    queue. For each ticket, the driver builds, runs light tests and the project''s `check_cmd`,
+    and only then marks the ticket done and commits it. Error reports and in-app "report a
+    problem" buttons feed new tickets into the same queue. A pre-release QA pass gates "release
+    my app". Adapters let it run under Claude Code, Codex or Orca. Inputs are an app idea
+    or an existing tinkerbuild folder plus a feature or bug description. Outputs are a running
+    personal app, a ticket history and one commit per passing ticket. It refuses to mark tickets
+    done or commit by hand, and it never edits `.ailib/` (overrides are copied into `.aai/skills/tinkerbuild/`).
+    It is not built for formal specs, governed team SDLCs or deployment pipelines. Stage:
+    the whole idea-to-release lifecycle for hobby or personal apps, mostly the build/operate
+    loop.'
+  requests:
+  - tinkerbuild a little habit-tracker app for me
+  - set up tinker build in this folder so I can start a new personal app
+  - 'add a feature to my app: export my entries as CSV'
+  - 'fix this bug: the save button does nothing after I edit a note'
+  - I've queued a bunch of tickets, run them all without asking me
+  - wire a 'report a problem' button into the app that files a ticket
+  - do the QA pass and release my app
+  - update the tinkerbuild install in this folder and tell me what drifted
+  not_for:
+  - vibe: wins when the user wants a live, interactive "vibe on" session with screenshots
+      after each change, or works in a folder marked as a vibe project, rather than a queued
+      no-HITL ticket loop.
+  - software-dev-factory: wins when the user wants a governed SDLC with an approved spec and
+      plan/red/green/review gates, one repo per product under projects/.
+  - solofactory: wins for the interview → PRD → subscription-backed build → gates → local
+      deploy factory that manages several project repos under projects/.
+  - grill-with-prototype: wins when the user only wants a clickable prototype or mockup and
+      a SPEC.md from a requirements interview, not a built app.
+  - init-dev-project: wins when the user wants a bare folder scaffolded to the dev-and-deploy
+      standard (lanes, make verbs, spec/src/tests layout) with no build loop.
+  stage: build
+  source_hash: edb79fd51505
