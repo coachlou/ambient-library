@@ -33,6 +33,7 @@ skills:
   - context-mgr
   - conversation-consolidation-system
   - conversation-ip-extractor
+  - create-appskill
   - deep-comprehension-assessment
   - deep-field
   - deep-mirror
