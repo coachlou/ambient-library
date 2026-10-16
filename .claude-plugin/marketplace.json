@@ -92,6 +92,11 @@
       "description": "Extracts named frameworks, methodologies, and publishable IP from a long conversation or session transcript; use for \"what did I figure out here\", \"find the framework in this\"."
     },
     {
+      "name": "create-appskill",
+      "source": "./library/create-appskill",
+      "description": "Creates and improves skills and app-skills (conversational orchestrator skills routing to bundled scripts, references, sub-skills and subagents): routing gate, Skill/App Brief, step classification, quality rubric, evals and description optimization over Anthropic's skill-creator (vendored unmodified); use for \"create a skill\", \"turn this into a skill\", \"create an appskill\", \"app-skill\", \"make an app I can talk to\", \"improve/audit/eval this skill\"."
+    },
+    {
       "name": "deep-comprehension-assessment",
       "source": "./library/deep-comprehension-assessment",
       "description": "Builds rigorous text-comprehension assessments with detailed feedback; use for \"test my understanding of this text\", \"comprehension quiz\"."

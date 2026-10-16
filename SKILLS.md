@@ -92,6 +92,7 @@ until the router reads one. Optionally scope which a project uses via
 | **vibe** | Vibe mode — a persistent, test-first build loop for local web apps and CLIs. The user describes a change; the loop tests, builds, runs, screenshots, fixes, commits, and shows the result. Use when the user says "vibe on", "/vibe", "let's vibe this", "vibe code a ...", asks to install or set up vibe in a folder, or works in a folder whose .aai/instructions.md marks it as a vibe project. Also handles "vibe off". Do not use for a plain "I want to build" outside a vibe folder, or for WBS or formal spec requests. |  |
 | **token-activity-graph** | Builds one self-contained HTML graph of Claude Code token usage by day, app, and model, costed from live models.dev pricing | *"Build a token activity graph"*, *"Show my token usage"*, *"Visualize my API costs"* |
 | **tinkerbuild** | Personal-app software factory: idea to UI to walking skeleton, then a no-HITL build/check loop for features and fixes, light testing, and a pre-release QA pass; harness-agnostic with Claude Code, Codex and Orca adapters | *"Tinkerbuild"*, *"Tinker build"*, *"Add a feature"* |
+| **create-appskill** | Creates and improves skills and app-skills (orchestrator skills routing to scripts, references, sub-skills, subagents) over Anthropic's skill-creator | *"Create a skill"*, *"Create an appskill"*, *"Audit this skill"* |
 
 ### In-context vs. spawned execution
 

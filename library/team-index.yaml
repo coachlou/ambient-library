@@ -2776,3 +2776,51 @@ tinkerbuild:
       standard (lanes, make verbs, spec/src/tests layout) with no build loop.
   stage: build
   source_hash: edb79fd51505
+create-appskill:
+  description: 'Creates and improves skills and app-skills (conversational orchestrator skills
+    routing to bundled scripts, references, sub-skills and subagents): routing gate, Skill/App
+    Brief, step classification, quality rubric, evals and description optimization over Anthropic''s
+    skill-creator (vendored unmodified); use for "create a skill", "turn this into a skill",
+    "create an appskill", "app-skill", "make an app I can talk to", "improve/audit/eval this
+    skill".'
+  summary: 'Authoring and improvement workbench for Claude skills and app-skills. An app-skill
+    is a skill folder whose SKILL.md is a conversational orchestrator: it routes each request
+    to bundled scripts, references, sub-skills and subagents. It is layered over Anthropic''s
+    skill-creator, vendored unmodified, and adds overlays. First, a routing gate: reuse an
+    existing skill at ≥70% coverage, use a CLAUDE.md line or hook for a one-liner, or choose
+    between a skill, an app-skill and a `.claude/agents` agent. Next comes a Skill Brief and,
+    for apps, an App Brief (parts inventory, conversation contract, routing table, shared
+    state), filled from the conversation, then the filesystem, then batched questions. Each
+    step is labelled code, inference, hybrid or delegate. Before evals run, the draft must
+    pass an 8-criterion quality rubric (gate 7/10, no zeros) and mechanical packaging and
+    provenance checks. Inputs: a workflow transcript, an idea, or an existing skill path (`--improve`
+    mode does a blind audit, applies fixes, re-scores and reports before/after). Output: a
+    skill folder with SKILL.md, CONTEXT.md, scripts, references and evals/evals.json, written
+    to `in-progress/<name>/` in the canonical library''s dev clone. App-skills are scaffolded
+    with `scaffold_appskill.py` and checked with `validate_appskill.py`, then go through description
+    optimization. It refuses to author straight into `library/`, to fall back to `~/.claude/skills/`
+    without asking, to write into the stale canonical-library copy, or to push. Pipeline stage:
+    creation and hardening, before promotion and distribution.'
+  requests:
+  - turn what we just did into a skill
+  - create a skill that converts my meeting notes into Linear tickets
+  - 'I want an app I can talk to that runs my podcast prep: research, outline and show notes,
+    each handled by its own subagent'
+  - build an app-skill that orchestrates my existing writing skills
+  - 'improve this skill, it keeps firing when it shouldn''t: library/researcher'
+  - audit and harden every skill in in-progress/ and give me a scoreboard
+  - optimize the description on my voice-profile skill so it triggers more reliably
+  - should this be a skill, an agent, or just a CLAUDE.md line?
+  not_for:
+  - skill-auditor: you only want a lint of an existing skill's frontmatter, catalog.yaml projection
+      and evals shape against the library schema, with no rewriting or rubric-driven fixes
+  - skill-evals: the skill and its evals/evals.json already exist and you just want a PASS/FAIL
+      run of its triggering and quality cases
+  - distro-kit: the thing is a finished app repo that needs packaging and publishing as an
+      ambient-library capability, not authoring as a skill
+  - chat-n-build: you want a live local dashboard driven by talking to the agent, with skillification
+      only as a byproduct of running the process
+  - harness-prd: you are designing a stateful agent-harness ProcessSpec (a state machine of
+      agents, gates and artifacts), not a shippable skill folder
+  stage: draft
+  source_hash: 1a6986b03936
