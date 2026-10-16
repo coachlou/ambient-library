@@ -620,7 +620,8 @@ hang if unexplained:
 >
 > Leave that window alone from now on. Don't close it, don't type in it.
 
-It prints a line like `SoloFactory → http://127.0.0.1:4173`.
+It prints a line like `SoloFactory → http://127.0.0.1:4173`. If it instead says the port is in use, see *Port 4173 is in use* under
+**Fixing a bad install**, and use the address it gives you in the step below.
 
 > Now open your web browser and go to: **http://127.0.0.1:4173**
 >
@@ -791,6 +792,15 @@ could change or remove them:
 > in an app you built before today, copy that app's folder somewhere safe first. Apps built
 > from now on keep their records where the factory never touches them.
 
+**If they were below 0.10.0 before the update**, builds now go one feature at a time, and
+the run view shows them as a map of stops. Ask first whether a build was partway through
+when they stopped the server; if one was, tell them it may need to be started again. Then
+say, briefly:
+
+> Builds now go one feature at a time, and the run page shows them as a map, so you can see
+> what's done and what's next. If a build stops or pauses and needs you, an amber note at the
+> top of every page tells you which one, and Open takes you straight to it.
+
 Do not walk an updating owner through Part C. They already know how to use the app; the
 update is finished once U4 holds.
 
@@ -823,7 +833,10 @@ Work these yourself. Do not read this table out loud.
 | `Run \`codex login\` and choose ChatGPT sign-in.` | Codex signed in with an API key | `codex login`, pick ChatGPT |
 | `requires a newer version of Codex` | Codex CLI is out of date | Update the Codex CLI, then restart the server |
 | Browser shows "can't connect" / "site can't be reached" | The server window was closed or `Control`+`C`'d | Restart with `cd ~/solofactory && bash start.sh` and leave it running |
-| `EADDRINUSE` | Something else is on port 4173 | Start with a different port: `cd ~/solofactory && PORT=5000 bash start.sh`, then use `http://127.0.0.1:5000` |
+| Run parks as *Repair budget exhausted* | A gate kept failing after its repairs were spent | In the run view choose **Prepare repair plan**; once the independent review passes, repairs start on their own. Resume alone does not renew the budget |
+| Run fails with `prompt_too_large` ("over SoloFactory's 200000-character prompt limit") | A factory defect: the input cannot fit, so retrying cannot help and no agent was started | Do not retry. Have the owner use **Report this run** (or Feedback) in the top bar |
+| `Port 4173 is in use by another app` | Another app already uses port 4173 | Start with a different port: `cd ~/solofactory && PORT=5000 bash start.sh`, then use `http://127.0.0.1:5000` everywhere this guide says 4173 |
+| `SoloFactory is already running at …` | A factory from an earlier window is still running | Open that address; don't start a second one |
 | `ask for an invite to that repo` right after the `curl` line | No GitHub access to the private release | `gh auth login` with an account that has access, or use a zip — see **The install command** |
 | `rsync: command not found` | Ubuntu missing rsync | B2 |
 | `curl: command not found` | Ubuntu missing curl | B2 |
