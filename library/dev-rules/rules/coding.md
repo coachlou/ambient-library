@@ -35,7 +35,7 @@ skip the ceremony.
    No import cycles.
 
 For architecture choices, also apply the simplicity directives D1, D2, D31, and D45 in
-`~/.aai/rules/operational/architecture-systems.md`.
+`~/.aai/rules/operational/architecture-systems.md` when that file exists.
 
 ### Red flags: treat as defects
 
