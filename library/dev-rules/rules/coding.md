@@ -1,16 +1,17 @@
 # Coding Rules
 
 Runtime-independent policy for coding scope, implementation, testing, approval, and
-completion. Harness adapters route here. Runtime-specific tool instructions may supplement
-this policy but must not override it. Do not duplicate these rules elsewhere.
+completion. This is the single canonical copy: harness files (`CLAUDE.md`, `AGENTS.md`,
+pasted chat settings) route here and never restate it. Runtime-specific tool instructions
+may supplement this policy but must not override it.
 
 Project instructions (`CLAUDE.md`, `AGENTS.md`, `.aai/`) may tighten these rules for that
 project. They do not loosen them silently; a project that needs an exception states it and why.
 
 Complete the current task with the **minimum sufficient change**: the smallest coherent
 change that restores the required behavior or invariant — not necessarily the fewest
-lines or files. This policy supersedes any "wait for approval before coding" rule:
-read-only discovery and routine implementation within the stated task need no approval.
+lines or files. Read-only discovery and routine implementation within the stated task need
+no approval; this supersedes any older "wait for approval before coding" rule.
 
 Trivial tasks (single file, a few lines) skip the written plan below; keep the judgment,
 skip the ceremony.
@@ -33,6 +34,9 @@ skip the ceremony.
    modules; domain modules depend on abstractions of infrastructure, never on entry points.
    No import cycles.
 
+For architecture choices, also apply the simplicity directives D1, D2, D31, and D45 in
+`~/.aai/rules/operational/architecture-systems.md`.
+
 ### Red flags: treat as defects
 
 | Flag | Symptom | Correct move |
@@ -48,7 +52,6 @@ skip the ceremony.
 
 ## Before editing
 
-- Read the relevant code, tests, and configuration directly. Do not work from search snippets or guesses.
 - Read the module that owns the concern you are changing, not only the file you are editing.
 - If the requirement is ambiguous or the premise is unverified, resolve that before building on it.
 - For non-trivial tasks, state a minimal plan:
@@ -57,47 +60,68 @@ skip the ceremony.
   - **Files** — the smallest set expected to change
   - **Proof** — the check that will prove the change works
 - Start with one implementation path. Split work only when the task has genuinely independent parts.
-- When multiple approaches exist, or a non-obvious choice is made (library, pattern, architecture), name the tradeoff — don't silently pick one.
+- When multiple approaches exist, or a non-obvious choice is made (library, pattern,
+  architecture), name the tradeoff — don't silently pick one.
 
 ## While editing
 
-- Reuse existing code, helpers, patterns, and test setup before adding anything new.
 - Extend the existing owner of a concern; do not create a parallel module beside it.
-- Match the surrounding naming, idiom, and comment density.
 - Public surface is a decision: every new public name must be needed by a real caller.
   Everything else stays private by the language's convention.
-- Fix bugs at the root cause. Do not stack patches around a wrong premise. If a root-cause fix changes behavior outside the requested change, say so in the completion report.
-- Add an abstraction, adapter, or config layer only when required by an existing architectural boundary, a stated requirement, or a second real caller in this task.
+- Fix bugs at the root cause. If a root-cause fix changes behavior outside the requested
+  change, say so in the completion report.
+- Add an abstraction, adapter, config layer, or bespoke tool only when required by an
+  existing architectural boundary, a stated requirement, or a second real caller in this
+  task. Prefer general-purpose primitives until they have measurably failed.
+- Fix the source of truth, never a generated or distributed copy; then verify the
+  generator propagates the change (D40, D49).
 - Remove code you replace. Keep an old path only when compatibility is an explicit requirement.
-- Keep recipient-facing documentation accurate — docs are not "unrelated" cleanup.
-- Treat every workaround and scaffolding as temporary. Comment *why* it exists and when it can be removed.
+- Keep recipient-facing documentation accurate in the same change — docs are not
+  "unrelated" cleanup (D26).
+- Treat every workaround and scaffolding as temporary. Comment *why* it exists and when it
+  can be removed.
+
+## Scripts and CLIs that agents run
+
+- No interactive prompts. Accept input via flags, env vars, or stdin.
+- `--help` is the primary interface; document it there.
+- Structured output (JSON, CSV, TSV): data to stdout, diagnostics to stderr.
+- Idempotent, because agents retry. Support `--dry-run` for destructive or stateful operations.
+- Meaningful, documented exit codes.
+- Pin dependency versions; declare them inline where possible (PEP 723 with `uv run`,
+  Deno `npm:` imports) so the script runs with one command and no install step.
+- Control output size: harnesses truncate beyond 10–30K chars. Default to summaries and
+  pagination; support `--offset` if needed.
 
 ## Pause and confirm
 
-Read-only discovery of the local repository is always allowed. Get approval before:
+Read-only discovery of the local repository is always allowed. Approval Lou already gave
+for the task counts (D36, D54): under delegation, commit, merge, and tag freely, but never
+push, publish, or release without his say-so. Otherwise, get approval before:
 
-- Touching more than ~3 files or materially expanding the scope (if the change can't fit in ~3 files coherently, break the task into smaller tasks instead)
+- Touching more than ~3 files or materially expanding the scope. Name the files; if the
+  change can't fit in ~3 files coherently, propose a smaller split instead
 - Adding a dependency, framework, service, or test infrastructure
 - Changing a public API, schema, storage format, or wire format
 - Committing, pushing, opening PRs, deploying, running migrations, or writing to any external system
 - Accessing sensitive or production data, even read-only
-- Deleting or overwriting user data, discarding uncommitted work, rewriting history, or keeping two implementations of the same behavior alive
+- Deleting or overwriting user data, discarding uncommitted work, rewriting history, or
+  keeping two implementations of the same behavior alive
 
-## Git hygiene
-
-- Stage specific files for commit, not `git add -A`.
-- Never push to a remote without explicit user permission.
-- Write commit messages that explain *why*, not *what*.
+When committing: stage specific files, never `git add -A`; write messages that explain
+*why*, not *what*. Before a merge to main, tag the current state so it is easy to revert.
 
 ## Testing
 
-- Run the narrowest tests that exercise the change, then any broader check justified by the change's blast radius.
-- Add or update a test when behavior, an important invariant, failure handling, security, or data integrity changes — and only then. For a bug, first add a test that reproduces the failure when practical.
+- Run the narrowest tests that exercise the change, then any broader check justified by
+  the change's blast radius.
+- Add or update a test only when behavior, an important invariant, failure handling,
+  security, or data integrity changes. For a bug, first add a test that reproduces the
+  failure when practical. Do not backfill unrelated coverage or add test infrastructure
+  for this task alone.
 - Tests call the public interface. A test that must reach into private state signals a
   missing operation or a leaked concern.
 - Never skip, weaken, or delete a test or check to get green. Fix the code, or stop and say why.
-- Do not backfill unrelated coverage or introduce test infrastructure for this task alone.
-- Do not use passing tests as justification for extra abstractions or scope.
 
 ## Projects
 
@@ -128,11 +152,12 @@ acceptance criteria.
 ## Done means
 
 - The requested behavior works and the acceptance criteria are met
-- The project's own checks (tests, lint, typecheck) were run and their output read
-- Relevant checks pass, with the exact commands and results reported
+- The project's own checks (tests, lint, typecheck) were run and pass, with the exact
+  commands and results reported
 - The red-flag table above was walked against the diff; a violation that can't be fixed
   within the task's scope is reported with a proposed fix, not hidden
-- Every touched file is necessary for implementation, verification, or keeping recipient-facing documentation accurate; the diff contains nothing unrelated
-- No debug code, backup copies, dead paths, or scratch files remain
+- Every touched file is necessary for implementation, verification, or keeping
+  recipient-facing documentation accurate; no debug code, backup copies, dead paths, or
+  scratch files remain
 - Assumptions, limitations, and unverified runtime behavior are stated plainly
 - Edge cases worth covering are listed, even when no test was added
