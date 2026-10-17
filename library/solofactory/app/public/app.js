@@ -569,7 +569,7 @@ function renderJob() {
   if (job.state === "completed" && job.deployment?.status === "live") {
     $("#open-app").href = job.deployment.url;
     $("#open-app").classList.remove("hidden");
-    $("#app-live").textContent = "Live";
+    $("#app-live").textContent = job.waivedProofs?.length ? `Live · owner waived ${job.waivedProofs.map((bug) => bug.id).join(", ")}` : "Live";
     $("#app-live").classList.remove("muted");
   } else if (job.state === "completed") {
     $("#app-live").textContent = "Stopped";
@@ -672,7 +672,7 @@ function renderRecovery() {
     const button = document.createElement("button"); button.textContent = label; button.type = "button";
     button.addEventListener("click", async () => {
       button.disabled = true; clearError();
-      try { await api(`/api/jobs/${state.job.id}/${endpoint}`, { method: "POST", body: endpoint === "recovery-plan" ? { ...body, guidance: $("#recovery-plan-feedback")?.value ?? "" } : body }); await poll(); startPolling(); }
+      try { await api(`/api/jobs/${state.job.id}/${endpoint}`, { method: "POST", body: endpoint === "recovery-plan" ? { ...body, guidance: $("#recovery-plan-feedback")?.value ?? "" } : endpoint === "waive-proof" ? { ...body, reason: $("#recovery-plan-feedback")?.value ?? "" } : body }); await poll(); startPolling(); }
       catch (error) { showError(error); button.disabled = false; }
     }); features.append(button);
   };
@@ -682,6 +682,8 @@ function renderRecovery() {
   // The same admission the server applies: only the policy's planning steps (and revising a ready plan) offer the planner.
   else if (next?.action === "prepare-plan" || next?.action === "approve-plan") action("Prepare repair plan", "recovery-plan");
   if (next?.action === "approve-plan" && phase && next.alternatives?.some((item) => item.action === "amend-plan")) renderAmendment(features, next, phase, action);
+  // The reviewer's own test is faulty: the owner's note in the box above becomes the recorded reason.
+  for (const item of next?.alternatives?.filter((entry) => entry.action === "waive-proof") ?? []) { const hint = document.createElement("p"); hint.className = "muted"; hint.textContent = item.reason; features.append(hint); if (item.repairerNote) { const note = document.createElement("pre"); note.style.whiteSpace = "pre-wrap"; note.textContent = `Last repair turn said:\n${item.repairerNote}`; features.append(note); } action(item.label, "waive-proof", { proof: item.proof }); }
   // Owner-added specs join the run's inputs; the next plan, review or Resume sees them.
   if (next && !["none", "factory-fix"].includes(next.action)) {
     const label = document.createElement("label"); label.htmlFor = "input-file"; label.textContent = "Add a spec or prototype file";

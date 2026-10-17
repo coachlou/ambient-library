@@ -296,7 +296,11 @@ evidence; reopen it only when the integration or deploy audit shows it no longer
 This is release QA: report defects rather than fixing feature code. For each defect, write one
 node:test file under qa/ that fails because of it (the test name states the expected behavior), and
 add {test, files, description} to a bugs array in review-result.json: test is that file, files are
-the source files at fault. The controller hands each bug to the feature owning those files.`;
+the source files at fault. The controller hands each bug to the feature owning those files.
+A bug test is trusted as ground truth and the repairer may not edit it, so a faulty test parks the run. Run each
+test once before reporting it and confirm it fails because of the app, not the test harness. Node's fetch silently
+drops forbidden request headers (Host, Origin, Content-Length): when a bug depends on one, send the request with
+node:http and prove the header arrived (for example by echoing it from a stub server) before blaming the app.`;
 
 export function reviewPrompt({ featureReviewed = false } = {}) {
   return `You are the final implementation reviewer. Audit the current app against every
@@ -318,6 +322,8 @@ and any integration-proof obligation keyed <plan>:<feature>/<obligation>). statu
 verification artifact files for passing checks. Cite executed test/browser evidence and
 supporting test files; source constants alone do not prove user behavior. Do not cite the
 verdict/request themselves, owner data, node_modules, or files outside the project.
+A spec naming a Node major at or below the controller's (plan-request.json toolchain) is satisfied by it:
+never block on that mismatch.
 A missing capability, missing required visual evidence, incomplete test coverage or unresolved
 finding must yield verdict:"blocked" and a non-pass check. Review every additional requirement
 in PRD/ACCEPTANCE and every source file review-request.json lists (attached specs and prototype
@@ -434,7 +440,8 @@ file; the controller blocks execution if anything outside the plan changes. Inve
 native-package, runtime or tool compatibility read-only when a feature depends on it, and record
 the result under compatibility. A tool you cannot confirm is "blocked" — never invent a pass.
 The controller's Node (plan-request.json toolchain) and its npm run every gate, so they need no
-compatibility entry unless a feature needs a different version.
+compatibility entry unless a feature needs a different version. A spec that names a Node major at or
+below the controller's (Node 24 on a Node 26 controller) is satisfied by it: never mark that blocked.
 
 Schema:
 ${FEATURE_PLAN_SCHEMA}
@@ -452,6 +459,9 @@ Rules the controller enforces:
 - A feature with an empty closes is a named prerequisite: it needs its own observable acceptance
   and proof, and a later closing feature must depend on it.
 - Every feature declares writes: the paths, directories or globs it creates or edits, tests included.
+- An earlier feature's test must not pin behavior a later feature changes (run df6500ce: F1's test required 404 on a
+  route F2 turned into a 303, and F2 could not edit it). Write each test to assert only its own feature's contract; when
+  a later feature must change an earlier test's expectation, list that test file in the later feature's writes.
   List every file its obligations need changed, the UI files included. Features with no dependsOn path
   between them must write different files, so two features that need the same file get a dependsOn. package.json and factory.json belong to a foundation feature (one
   with no dependsOn), so put every dependency there. .factory/, package-lock.json, README.md and
