@@ -204,7 +204,7 @@
     {
       "name": "init-dev-project",
       "source": "./library/init-dev-project",
-      "description": "Scaffolds a folder into the dev-and-deploy standard (lanes, four make verbs, spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the standard as a reference) and makes it a git repo; use for \"init a dev project\", \"scaffold a new project\", \"set up a repo for X\", \"new skill/tool/app folder\", \"start a project the standard way\"."
+      "description": "Scaffolds a folder into the dev-and-deploy standard (lanes, make verbs with a release lane, spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the standard as a reference) and makes it a git repo; use for \"init a dev project\", \"scaffold a new project\", \"set up a repo for X\", \"new skill/tool/app folder\", \"start a project the standard way\"."
     },
     {
       "name": "ireport",
@@ -265,6 +265,11 @@
       "name": "publish-article",
       "source": "./library/publish-article",
       "description": "Publishes a finished Markdown article to aimmhub.coachlou.com (KB ingest, deploy, verify); use for \"publish this article\", \"get this online\", \"put it on the hub\". Not for writing or editing."
+    },
+    {
+      "name": "release-lane",
+      "source": "./library/release-lane",
+      "description": "Moves work through the release loop (checkpoint commits, status, optional system test, release candidates to staging, a UAT issue log, promotion to production) with each project's commands in .aai/skills/release-lane/project.toml; use for \"checkpoint this\", \"cut an rc\", \"send it to testers\", \"log this bug from testing\", \"is it stable\", \"release it\"."
     },
     {
       "name": "researcher",

@@ -2686,37 +2686,35 @@ vibe:
   stage: build
   source_hash: 3a8ebb664f4e
 init-dev-project:
-  description: Scaffolds a folder into the dev-and-deploy standard (lanes, four make verbs,
-    spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the standard as a
-    reference) and makes it a git repo; use for "init a dev project", "scaffold a new project",
-    "set up a repo for X", "new skill/tool/app folder", "start a project the standard way".
-  summary: 'Scaffolds an empty or partially-populated folder into the "dev-and-deploy" standard
-    and turns it into a git repo. Inputs: a target path (created if missing, else the cwd),
-    a project name (defaults to folder basename), a one-sentence description, and an optional
-    `--kind` (`skill`, `skill-app`, `tool`, `web`/`service`/`project`) — passed only when
-    the user''s words name one; otherwise the script sniffs `SKILL.md`, `manifest.json`, `bridge/`,
-    `wrangler.*`, `Dockerfile`, `vercel.json` and falls back to the web layout. Runs `scripts/init_dev_project.py`
-    (flags: `--dry-run`, `--no-git`, `--json`) and emits README, VERSION (0.0.0), CHANGELOG,
-    Makefile (four verbs, gates), .gitignore, `AGENTS.md` + `CLAUDE.md` discovery anchors,
-    `deploy/SHIPLIST` (kind-selected), `spec/SPEC.md` with TODO placeholders that make `make
-    check` fail by design, and a `.aai/` scaffold — instructions, identity, purpose, context,
-    checkpoint, HANDOFF, plus a version-stamped `references/dev-standard.md` that governs
-    the project thereafter. Then `git init -b main`, one commit, tag `v0.0.0` — only outside
-    an existing repo; inside one it leaves git alone and names the repo. Refuses to overwrite
-    (fills missing files only, re-runnable), never adds a remote or pushes, never stacks a
-    duplicate anchor, never creates empty `src/`, `tests/`, `docs/`, `tools/`, never runs
-    ambient-folder''s Stamp. Interviewing is opt-in: with `--interview` it hands off to ambient-folder''s
-    Incept to rewrite identity and purpose. Stage zero — the first command before any code,
-    spec, or WBS.'
+  description: Scaffolds a folder into the dev-and-deploy standard (lanes, make verbs with
+    a release lane, spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the
+    standard as a reference) and makes it a git repo; use for "init a dev project", "scaffold
+    a new project", "set up a repo for X", "new skill/tool/app folder", "start a project the
+    standard way".
+  summary: 'Setup-stage scaffolder: turns a target folder, new or existing, into a project
+    under the dev-and-deploy standard and makes it a git repo. Inputs are a target path (created
+    if missing, else the current folder), --name (defaults to the basename), a one-sentence
+    --description taken from the request, and an optional --kind (skill, skill-app, tool,
+    web). Without --kind it detects the kind from files already present (SKILL.md, manifest.json,
+    bridge/, wrangler/Dockerfile/vercel.json) and falls back to the web layout. Tools are
+    never detected. It asks no questions. It produces README, VERSION 0.0.0, CHANGELOG, a
+    Makefile with fixed verbs and gates (check, rc, uat, release, deploy), AGENTS.md as the
+    discovery anchor with CLAUDE.md redirecting to it, deploy/SHIPLIST chosen by kind, deploy/README,
+    spec/SPEC.md placeholders, tests/acceptance/UAT.md, the vendored .ailib/release-lane/
+    gates, and .aai/ (instructions, identity, purpose, context, checkpoint, HANDOFF, and a
+    stamped dev-standard.md). It runs git init -b main with one commit and a v0.0.0 tag only
+    when the folder is outside any repo. Refusals: it never overwrites or re-scaffolds, never
+    adds a remote or pushes, never stubs make check to pass, never pre-creates src/docs/tools,
+    and never runs ambient-folder Stamp. Its interview is opt-in only (ambient-folder Incept,
+    rewriting only identity and purpose). After setup, release-lane runs the loop.'
   requests:
-  - init a dev project here
-  - scaffold a new project for a Slack digest tool
-  - set up a repo for this folder the standard way
-  - new skill folder called gears-reporter
-  - start a CLI tool project in ~/code/tsv-sort
-  - make this an actual repo with a Makefile and a ship list
-  - I'm starting a web app from scratch — give me the standard layout
-  - stamp the dev standard on this directory and git init it
+  - init a dev project in ~/code/invoice-parser
+  - scaffold a new project for a CLI tool that syncs my bookmarks
+  - set up a repo for a Cloudflare worker that proxies my API
+  - start a new skill folder the standard way
+  - new skill with a dashboard, call it habit-board
+  - make this existing folder follow the dev-and-deploy standard and git init it
+  - give me the standard layout with make verbs and a release lane for this app
   not_for:
   - ambient-folder: wins when the user wants a folder made ambiently intelligent through an
       interview about purpose, or maintained afterwards, rather than given the dev layout.
@@ -2728,8 +2726,58 @@ init-dev-project:
       controller, not just the folder scaffold.
   - grill-with-prototype: wins when the spec has to be produced through a live prototype interview
       before any scaffolding matters.
+  - release-lane: the project is already scaffolded and the user wants to checkpoint, cut
+      an rc, log UAT bugs, or promote to production
+  - solofactory: the user wants an interview-to-PRD-to-build software factory running over
+      many projects, not a single repo's skeleton
+  - create-appskill: the user wants a skill's content designed and written (brief, steps,
+      evals), not just its folder and release scaffolding
   stage: setup
-  source_hash: 7d611f308486
+  source_hash: 3079fcd81fe0
+release-lane:
+  description: Moves work through the release loop (checkpoint commits, status, optional system
+    test, release candidates to staging, a UAT issue log, promotion to production) with each
+    project's commands in .aai/skills/release-lane/project.toml; use for "checkpoint this",
+    "cut an rc", "send it to testers", "log this bug from testing", "is it stable", "release
+    it".
+  summary: 'Runs the release loop for a project that is already scaffolded and under git:
+    checkpoint commits (repeat) → optional systest → release candidate → staging plus testers
+    → UAT issue log (fixes go back through checkpoint, then another rc) → promotion to production.
+    Inputs: a git repo, the release_lane.py script (from .ailib/ or the plugin root), and
+    a data-only .aai/skills/release-lane/project.toml that holds each project''s check, accept,
+    deploy, changelog and version_files settings. Never fork the skill per project; change
+    the config. The script asserts every gate it can check. Exit 1 means a gate held and is
+    reported to the user, not edited around. Exit 2 means the config is broken. Artifacts:
+    commits on a non-main branch, changelog "Unreleased" lines, vX.Y.Z-rc.N tags, tests/acceptance/runs/<date>.md
+    reports, a UAT log table (id, reporter, rc, severity, status, commit), drafted tester
+    notes and announcements, a --no-ff merge to main, and a release tag whose tree must match
+    the last rc. Read-only status adds a docs-drift report. It won''t push, merge, deploy,
+    message testers or users, defer an issue, or delete a branch without a yes in chat for
+    each one. It won''t work around wrong install docs; those become UAT issues. Projects
+    without testers skip rc and release in one step. Stage: after build and before and through
+    production rollout.'
+  requests:
+  - Checkpoint this. Commit what I've got on the feature branch.
+  - Cut an rc and push it to staging.
+  - Send the new candidate to the testers.
+  - Log this bug Maria found in rc.2. It's a blocker.
+  - Is it stable enough to ship yet?
+  - Release it to production and tag it.
+  - What's changed since the last tag, and are the docs out of date?
+  - Run a system test before we cut the candidate.
+  not_for:
+  - checkpoint: wins when "checkpoint" means saving conversation context before /compact or
+      a handoff, not a git commit
+  - init-dev-project: wins when the folder still needs scaffolding into the dev-and-deploy
+      standard before any release loop exists
+  - tinkerbuild: wins for a personal app built inside its own idea-to-QA factory loop, where
+      "release my app" is that factory's last step
+  - wrap: wins for an end-of-session ritual (commit, export, handoff, memory harvest) rather
+      than moving a version toward production
+  - to-issues: wins when a plan or PRD needs breaking into tracker tickets, not when bugs
+      found in UAT get logged against an rc
+  stage: release
+  source_hash: 91ba0d87cc2c
 tinkerbuild:
   description: 'Personal-app software factory: idea to UI to walking skeleton, then a no-HITL
     build/check loop for features and fixes, light testing, and a pre-release QA pass; harness-agnostic

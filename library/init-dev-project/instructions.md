@@ -18,8 +18,14 @@ from then on.
   left untouched and the report names the repo; commit there. It never adds a
   remote and never pushes.
 - Only the root files, `Makefile`, `CLAUDE.md`, `AGENTS.md`, `deploy/SHIPLIST`,
-  `spec/SPEC.md`, and `.aai/` are created. `src/`, `tests/`, `docs/`, `tools/` appear on first use, by hand. An empty
-  folder is the first sign of a template that is too heavy.
+  `deploy/README.md`, `spec/SPEC.md`, `tests/acceptance/UAT.md`, and `.aai/` are
+  created, plus the vendored `.ailib/release-lane/` (with `GEMINI.md` and
+  `.ailib/manifest.yaml`, written by ambient-folder's `install.sh`). The Makefile's
+  `rc`, `uat`, `release` and `deploy` run that vendored script, so it lands before the
+  first commit. Without `ambient-folder/` and `release-lane/` beside this skill (a
+  standalone install), the report says so and those verbs fail until it is vendored.
+  `src/`, `docs/`, `tools/` appear on first use, by hand. An empty folder is the first
+  sign of a template that is too heavy.
 
 ## Process
 
@@ -38,7 +44,7 @@ from then on.
    Run with `--dry-run` first only when the folder already has files.
 3. **Report** — *code*. Print the script's summary: the kind and why
    (`given`, `found SKILL.md`, or `nothing to detect`), files created, files
-   skipped, git state. If the kind looks wrong for what the user asked, say so
+   skipped, release-lane state, git state. If the kind looks wrong for what the user asked, say so
    now; the ship list is the one file to fix. Then tell the user the next command is `make` inside
    the folder.
 4. **`--interview` (opt-in only)** — *inference*. If the user asked for an
@@ -55,7 +61,10 @@ from then on.
 ├── AGENTS.md                the canonical discovery anchor: read .aai/instructions.md
 ├── CLAUDE.md                redirect to AGENTS.md (Claude Code auto-loads this, not AGENTS.md)
 ├── deploy/SHIPLIST          picked by --kind (standard §4); edit to match the real layout
+├── deploy/README.md         staging and production targets + rollback (TODO until the first deploy)
 ├── spec/SPEC.md             TODO: placeholders; `make check` fails until they are filled
+├── tests/acceptance/UAT.md  user-testing log; `make uat` reads it
+├── .ailib/release-lane/     vendored gates for rc / uat / release / deploy (re-run install.sh to update)
 └── .aai/
     ├── instructions.md      behavior of a project under the standard
     ├── identity.md          general development harness (edit as the build progresses)
@@ -73,8 +82,10 @@ from then on.
   Without `--kind`, detection is: `SKILL.md` + `manifest.json` + `bridge/` →
   skill-app; `SKILL.md` → skill; `wrangler.*`, `Dockerfile` or `vercel.json` →
   web; nothing → project (web layout). Tools are never detected.
-  The Makefile verbs and gates are the same for every kind; recipe bodies are
-  filled in by hand when `make run` is first needed.
+  The Makefile verbs and gates are the same for every kind; recipe bodies
+  (`run`, `check`, `accept`, `ship`) are filled in by hand when first needed.
+  Per-project gate commands that differ from the Makefile defaults go in
+  `.aai/skills/release-lane/project.toml`, never in a fork of the lane.
 - `make check` fails until the project defines it. A gate that passes with
   nothing behind it is a false green; do not "fix" the stub to exit 0.
 - The anchors are what makes `.aai/` discoverable: without one, an agent whose

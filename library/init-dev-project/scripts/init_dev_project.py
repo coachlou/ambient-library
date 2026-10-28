@@ -9,7 +9,7 @@ any git repo, runs `git init -b main`, commits the scaffold and tags v0.0.0.
 Inside an existing repo (its own or a parent's, like the incubator) git is left
 untouched: no nested repo, no commit. Never adds a remote, never pushes.
 
-Exit codes: 0 ok, 1 bad arguments or template missing, 2 git failed.
+Exit codes: 0 ok, 1 bad arguments or template missing, 2 git or release-lane vendoring failed.
 """
 import argparse, datetime, json, os, subprocess, sys
 
@@ -17,6 +17,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SKILL = os.path.dirname(HERE)
 TEMPLATES = os.path.join(SKILL, "templates", "project")
 STANDARD = os.path.join(SKILL, "references", "standard.md")
+# The Makefile's rc/uat/release/deploy run release-lane from .ailib/; ambient-folder vendors it.
+INSTALL = os.path.join(SKILL, "..", "ambient-folder", "install.sh")
 
 # Standard §4: per kind, what ships and where the source lives (the map's BUILD row).
 # Any other kind (web, service, project, ...) gets the web layout.
@@ -168,6 +170,21 @@ def main():
             with open(dst, "a") as f:
                 f.write(block)
 
+    # Vendored before the first commit so v0.0.0 already carries the lane.
+    lane = os.path.join(root, ".ailib", "release-lane")
+    if os.path.isdir(lane):
+        vendored = "present; left as is"
+    elif not os.path.isfile(INSTALL) or not os.path.isdir(os.path.join(SKILL, "..", "release-lane")):
+        vendored = "not vendored: no ambient-folder/release-lane beside this skill; run ambient-folder's install.sh release-lane <path>"
+    elif a.dry_run:
+        vendored = "would vendor .ailib/release-lane/"
+    else:
+        r = subprocess.run(["bash", INSTALL, "release-lane", root], capture_output=True, text=True)
+        if r.returncode:
+            print(r.stdout + r.stderr, file=sys.stderr)
+            return 2
+        vendored = "vendored .ailib/release-lane/"
+
     git = "skipped"
     repo = None if a.no_git else enclosing_repo(root)
     if a.no_git:
@@ -191,7 +208,7 @@ def main():
         git = "would initialize"
 
     summary = {"path": root, "name": name, "kind": a.kind, "kind_reason": kind_reason, "dry_run": a.dry_run,
-               "created": created, "appended": appended, "skipped": skipped, "git": git}
+               "created": created, "appended": appended, "skipped": skipped, "release_lane": vendored, "git": git}
     if a.json:
         print(json.dumps(summary, indent=2))
     else:
@@ -201,6 +218,7 @@ def main():
         print(f"  kind: {a.kind} ({kind_reason})")
         print(f"  {verb}: {len(created)}  {appended_verb}: {len(appended)}"
               f"  skipped (exists): {len(skipped)}  git: {git}")
+        print(f"  release-lane: {vendored}")
         for r in created:
             print(f"  + {r}")
         for r in appended:

@@ -1,0 +1,11 @@
+{
+  "name": "release-lane",
+  "description": "Moves work through the release loop (checkpoint commits, status, optional system test, release candidates to staging, a UAT issue log, promotion to production) with each project's commands in .aai/skills/release-lane/project.toml; use for \"checkpoint this\", \"cut an rc\", \"send it to testers\", \"log this bug from testing\", \"is it stable\", \"release it\".",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}

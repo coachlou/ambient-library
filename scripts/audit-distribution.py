@@ -50,6 +50,7 @@ TUNED_DESCRIPTIONS = {
     "chat-n-build": "3f7ee5193e45",  # more trigger examples + not-for negatives
     "checkpoint": "776f42fe228c",  # spells out all three modes and their triggers
     "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
+    "release-lane": "8fabddc53808",  # lists every mode's trigger phrases
 }
 
 

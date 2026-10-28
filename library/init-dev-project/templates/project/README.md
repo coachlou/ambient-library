@@ -13,6 +13,7 @@ make run
 
 ## Deploy
 
-Target: not chosen yet. When it is, name it here and put its config in `deploy/<target>/`.
+Two channels: `staging` (release candidates, for testers) and `production` (releases).
+Targets and rollback: `deploy/README.md`. Per-target config goes in `deploy/<target>/`.
 
 Governed by `.aai/references/dev-standard.md`.

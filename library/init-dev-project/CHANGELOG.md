@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0 — 2026-10-28
+- Release candidates and user testing. The scaffold vendors `release-lane` into `.ailib/release-lane/` and the Makefile's `rc`, `uat`, `release` and `deploy` call it. `make rc` cuts `vX.Y.Z-rc.N` for staging, `make uat` reads the new `tests/acceptance/UAT.md`, and `make release` promotes the last rc on `main`. `deploy` takes `CHANNEL=staging|production`, and the new `deploy/README.md` names both targets.
+- CHANGELOG `## Unreleased` replaces `NOTE=`. Merges to `main` are `--no-ff`. Per-project paths and commands go in `.aai/skills/release-lane/project.toml`. Standard decision 12.
+
 ## v0.4.0 — 2026-10-07
 - The scaffold writes the `AGENTS.md` canonical block and the `CLAUDE.md` redirect, so a scaffolded folder's `.aai/` is discoverable by agents that aren't already routed to it. Existing adapter files are appended to, never overwritten; the shared "ambient folder" phrase keeps `ambient-folder/install.sh` from writing a second anchor. Standard decision 11.
 

@@ -1,7 +1,7 @@
 # Dev and deploy standard
 
 One standard for skills, tools, skill-apps, and web apps. It names the lanes a
-project moves through, the four verbs every repo answers to, and the six files
+project moves through, the verbs every repo answers to, and the six files
 every repo carries. It is not a factory. You have built five factories
 (software-dev-factory, recursive-development, agentic-state-harness,
 grokbot ADLC studio, vibe-skilling); this reuses their surviving parts.
@@ -32,6 +32,11 @@ idea ──▶ studio ──▶ release ──▶ deploy ──▶ maintain
           checking)    you say so)   README)        session)
 ```
 
+With testers, release has two steps: `make rc` cuts a candidate for staging,
+testers log issues in `tests/acceptance/UAT.md`, fixes go back through studio
+and a new rc, and `make release` promotes the last rc once `make uat` passes.
+Without testers, `make release` alone still bumps, accepts and tags in one step.
+
 This is vibe-skilling decision 5, applied to everything. Studio and release
 are different modes, not phases; per-request checks in studio never substitute
 for the cold end-to-end run in release.
@@ -43,13 +48,21 @@ for the cold end-to-end run in release.
 | spec exit | `make spec` (run by `make check`) | `spec/SPEC.md` exists and no line starts with `TODO:`; each example in it has a test |
 | studio entry | `make run` | it starts and you can touch it |
 | release entry | `make check` | the candidate builds from `deploy/SHIPLIST`, then lint + unit + smoke pass, locally, in under a minute |
-| release exit | `make release BUMP=patch` | VERSION bumped, then acceptance passes on the candidate built with that VERSION, then CHANGELOG line, commit, tag on `main`. A failed acceptance restores VERSION and tags nothing |
-| deploy exit | `make deploy` | one smoke request against the deployed instance reports the released version, and `deploy/README.md` names the rollback |
+| candidate | `make rc BUMP=patch` | `## Unreleased` has a line; check passes; VERSION bumped once (rc.1 only), acceptance passes on that candidate, tag `vX.Y.Z-rc.N`. A failed acceptance restores VERSION and tags nothing |
+| user testing | `make uat` | `tests/acceptance/UAT.md` has no open blocker and no open major that is not `deferred` |
+| release exit | `make release BUMP=patch` | on `main`, `make uat` passes and HEAD's tree equals the last rc, acceptance passes again, `## Unreleased` is dated, tag `vX.Y.Z` on `main`. With no rc it bumps, accepts and tags in one step; a failed acceptance restores VERSION and tags nothing |
+| deploy exit | `make deploy CHANNEL=staging\|production` | clean tree, HEAD carries the channel's tag (rc for staging, release for production), one smoke request against the deployed instance reports the version, and `deploy/README.md` names both targets and their rollback |
+
+`rc`, `uat`, `release` and `deploy` run `release-lane`, vendored at
+`.ailib/release-lane/`. A project whose paths or commands differ sets them in
+`.aai/skills/release-lane/project.toml`; it never forks the lane.
 
 ## 3. Repo layout — one folder per concern
 
 Two questions decide where a file goes: **who reads it** (human, agent, or
-machine) and **does it ship**. Folders are created on first use, not up front.
+machine) and **does it ship**. Folders are created on first use, not up front,
+except the few files a gate reads (`spec/SPEC.md`, `deploy/SHIPLIST`,
+`deploy/README.md`, `tests/acceptance/UAT.md`), which the scaffold writes.
 An empty folder is the first sign of a template that is too heavy.
 
 ```
@@ -72,7 +85,9 @@ An empty folder is the first sign of a template that is too heavy.
 │   ├── unit/              dev test: fast, pure, every `make check`
 │   ├── smoke/             dev test: does it start, does one button round-trip
 │   └── acceptance/        production test: end-to-end on the built candidate,
-│                          real target. Only in `make release`, before the tag.
+│                          real target. In `make rc` and `make release` before
+│                          the tag, or alone as `make accept`. UAT.md is the
+│                          user-testing log `make uat` reads.
 │                          Cold run on a second model only where it has caught
 │                          a real failure; it is not charged to every release.
 │
@@ -80,7 +95,7 @@ An empty folder is the first sign of a template that is too heavy.
 │   ├── SHIPLIST           what ships, one path per line. `make build` copies
 │   │                      exactly this into build/candidate and fails on any gap
 │   ├── <target>/          cloudflare/  docker/  library/  — one is active
-│   └── README.md          which target is live, how to roll back
+│   └── README.md          staging and production targets, how to roll back each
 │
 │   BESIDE IT — by audience, no order
 │
@@ -101,9 +116,10 @@ An empty folder is the first sign of a template that is too heavy.
                            logs. Safe to delete at any time. Both gitignored.
 ```
 
-### The four verbs
+### The verbs
 
-The Makefile is the pipeline: `run`, `check`, `release`, `deploy`. `make` alone
+The Makefile is the pipeline: `run`, `check`, `rc`, `uat`, `release`, `deploy`,
+with `accept` callable alone and `ship` as the per-target body `deploy` calls. `make` alone
 prints the numbered pipeline map from §3. Targets call whatever tools the project already has (`lint_app.py`,
 `smoke.py`, `try_app.py`, `package_app.py`, `wrangler deploy`, `docker compose
 up`). A new kind of project changes the recipe bodies, never the verb names.
@@ -115,8 +131,8 @@ up`). A new kind of project changes the recipe bodies, never the verb names.
   do not. If they drift, one of them is wrong; fix that one, never let both
   float.
 - **Tests split by cost and stage, not by module.** Unit and smoke run in studio
-  on every `make check`; they are fast and local. Acceptance runs only in
-  `make release`, after the version bump, against the candidate `build/`
+  on every `make check`; they are fast and local. Acceptance runs in `make rc`
+  and `make release`, after the version bump, against the candidate `build/`
   produces, so the artifact that passed is the artifact that is tagged. The tag is cut
   only after it passes. `try_app` transcripts are acceptance tests and live in
   `tests/acceptance/`, not in `build/`.
@@ -163,12 +179,17 @@ anything the root `.gitignore` names, so caches never reach the candidate.
 ## 5. Versioning and git
 
 - One version, one file (`VERSION`, or the single manifest the platform forces:
-  `package.json`, `pyproject.toml`, `manifest.json`). `make release` reads it,
-  bumps it, and rewrites every copy that must match. No hand edits in N places.
+  `package.json`, `pyproject.toml`, `manifest.json`). `make rc` (or `make
+  release` without an rc) reads it, bumps it, and rewrites every copy that must
+  match. No hand edits in N places. VERSION is the final version from rc.1 on;
+  the rc number lives only in the tag `vX.Y.Z-rc.N`.
 - `main` is always releasable. Work on `claude/*` or `feat/*` in a worktree.
-  Squash-merge, delete the branch, delete the worktree, tag on `main`.
-- Every tag gets a CHANGELOG line. Pushing tags is a deliberate `make release
-  PUSH=1`, never implicit.
+  rc tags are cut on the branch; merge to `main` with `--no-ff` so the last rc
+  stays an ancestor of the release, then tag on `main`. Delete the branch and
+  the worktree after.
+- Every behavior change adds a line under `## Unreleased` in CHANGELOG.md as it
+  lands; `make release` dates that section. Nothing in the pipeline pushes;
+  pushing a branch or tag is its own deliberate step.
 - `.aai/HANDOFF.md` is rewritten, not appended, at the end of every session;
   history is in git.
 
@@ -179,8 +200,9 @@ anything the root `.gitignore` names, so caches never reach the candidate.
 - No CI until a repo has a second committer. Local `make check` before tag is
   the CI.
 - No new tooling. The scaffold skill in this folder drops the root files, a
-  Makefile with four stub targets, `spec/SPEC.md`, and `.aai/`. Other folders
-  appear on first use. That is its whole job.
+  Makefile whose project-specific recipes are failing stubs, the gate files of
+  §3, `.aai/`, and the vendored release-lane. Other folders appear on first use.
+  That is its whole job.
 
 ## Decisions
 
@@ -234,3 +256,14 @@ anything the root `.gitignore` names, so caches never reach the candidate.
    `AGENTS.md`, `CLAUDE.md` redirects to it, and both carry the phrase
    "ambient folder" so `ambient-folder/install.sh` sees an anchor already
    present and writes no duplicate.
+12. v0.5.0 (2026-10-28): release candidates and user testing. Testers need a
+   build that is not yet the release, and the old one-step `make release` had
+   no place for it. `make rc` bumps once and tags `vX.Y.Z-rc.N`; fixes fold
+   into the same version as rc.2, rc.3. `make uat` reads the UAT log;
+   `make release` promotes only on `main`, with uat passing and HEAD's tree
+   equal to the last rc, which is why merges are `--no-ff` (rule C) instead of
+   squash. `## Unreleased` replaces `NOTE=`, so the changelog is written as the
+   work lands. The gates moved into the `release-lane` skill, vendored per
+   project, so the how is canonical and each project's who and where is a
+   config file. Piloted on a fresh scaffold: rc.1 to staging, uat, `--no-ff`
+   merge, release with the changelog dated, production.
