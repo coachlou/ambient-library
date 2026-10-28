@@ -2824,6 +2824,51 @@ tinkerbuild:
       standard (lanes, make verbs, spec/src/tests layout) with no build loop.
   stage: build
   source_hash: edb79fd51505
+session-observatory:
+  description: Builds a Langfuse-style observability dashboard from local AI coding session
+    logs (Claude Code + Codex) for the last 7 days — stdlib-only parser, single-file HTML
+    dashboard, data-driven config proposals; use for "session observatory", "build observability
+    dashboard", "parse session logs", "harness dashboard", "what did my sessions look like".
+  summary: 'Builds a Langfuse-style observability dashboard from local AI coding session logs
+    covering the last 7 days. It reads Claude Code JSONL from ~/.claude/projects/*/*.jsonl,
+    including subagent logs under subagents/, and Codex JSONL from ~/.codex/sessions/. A stdlib-only
+    Python parser (parse_sessions.py, run with python3 -I) extracts for each session: harness,
+    project, start/end, models, sanitized prompt snippets, paired tool calls with durations
+    and error types, tokens by model and day (uncached input, output, cache read, cache write),
+    and kind (interactive, automated or subagent). It also classifies the task type from the
+    first typed prompt. It aggregates everything into harness-summary.json: latency percentiles,
+    failures by tool and error type, retry storms of 3+ consecutive same-tool failures, top
+    token and duration sinks, and per-project details. The output is a single-file dashboard.html
+    with the data spliced in by string index, never regex. It has a reactive summary strip
+    and Traces, Projects, Tokens, Models, Latency, Errors, Health and Report tabs. The Report
+    tab has Approve/Hold/Reject decisions stored in an artifact db. The skill then writes
+    HARNESS.md, which proposes model routing, tool keep/fix/cut, new skills, guardrails and
+    budget changes based on the data. Proposals stay unapproved until the user approves them.
+    The skill never prints secrets, keys or full prompt text; snippets are capped at 10 words
+    with paths, URLs and ids redacted. Output goes to ~/Downloads/ai-observability/. Stage:
+    audit and operate. It runs weekly as the harness-tuning feedback loop.'
+  requests:
+  - Build me an observability dashboard from my Claude Code and Codex sessions this week
+  - Run the session observatory
+  - What did my AI coding sessions look like over the last 7 days?
+  - Which tools are failing most and where are my retry storms?
+  - Parse my session logs and tell me which projects burned the most tokens
+  - Give me a harness dashboard with latency per tool and error rates
+  - Look at my session data and propose CLAUDE.md guardrails and model routing changes
+  - Do the weekly harness report so I can approve or reject the recommendations
+  not_for:
+  - token-activity-graph: wins when the user only wants a token-usage or cost graph by day,
+      app and model with live pricing, with no tool, error, latency or trace analysis
+  - deep-mirror: wins when the session logs are being mined for the user's cognitive profile
+      or decision patterns rather than for harness performance and reliability
+  - capture-chat: wins when the user wants to export or archive one conversation as markdown,
+      not analyze many sessions' telemetry
+  - chat-n-build: wins when the user wants a live local dashboard they drive by talking to
+      the agent for an arbitrary process, not a static, rebuilt-weekly report on session logs
+  - project-index: wins when the question is "what have I been working on" across folders
+      on disk, answered from directory contents rather than session logs
+  stage: audit
+  source_hash: 8862968fbc6a
 create-appskill:
   description: 'Creates and improves skills and app-skills (conversational orchestrator skills
     routing to bundled scripts, references, sub-skills and subagents): routing gate, Skill/App

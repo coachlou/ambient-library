@@ -282,6 +282,11 @@
       "description": "Runs session check-in/check-out against a project's .context/ store; use for \"what should I work on\", \"resume work\", \"checkpoint\", \"session check-in/check-out\". Requires (or offers to bootstrap) a .context/ directory."
     },
     {
+      "name": "session-observatory",
+      "source": "./library/session-observatory",
+      "description": "Builds a Langfuse-style observability dashboard from local AI coding session logs (Claude Code + Codex) for the last 7 days — stdlib-only parser, single-file HTML dashboard, data-driven config proposals; use for \"session observatory\", \"build observability dashboard\", \"parse session logs\", \"harness dashboard\", \"what did my sessions look like\"."
+    },
+    {
       "name": "skill-auditor",
       "source": "./library/skill-auditor",
       "description": "Audits a skill's SKILL.md frontmatter, catalog.yaml projection, references, and evals shape against the library schema, reporting ordered actionable findings; use for \"audit this skill\", \"does X follow the schema\", \"lint X against the catalog\", \"check X before I publish it\"."

@@ -33,6 +33,7 @@ until the router reads one. Optionally scope which a project uses via
 | **writing-team** | Full research → draft → edit pipeline to a publish-ready piece | *"Write me an article on X end to end"* |
 | **context-mgr** | Installs the multi-agent `.context/` continuity system into a project | *"Install context-mgr"*, *"Set up multi-agent context here"* |
 | **session** | Session check-in/check-out against a project's `.context/` store | *"What should I work on"*, *"Checkpoint"* |
+| **session-observatory** | Builds a weekly observability dashboard and harness proposals from local Claude Code and Codex session logs | *"Run the session observatory"*, *"What did my sessions look like?"* |
 | **checkpoint** | Preserves conversation context across compaction — distills state into the project's `.aai/checkpoint.md` before `/compact`, or runs the `.context/` handoff protocol | *"Checkpoint"*, *"Before I compact"*, *"Save context before clearing"* |
 | **capture-chat** | Exports a chat conversation/session as portable markdown — conversation only or with artifacts — into the `.aai` session archive | *"Export this conversation"*, *"Capture this chat"*, *"Save this session"* |
 | **chat-n-build** | Live local dashboard driven by chat: the agent keeps a process's state on screen via the `dash` CLI, answers button clicks, builds sandboxed custom widgets, and skillifies the process | *"Fire up a dashboard for my X"*, *"Show this on the dashboard"*, *"Turn this process into a skill"* |
