@@ -2445,28 +2445,33 @@ solofactory:
     → PRD → subscription-backed build → gates → local deploy) as a folder's agentic function
     with each project a git repo under projects/ or the root; use for "set up solofactory
     here", "make this folder a software factory", "start the factory", "update my solofactory".
-  summary: 'Installs and operates SoloFactory, a local-first software factory that turns a
-    folder into a workspace where an owner can go from idea to running app. The flow is an
-    interview guide, a frozen PRD, plan and acceptance contract, a build using the owner''s
-    own signed-in Codex or Claude Code subscription, deterministic gates, and a local deploy
-    on localhost. No API keys are requested or stored. Install uses the ambient-folder installer
-    to write .aai/ (owned), a vendored .ailib/solofactory with run.sh and the bundled app/,
-    a root start.sh, and projects/ with one workspace per project; re-running updates .ailib
-    without touching .aai or projects. Operation starts the factory UI at 127.0.0.1:4173,
-    selects a project, and inspects state through .aai/*.md, git log and .solofactory/runs.
-    When the owner talks to it in chat ("hey solofactory", "how''s my app", "add X to my app",
-    a bare option number), it follows drive.md and offers only numbered options the factory
-    can really do. Needs Node 22+ and a signed-in CLI. It never starts a real build without
-    explicit go-ahead since builds spend quota (SOLOFACTORY_DEMO=1 is free), never edits .ailib
-    in a target folder, and never installs into the library repo. Stage: setup and operate.'
+  summary: 'Installs SoloFactory into a target folder and then operates it. SoloFactory is
+    a local-first software factory that runs interview → frozen PRD/plan/acceptance contract
+    → build → deterministic gates → localhost deploy. The build uses the owner''s own signed-in
+    Codex or Claude Code CLI subscription and never asks for or stores API keys. Inputs: a
+    target folder (cwd by default), Node 22+, and a signed-in `codex` or `claude` CLI. A non-technical
+    owner on macOS or Windows (WSL2) gets the INSTALL.md runbook instead. Output: an ambient
+    scaffold. That means an owned `.aai/` (identity, instructions, context, memory/solofactory),
+    a vendored `.ailib/solofactory/` carrying a full offline app snapshot, a root `start.sh`,
+    and `projects/<name>/` workspaces. Each workspace is its own git repo with its own `.aai/`.
+    The UI runs at 127.0.0.1:4173. Operating it covers starting the factory, inspecting runs
+    (`.solofactory/runs/<id>/state.json`, `events.jsonl`, `.factory/*.md`, git log) and chat-driving
+    the owner through numbered options in drive.md ("hey solofactory", "how''s my app", "add
+    X"). Re-running the installer is the update path. It refreshes `.ailib/` and leaves `.aai/`
+    and `projects/` alone. It refuses to start a real build without an explicit go-ahead,
+    because builds spend subscription quota (`SOLOFACTORY_DEMO=1` is free). It also won''t
+    hand-edit `.ailib/` or `library/solofactory/`, won''t install into the library repo, and
+    does one operation per request. Stage: setup, then operate. It covers the whole idea-to-local-deploy
+    pipeline inside one app.'
   requests:
-  - Set up solofactory here
-  - Make this folder a software factory so I can build an app by answering questions
-  - Start the factory
-  - Hey solofactory, how's my app going?
-  - Add a dark mode to my app using the factory
-  - Update my solofactory install
-  - What can I do next in the factory?
+  - set up solofactory in this folder
+  - make ~/apps a software factory I can run from my Claude subscription
+  - start the factory
+  - hey solofactory, how's my app doing?
+  - update my solofactory install to the latest version
+  - add a dark mode toggle to my factory app
+  - why did my last factory run fail? check the run log
+  - help my non-technical client install solofactory on Windows
   not_for:
   - software-dev-factory: wins when the user has an approved spec and wants a governed plan,
       red, green, review controller with byte-bound approvals.
@@ -2478,8 +2483,10 @@ solofactory:
       during a requirements interview, not a full build factory.
   - ambient-folder: wins for general folder scaffolding or vendored-skill re-sync with no
       factory involved.
-  stage: operate
-  source_hash: 4abd92de15ea
+  - tinkerbuild: wins for a personal app taken through mockups, a walking skeleton and a no-HITL
+      ticket loop with Orca/Codex adapters, outside an installed SoloFactory
+  stage: setup, operate
+  source_hash: f26a648a24c9
 software-dev-factory:
   description: Installs and operates the software development factory, a governed SDLC controller
     that drives your own Claude Code or Codex CLI through plan, red, green and review against
