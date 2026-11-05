@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createServer as createNetServer } from "node:net";
 import { spawn } from "node:child_process";
 import { createWriteStream } from "node:fs";
-import { appendFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { assertAllowedCommand, runProcess, subscriptionEnvironment } from "./process.mjs";
@@ -84,6 +84,17 @@ const liveByProject = new Map();
 
 // Test files and fixtures: never widened into, since editing another feature's tests can weaken them.
 const TEST_PATH = /(^|\/)(tests?|__tests__|spec)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
+
+// ponytail: size + mtime per file, not content hashes; data/ can hold large uploads.
+async function dataSnapshot(appDir) {
+  const root = path.join(appDir, "data");
+  const entries = await readdir(root, { recursive: true, withFileTypes: true }).catch(() => []);
+  const files = entries.filter((entry) => entry.isFile()).map((entry) => path.relative(root, path.join(entry.parentPath, entry.name)));
+  return new Map(await Promise.all(files.map(async (file) => {
+    const info = await stat(path.join(root, file)).catch(() => null);
+    return [`data/${file}`, info ? `${info.size}:${info.mtimeMs}` : "gone"];
+  })));
+}
 
 export class SoloFactory {
   constructor({ store, provider, maxRepairs = 2, batchRepairsFrom = 10, autoStartRepairs = true, commandRunner = runProcess, deployer, watch = watchConfig() } = {}) {
@@ -707,8 +718,9 @@ export class SoloFactory {
     job.sliceIndex = 0;
     await writeFile(path.join(this.store.jobDir(job.id), "approved-plan.json"), `${JSON.stringify(job.approvedPlan, null, 2)}\n`);
     await this.store.writeState(job);
-    // Committed so restart-from-slice resets and resumes always see the approved plan.
-    await this.commit(job, "factory: feature plan approved");
+    // Committed so restart-from-slice resets and resumes always see the approved plan. Not best effort:
+    // without this commit a restart's hard reset deletes the plan and every Resume parks on stale_plan.
+    if (await this.store.commit("factory: feature plan approved")) await this.emit(job.id, { type: "git.committed", state: job.state, message: "factory: feature plan approved" });
     await this.emit(job.id, { type: "plan.approved", state: job.state, message: `Feature plan approved: ${plan.slices.length} feature${plan.slices.length === 1 ? "" : "s"}` });
     return job;
   }
@@ -1070,6 +1082,7 @@ export class SoloFactory {
     job = await this.stage(job, "completed", "Application is live and verified");
     job.completedAt = new Date().toISOString();
     await this.store.writeState(job);
+    await this.settleDeployment(job);
     await this.emit(job.id, { type: "job.completed", state: "completed", message: `Working app: ${deployment.url}${job.waivedProofs?.length ? ` (owner waived ${job.waivedProofs.map((bug) => bug.id).join(", ")})` : ""}` });
     return job;
   }
@@ -1167,6 +1180,7 @@ export class SoloFactory {
     const logPath = path.join(appDir, ".factory", "logs", `${label}.log`);
     await this.emit(job.id, { type: "agent.started", state: job.state, stage: label, feature: featureOf(job), promptChars: prompt.length, message: `${this.provider.id} started ${label}` });
     const monitor = this.monitorOf(job);
+    const dataBefore = await dataSnapshot(appDir);
     let spawned;
     let result;
     try {
@@ -1200,6 +1214,7 @@ export class SoloFactory {
       throw error;
     } finally {
       await this.releaseWorker(job, spawned);
+      await this.reportDataChanges(job, label, dataBefore, await dataSnapshot(appDir));
     }
     if (result.sessionId) {
       job.agentSessions ||= {};
@@ -1208,6 +1223,14 @@ export class SoloFactory {
     }
     await this.emit(job.id, { type: "agent.completed", state: job.state, stage: label, feature: featureOf(job), usage: result.usage ?? null, message: `${label} worker completed` });
     return result;
+  }
+
+  // data/ is gitignored so owner data survives commits and rewinds, which also hides it from the writes gate
+  // and the candidate hash. Agents are told never to touch it; report when one did. Report only, never blocks.
+  async reportDataChanges(job, label, before, after) {
+    const changed = [...new Set([...before.keys(), ...after.keys()])].filter((file) => before.get(file) !== after.get(file)).sort();
+    if (!changed.length) return;
+    await this.emit(job.id, { type: "data.touched", state: job.state, stage: label, files: changed.slice(0, 50), count: changed.length, message: `${label} changed ${changed.length} file${changed.length === 1 ? "" : "s"} in data/ (owner data, outside git): ${changed.slice(0, 5).join(", ")}${changed.length > 5 ? ", …" : ""}` });
   }
 
   // The one automatic transient continuation per stage invocation, shared by the provider's idle
@@ -1651,7 +1674,18 @@ export class SoloFactory {
       throw new FactoryError("invalid_metrics", `The app metrics endpoint failed: ${error.message}.`, { missing: [], received: undefined });
     });
     validateMetrics(metrics);
+    if (child.exitCode !== null || child.signalCode !== null) throw new FactoryError("deployment_exited", `App exited with ${child.exitCode ?? child.signalCode} right after its health check.`);
     return { mode: "local", status: "live", url, port, pid: child.pid, startedAt: new Date().toISOString() };
+  }
+
+  // The exit handler only corrects a stored "live", so an app that exited before that write landed is
+  // caught here: the handler drops the child from this.deployments synchronously on exit.
+  async settleDeployment(job) {
+    if (job.deployment?.mode !== "local" || job.deployment.status !== "live" || this.deployments.has(job.id)) return;
+    job.deployment.status = "stopped";
+    job.deployment.stoppedAt = new Date().toISOString();
+    await this.store.writeState(job);
+    await this.emit(job.id, { type: "deployment.stopped", state: job.state, message: "App process stopped right after launch." });
   }
 
   // Starts a completed run's built app again on a fresh port; only the project's newest run may, since one app runs per project.
@@ -1667,6 +1701,7 @@ export class SoloFactory {
     await mkdir(path.join(this.store.appDir(jobId), ".factory", "logs"), { recursive: true }); // gitignored, so may be absent
     job.deployment = await this.deployLocal(job, manifest, new AbortController().signal);
     await this.store.writeState(job);
+    await this.settleDeployment(job);
     await this.emit(job.id, { type: "deployment.relaunched", state: job.state, message: `App relaunched: ${job.deployment.url}` });
     return job;
   }
@@ -1861,7 +1896,7 @@ export function continuationAction(job, { maxRepairs = 2, busy = false } = {}) {
   if (busy) return next("none", null, null, "A worker is already running or queued for this run; wait for it to park.");
   if (job.state === "cancelled") return next("none", null, null, "The owner cancelled this run; start over to build it again.");
   // Restart reconciliation: never a second writer while the old worker may still write.
-  if (job.error?.code === "worker_unconfirmed" && workerAlive(job.error.details?.pid)) return next("stop-worker", `Stop worker ${job.error.details.pid}`, null, `A ${job.error.details.kind ?? "worker"} from before the restart (pid ${job.error.details.pid}, ${job.error.details.label}) is still running and may write to the workspace. Stop that process; Resume becomes available once it has exited.`);
+  if (job.error?.code === "worker_unconfirmed" && workerAlive(job.error.details?.pid)) return next("stop-worker", `Stop worker ${job.error.details.pid}`, null, `A ${job.error.details.kind ?? "worker"} from before the restart (pid ${job.error.details.pid}, ${job.error.details.label}) is still running and may write to the workspace. Stop that process and its children (kill -- -${job.error.details.pid}); Resume becomes available once it has exited.`);
   if (OVERSIZED_PROMPT.has(job.error?.code) && job.error.details?.build === BUILD_ID) return next("factory-fix", null, null, "SoloFactory built a prompt over its size limit. This factory build would build the same prompt again, so retrying cannot help. Install a SoloFactory fix; the retry returns once a different build is running.");
   if (planBlockedOut(job)) return { ...next("amend-plan", "Submit corrected plan for review", "recovery-review", "Automatic plan corrections are exhausted. The plan still has review blockers. Correct the plan and submit it for review. Change the requirements only if the inputs themselves are wrong."),
     alternatives: [next("revise-inputs", "Revise inputs and prepare a new plan", "recovery-plan", "Use this only if the specs or prototype inputs themselves are wrong or ambiguous; it prepares a new plan with a fresh correction budget.")] };
