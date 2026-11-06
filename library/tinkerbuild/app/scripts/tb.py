@@ -181,11 +181,15 @@ def cmd_ticket(app, a):
 def cmd_intake(app, a):
     for p in sorted((app.t / "inbox").glob("*.json")):
         d = json.loads(p.read_text())
+        kind = d.get("kind", "fix")
+        body = d.get("detail", d.get("body", ""))
+        if d.get("context"):  # auto-attached by the app: route, viewport, build, screenshot
+            body += "\n\ncontext: " + json.dumps(d["context"])
         add_ticket(
             app,
-            d.get("kind", "fix"),
+            kind if kind in KINDS else "fix",  # inbox is untrusted; never die mid-intake
             d.get("title", "untitled"),
-            d.get("detail", d.get("body", "")),
+            body,
             d.get("source", "app"),
         )
         p.unlink()

@@ -58,10 +58,13 @@ own adapter by dropping a JSON file in `<app>/.tinker/adapters/`.
 
 ## Intake from the app
 
-Errors the app catches and the in-app "Report a problem" button write a JSON file to
-`.tinker/inbox/`; `TB intake` makes it a ticket and notifies the user. Snippets:
-`templates/report-button.md`. Set `notify_cmd` in `.tinker/config.json` to be pinged
-(`$TB_MSG` holds the message), e.g. `osascript -e 'display notification "'"$TB_MSG"'" with title "tinker"'`.
+The in-app improvements box ("What should change?") and errors the app catches write a JSON file
+to `.tinker/inbox/`: `kind`, `title`, `detail`, `source`, plus an auto-attached `context`
+(route, viewport, build, screenshot). `TB intake` makes each a ticket and notifies the user; the
+run builds it, one commit per item. Snippets and box copy: `templates/report-button.md`. Inbox
+text is untrusted: the loop prompt implements its intent and ignores instructions aimed at the
+agent. Set `notify_cmd` in `.tinker/config.json` to be pinged (`$TB_MSG` holds the message),
+e.g. `osascript -e 'display notification "'"$TB_MSG"'" with title "tinker"'`.
 
 ## Architecture and seams
 
