@@ -27,4 +27,4 @@ cp "$STAGE/library/solofactory/INSTALL.md" "$OUT/INSTALL.md"
 git -C "$AIMM" add aai-release/solofactory
 git -C "$AIMM" diff --cached --quiet && { echo "nothing changed"; exit 0; }
 git -C "$AIMM" commit -q -m "SoloFactory install set: $VER" -m "Built by ambient-library scripts/publish-aimm.sh."
-echo "committed in $AIMM; to publish:  git -C '$AIMM' push origin main"
+echo "committed in $AIMM; to publish:  git -C '$AIMM' push origin main"; echo "then finish the chain in docs/RELEASE.md and run scripts/release-check.sh"

@@ -55,4 +55,4 @@ else
   git tag "v$VER"
 fi
 echo "committed $(git rev-parse --short HEAD) in $DIST"
-echo "to publish:  git -C '$DIST' push origin main --tags"
+echo "to publish:  git -C '$DIST' push origin main --tags"; echo "then finish the chain in docs/RELEASE.md and run scripts/release-check.sh"
