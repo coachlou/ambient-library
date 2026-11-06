@@ -23,7 +23,12 @@ npm start
 
 Open <http://127.0.0.1:4173>. If that port is taken, the server says whether it is another SoloFactory (open that one) or another app (start with `PORT=5000 npm start`). The **Manual** button in the header opens the illustrated user
 manual (`docs/manual/index.html`, also served at `/manual`). Answer the Factory Guide one turn at a time, review the
-compiled brief, and choose **Queue for the factory**. **Attach files** drops an existing spec
+compiled brief, and choose **Queue for the factory**. Every check in the brief must be provable offline on
+this machine, so the Guide rewrites checks that need a live account, an operating-system change,
+the real time of day or a fixed drive path, and moves the live part to a **Checked by hand after
+install** list that no build or review chases. A keyword scan sends a ready brief back to the
+Guide once if it still finds such a check; anything left, and a brief above 12 checks, shows as
+a note on the review screen. **Attach files** drops an existing spec
 (markdown, text, JSON, YAML, CSV) straight into the conversation and lets the Guide open a
 mockup or screenshot (png, jpg, gif, webp); images are saved under the project's
 `.factory/uploads/`. The brief joins that project's run
@@ -166,7 +171,9 @@ file never leaves your machine; `GET /api/errors?limit=50` returns the latest en
   off). The next worker is not started: the run parks with `run_budget_reached`, naming what
   it has spent, and Resume allows another allotment of the same size. Every recovery approval
   screen also shows the run's spend so far (workers, tokens, cost when known, elapsed time)
-  and how many repair turns the approval grants.
+  and how many repair turns the approval grants, plus how many recent approvals in a row
+  verified no feature. Any owner step after the ceiling (retry plan, approve, Resume) grants
+  the next allotment.
 - A test or proof gate that runs past `SOLOFACTORY_GATE_MINUTES` (default 5, 1–60; install
   always gets at least 10) is stopped and the run parks with `gate_timeout`. No repair turn
   runs and no attempt is spent, because a killed command proved nothing about the app. Raise
