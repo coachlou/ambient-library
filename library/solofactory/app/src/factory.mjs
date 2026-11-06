@@ -64,7 +64,7 @@ const HARNESS = {
 
 // An oversized prompt is rebuilt identically on this build, so its retry waits for a different factory build.
 const OVERSIZED_PROMPT = new Set(["prompt_too_large", "input_too_large"]);
-const BUILD_ID = `${HARNESS.version}+${HARNESS.commit}`;
+export const BUILD_ID = `${HARNESS.version}+${HARNESS.commit}`;
 const TERMINAL = new Set(["completed", "failed", "cancelled", "interrupted", "paused"]);
 const PARKED_STATES = new Set(["failed", "cancelled", "interrupted", "paused"]);
 // A pause lands only where the tree is green and committed: before a stage that follows a passed gate.
@@ -823,7 +823,7 @@ export class SoloFactory {
     const ref = `refs/factory/set-aside/${slice.id}`;
     await this.store.git("update-ref", ref, "HEAD");
     // State first: a crash after the reset still finds the ref to restore from.
-    (job.setAside ??= []).push({ id: slice.id, ref, base: cursor.base, cursor, remaining: job.repairBudgetLimit == null ? null : job.repairBudgetLimit - (job.attempt ?? 0), limit: job.repairBudgetLimit, error: { code: error.code, message: error.message, details: error.details } });
+    (job.setAside ??= []).push({ id: slice.id, ref, base: cursor.base, cursor, remaining: job.repairBudgetLimit == null ? null : job.repairBudgetLimit - (job.attempt ?? 0), limit: job.repairBudgetLimit, error: { code: error.code, message: error.message, details: { ...error.details, build: BUILD_ID } } });
     job.featureCursor = null;
     await this.store.writeState(job);
     await this.store.reset(cursor.base);
@@ -1106,7 +1106,8 @@ export class SoloFactory {
     job.error = interrupted ? { code: "process_restarted", message: "The factory stopped during this run. Its files are preserved and can be resumed.", details: {} } : {
       code: cancelled ? "cancelled" : error.code ?? "unexpected_error",
       message: cancelled ? "The owner cancelled this run." : error.message,
-      details: OVERSIZED_PROMPT.has(error.code) ? { ...error.details, build: BUILD_ID } : error.details ?? {},
+      // The build that recorded the failure (a set-aside feature keeps its own): an oversized prompt waits for another build, and a gate failure is rerun on one.
+      details: { build: BUILD_ID, ...error.details },
     };
     job.recovery = buildRecovery(job, this.store.appDir(jobId), undefined, { maxRepairs: this.maxRepairs });
     job.watch = { ...job.watch, observed: { ...this.supervision(jobId), status: "Action needed", monitoring: false } };
@@ -1501,7 +1502,7 @@ export class SoloFactory {
     try { candidate = await sourceBaseline(this.store, { head: false }); } catch {}
     const scope = `${slice?.id ?? job.recoveryPhase?.cursor?.id ?? job.featureCursor?.id ?? "app"}:${failure.details?.gate ?? failure.code}`;
     job.watch ??= {};
-    job.watch.attempts = [...(job.watch.attempts ?? []), { ...failureSignature(failure, { scope, candidate }), log: failure.details?.gate ? gateLog(job, failure.details.gate) : null, at: new Date().toISOString() }].slice(-30);
+    job.watch.attempts = [...(job.watch.attempts ?? []), { ...failureSignature(failure, { scope, candidate }), log: failure.details?.gate ? gateLog(job, failure.details.gate) : null, build: BUILD_ID, at: new Date().toISOString() }].slice(-30);
     await this.store.writeState(job);
   }
 
@@ -1925,8 +1926,15 @@ export function continuationAction(job, { maxRepairs = 2, busy = false } = {}) {
   if (phase === "planning" || phase === "plan_failed") return next("retry-plan", "Retry repair-plan preparation", "recovery-plan", `${phase === "planning" ? "Repair-plan preparation stopped before it finished" : "Repair-plan preparation failed"}, so no plan is approved. Retry repair-plan preparation; Resume cannot continue an unapproved plan.`);
   if (phase === "ready") return { ...next("approve-plan", "Approve and continue repairs", "recovery-start", "The repair plan passed independent review, but a Pause stopped it before repairs started. Approve and continue repairs to start it; Resume does not start an unapproved plan."),
     alternatives: [next("amend-plan", "Submit corrected plan for review", "recovery-review", "Replaces the ready plan with your corrected plan. The ready plan stays in history as evidence but can no longer be approved. The replacement gets one independent review and no automatic corrections; if it passes, repairs start on their own.")] };
-  if (repairsExhausted(job, maxRepairs)) return { ...next("prepare-plan", "Prepare repair plan", "recovery-plan", "The repair budget is exhausted. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume does not renew the budget or rerun the same review."),
-    ...(job.bugProofs?.length ? { alternatives: job.bugProofs.map((bug) => ({ ...next("waive-proof", `Waive ${bug.id} (faulty test)`, "waive-proof", `Use only if the reviewer's test ${bug.proof.command.at(-1)} is itself wrong: ${bug.description}. Type why in the box above first; it is required.`), proof: bug.id, repairerNote: job.lastRepairNote?.text ?? null })) } : {}) };
+  // Member run, 2026-11-03: a 0.10.1 gate failure (Node's fsync crash, fixed in 0.10.2) was planned around on 0.10.3
+  // from its stored output. A gate recorded by another build is rerun by Resume first; a missing stamp predates them.
+  // A rerun costs no model call, a repair plan costs a planner, repairs and a review. Feature and final-integration
+  // gates verify first on Resume; in a recovery phase only a running feature's cursor does (a built phase reviews
+  // first, a batch re-grants its repair budget), so those keep the repair plan.
+  const waivers = job.bugProofs?.length ? { alternatives: job.bugProofs.map((bug) => ({ ...next("waive-proof", `Waive ${bug.id} (faulty test)`, "waive-proof", `Use only if the reviewer's test ${bug.proof.command.at(-1)} is itself wrong: ${bug.description}. Type why in the box above first; it is required.`), proof: bug.id, repairerNote: job.lastRepairNote?.text ?? null })) } : {};
+  const rerunsGate = !job.recoveryPhase || (phase === "running" && job.recoveryPhase.cursor);
+  if (job.planVersion === 2 && rerunsGate && job.error?.code === "quality_gate_failed" && job.error.details?.build !== BUILD_ID) return { ...next("resume", job.state === "paused" ? "Resume" : "Resume current run", "resume", "SoloFactory changed since this gate failed. Resume reruns the gate on this build first; only a failure here leads to a repair plan."), ...waivers };
+  if (repairsExhausted(job, maxRepairs)) return { ...next("prepare-plan", "Prepare repair plan", "recovery-plan", "The repair budget is exhausted. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume does not renew the budget or rerun the same review."), ...waivers };
   // Resume would hit the same review cap; only a repair plan can move this feature.
   if (job.error?.code === "review_unstable") return next("prepare-plan", "Prepare repair plan", "recovery-plan", "The feature did not reach a stable reviewed candidate within its review limit. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume would stop at the same limit.");
   if (job.error?.details?.loop) return job.error.code === "review_rejected" || pendingProofFailure(job)
@@ -1951,7 +1959,9 @@ function retarget(actions = [], next) {
 export function withContinuation(job, options) {
   const nextAction = continuationAction(job, options);
   if (!job.recovery) return { ...job, nextAction };
-  return { ...job, nextAction, recovery: { ...job.recovery, canResume: nextAction.action === "resume", nextAction, actions: retarget(job.recovery.actions, nextAction) } };
+  // A banner stored when another action was next (a repair plan, a fix install, a stop) no longer applies once Resume is.
+  const stale = nextAction.action === "resume" && job.recovery.nextAction && job.recovery.nextAction.action !== "resume";
+  return { ...job, nextAction, recovery: { ...job.recovery, canResume: nextAction.action === "resume", nextAction, actions: stale ? [`${nextAction.label}: ${nextAction.reason}`] : retarget(job.recovery.actions, nextAction) } };
 }
 
 export function buildRecovery(job, workspace, diagnostics = job.error?.details?.diagnostics ?? [], { legacy = false, maxRepairs = 2 } = {}) {
