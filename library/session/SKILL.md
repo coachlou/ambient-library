@@ -1,6 +1,6 @@
 ---
 name: session
-description: Runs session check-in/check-out against a project's .context/ store; use for "what should I work on", "resume work", "checkpoint", "session check-in/check-out". Requires (or offers to bootstrap) a .context/ directory.
+description: Runs session check-in/check-out against a project's .context/ store; use for "what should I work on", "resume work", "session check-in/check-out". Requires (or offers to bootstrap) a .context/ directory.
 ---
 
 Read `instructions.md` in this skill's directory and follow it.

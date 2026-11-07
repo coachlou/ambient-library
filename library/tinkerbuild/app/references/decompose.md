@@ -6,7 +6,7 @@ slice**: UI → logic → storage for one observable behavior, buildable in one 
 
 ## Steps
 
-1. **Read `.tinker/brief.md` and `.tinker/architecture.md`** first (create them via `bootstrap.md`
+1. **Read `.tinker/brief.md` (or `spec/SPEC.md` when it exists) and `.tinker/architecture.md`** first (create them via `bootstrap.md`
    if the app is new). Slices are cut along the architecture's modules and seams, never across
    them at random. If `.tinker/design/design.md` exists, each of its screens is covered by at
    least one slice, and a UI slice's `body` names the screen and components it builds.

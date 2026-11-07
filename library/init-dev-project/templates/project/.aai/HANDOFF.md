@@ -13,5 +13,9 @@ Nothing.
 - Choose the deploy target and name it in README.
 - Define `make run` and `make check`.
 
+## Branches kept
+None. List each branch not deleted at session end: why, and the date flagged
+(restarts its 14-day clock).
+
 ## Next
 Fill the `TODO:` lines in `spec/SPEC.md` until `make spec` passes, then `make run`.

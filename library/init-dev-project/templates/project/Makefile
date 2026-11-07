@@ -1,10 +1,9 @@
-# The pipeline. Four verbs, same names in every repo; bodies change per project.
+# The pipeline. Same verbs in every repo; bodies change per project.
 # `make` alone prints the numbered pipeline map.
 # rc / uat / release / deploy gates live in release-lane (vendored at .ailib/release-lane/);
 # paths and commands override in .aai/skills/release-lane/project.toml.
 .DEFAULT_GOAL := help
 BUMP ?= patch
-CHANNEL ?= production
 LANE := python3 .ailib/release-lane/release_lane.py
 
 help:
@@ -57,6 +56,8 @@ release:
 
 # Gate (tag matches channel, clean tree), then `make ship CHANNEL=...`.
 deploy:
+	@test -n "$(CHANNEL)" || { echo "deploy: say CHANNEL=staging or CHANNEL=production" >&2; exit 1; }
+	@! grep -n "^| $(CHANNEL) |.*TODO" deploy/README.md >&2 || { echo "deploy: fill the $(CHANNEL) row in deploy/README.md first" >&2; exit 1; }
 	@$(LANE) deploy --channel $(CHANNEL)
 
 # The per-project ship body. Name both targets and their rollback in README.

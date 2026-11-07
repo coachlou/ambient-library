@@ -1,7 +1,7 @@
 {
   "name": "wrap",
-  "description": "Full session close-out ritual \u2014 commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session.",
-  "version": "1.0.0",
+  "description": "Full session close-out ritual — commit, export conversation, teaching narrative, handoff, memory harvest; use for \"wrap up\", \"close out\", \"export this conversation\". For a plain .context/ checkpoint, prefer session.",
+  "version": "1.0.1",
   "author": {
     "name": "Coach Lou"
   },

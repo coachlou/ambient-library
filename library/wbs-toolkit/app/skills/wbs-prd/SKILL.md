@@ -1,7 +1,7 @@
 ---
 name: wbs-prd
 description: >-
-  Use this skill when starting a new project, feature, or module — before any code is written. Relentlessly interviews the user about functionality, observable results, evidence, priorities, constraints, and failure behavior, then compiles those requirements into a WBS-compatible .wbs/tree.yaml and .wbs/context.md ready for wbs.py to execute. Triggers on: "spec this out", "plan this", "I want to build", "grill me on this", "PRD this", "generate the WBS", "create the tree", "scaffold the tree", "let's plan before we build", or any request to capture requirements before coding.
+  Use this skill when the user wants a WBS (work-breakdown-structure) tree for a new project, feature, or module — before any code is written. Relentlessly interviews the user about functionality, observable results, evidence, priorities, constraints, and failure behavior, then compiles those requirements into a WBS-compatible .wbs/tree.yaml and .wbs/context.md ready for wbs.py to execute. Triggers only with explicit WBS/tree wording: "spec this out as a WBS", "WBS this", "grill me for the WBS", "PRD this into a tree", "generate the WBS", "create the tree", "scaffold the tree", "plan this as a WBS tree". Not for generic "spec this out", "plan this", or "I want to build" requests with no WBS or tree mention.
 ---
 
 ## Gotchas

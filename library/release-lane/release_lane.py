@@ -6,12 +6,13 @@ Verbs:
   check                      run the configured check command
   rc [--bump patch|minor|major] [--dry-run]
                              cut vX.Y.Z-rc.N: bump once per version, accept, tag
-  uat                        exit 1 on an open blocker or an open major not deferred
+  uat                        exit 1 on a blocker not fixed or a major still open
   release [--bump ...] [--dry-run]
                              promote: on the main branch, uat ok, tree == last rc,
                              accept, date CHANGELOG, tag vX.Y.Z (no rc: bump + accept)
   deploy --channel staging|production [--dry-run]
-                             staging needs an rc tag on HEAD, production a release tag
+                             staging needs an rc tag on HEAD, production a release tag;
+                             then deploy_verify (if set) must report {version}
 
 Config: <repo>/.aai/skills/release-lane/project.toml (all keys optional; see DEFAULTS).
 Commands may use {version}, {tag} and {channel}. Never pushes.
@@ -22,6 +23,7 @@ Exit codes: 0 ok, 1 a gate failed, 2 usage or config error.
 import argparse
 import datetime
 import json
+import os
 import re
 import subprocess
 import sys
@@ -38,10 +40,13 @@ DEFAULTS = {
     "uat_log": "tests/acceptance/UAT.md",
     "deploy_staging": "make ship CHANNEL=staging",
     "deploy_production": "make ship CHANNEL=production",
+    "deploy_verify": "",
     "main_branch": "main",
 }
 SEMVER = re.compile(r"\d+\.\d+\.\d+")
 CONFIG_PATH = ".aai/skills/release-lane/project.toml"
+STATUSES = ("open", "fixed", "deferred")
+SEVERITIES = ("blocker", "major", "minor")
 
 
 class Gate(Exception):
@@ -63,7 +68,10 @@ def load_config(root):
     cfg = dict(DEFAULTS)
     p = root / CONFIG_PATH
     if p.exists():
-        extra = tomllib.loads(p.read_text())
+        try:
+            extra = tomllib.loads(p.read_text())
+        except tomllib.TOMLDecodeError as e:
+            raise Usage(f"{CONFIG_PATH}: {e}")
         unknown = set(extra) - set(DEFAULTS)
         if unknown:
             raise Usage(f"{CONFIG_PATH}: unknown keys {sorted(unknown)}")
@@ -151,13 +159,16 @@ class Lane:
         if missing:
             raise Gate(f"{verb}: missing {missing}")
 
-    def bump(self, old, kind):
+    @staticmethod
+    def next_version(old, kind):
         a, b, c = map(int, old.split("."))
-        new = {
+        return {
             "major": f"{a + 1}.0.0",
             "minor": f"{a}.{b + 1}.0",
             "patch": f"{a}.{b}.{c + 1}",
         }[kind]
+
+    def bump(self, old, new):
         for name in self.cfg["version_files"]:
             p = self.root / name
             text = p.read_text()
@@ -228,6 +239,9 @@ class Lane:
             raise Gate("check failed")
 
     def rc(self, kind):
+        branch = git("rev-parse", "--abbrev-ref", "HEAD")
+        if branch == self.cfg["main_branch"]:
+            raise Gate(f"rc: on {branch}; cut candidates on a branch, then merge --no-ff")
         self.require_clean("rc")
         self.require_unreleased("rc")
         cur = self.version()
@@ -241,8 +255,10 @@ class Lane:
         ):
             raise Gate(f"rc: HEAD is already v{cur}-rc.{n[-1]}; commit a fix first")
         self.check()
-        ver = self.bump(cur, kind) if bumped else cur
+        ver = self.next_version(cur, kind) if bumped else cur
         self.require_files("rc", ver)
+        if bumped:
+            self.bump(cur, ver)
         n = (self.rcs(ver) or [0])[-1] + 1
         tag = f"v{ver}-rc.{n}"
         self.accept_or_restore("rc", ver, bumped)
@@ -273,7 +289,15 @@ class Lane:
             if set("".join(r)) <= set("-: ") or len(r) <= max(si, st):
                 continue  # separator or short row
             sev, status = r[si].lower(), r[st].lower()
-            blocking = status == "open" and sev in ("blocker", "major")
+            if sev not in SEVERITIES or status not in STATUSES:
+                raise Usage(
+                    f"{p.name}: {r[0]} has severity '{sev}', status '{status}'; "
+                    f"use {'|'.join(SEVERITIES)} and {'|'.join(STATUSES)}"
+                )
+            # ponytail: deferring is for majors only; a blocker blocks until fixed
+            blocking = (sev == "blocker" and status != "fixed") or (
+                sev == "major" and status == "open"
+            )
             items.append(
                 {"id": r[0], "severity": sev, "status": status, "blocking": blocking}
             )
@@ -286,7 +310,8 @@ class Lane:
         bad = [i for i in items if i["blocking"]]
         if bad:
             raise Gate(
-                "uat: open " + ", ".join(f"{i['id']} ({i['severity']})" for i in bad)
+                "uat: blocking "
+                + ", ".join(f"{i['id']} ({i['severity']}, {i['status']})" for i in bad)
             )
         self.say(f"uat: ok ({len(items)} items, none blocking)")
 
@@ -302,19 +327,25 @@ class Lane:
         bumped = False
         if self.tag_exists(f"v{cur}"):  # no candidate: legacy one-step release
             self.check()
-            ver, bumped = self.bump(cur, kind), True
+            ver, bumped = self.next_version(cur, kind), True
         else:
             ver = cur
             if n := self.rcs(ver):
                 rc = f"v{ver}-rc.{n[-1]}"
                 self.uat()
-                if subprocess.run(["git", "diff", "--quiet", rc, "HEAD"]).returncode:
+                # the UAT log records testing of this rc, so it may change after it
+                log = self.cfg["uat_log"].format(version=ver)
+                diff = ["git", "diff", "--quiet", rc, "HEAD", "--", ".", f":(exclude){log}"]
+                if subprocess.run(diff).returncode:
                     raise Gate(
                         f"release: HEAD differs from {rc}; cut a new rc and test it"
                     )
             else:
                 self.check()
+                self.say(f"release: no rc for v{ver}; releasing VERSION as written (--bump ignored)")
         self.require_files("release", ver)
+        if bumped:
+            self.bump(cur, ver)
         tag = f"v{ver}"
         self.accept_or_restore("release", ver, bumped)
         paths = list(self.cfg["version_files"]) if bumped else []
@@ -356,6 +387,10 @@ class Lane:
         ver = SEMVER.search(tag).group()
         if not self.sh(f"deploy_{channel}", version=ver, tag=tag, channel=channel):
             raise Gate(f"deploy: {channel} command failed")
+        if not self.cfg["deploy_verify"]:
+            self.say("deploy: deploy_verify not configured; confirm the live version by hand")
+        elif not self.sh("deploy_verify", version=ver, tag=tag, channel=channel):
+            raise Gate(f"deploy: {channel} is not reporting {ver}; roll back to the previous tag")
 
 
 def main(argv=None):
@@ -371,6 +406,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         root = Path(git("rev-parse", "--show-toplevel"))
+        os.chdir(root)  # git() and sh() then agree on the repo, wherever we were called
         lane = Lane(root, load_config(root), a.dry_run)
         if a.verb == "status":
             print(json.dumps(lane.status(), indent=2))

@@ -126,10 +126,15 @@ PY
 for f in $ANCHOR_FILES; do
   if ! { [ -f "$TARGET/$f" ] && grep -q 'ambient folder' "$TARGET/$f"; }; then
     [ -f "$TARGET/$f" ] && printf '\n' >> "$TARGET/$f"
+    if [ $DISTRO = 1 ]; then
+      ROLE="\`$CAP\` is its agentic function"
+    else
+      ROLE="its behavior lives in \`.aai/\`; vendored tools are in \`.ailib/\`"
+    fi
     cat >> "$TARGET/$f" <<MD
 ## Ambient folder
 
-This folder is an ambient folder: \`$CAP\` is its agentic function.
+This folder is an ambient folder: $ROLE.
 **Read \`.aai/instructions.md\` and follow it before acting.** "Ambient folder"
 means a folder with an \`.aai/\` behavior layer. Do not scaffold a project here
 unless \`.aai/instructions.md\` says to.

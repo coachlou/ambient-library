@@ -1,7 +1,7 @@
 # release-lane
 
-The loop: **checkpoint** (repeat) → optional **systest** → **rc** → testers + staging →
-**uat** (fixes go back through checkpoint, then rc again) → **release**.
+The loop: **commit** (repeat) → optional **systest** → **rc** → testers + staging →
+**uat** (fixes go back through commit, then rc again) → **release**.
 `release_lane.py` asserts every gate a script can check; this file covers the judgment
 and the pauses.
 
@@ -23,14 +23,14 @@ and the pauses.
 
 ## Modes
 
-**checkpoint** (after each build step)
+**commit** (after each build step)
 1. Group `git status` / the diff. If it mixes unrelated work, propose a split.
 2. `RL check`. A failure means no commit; show the output.
 3. Behavior changed (source touched, not just docs): a test should have changed too, and
    the changelog's `## Unreleased` needs a user-facing line. Draft one if missing.
    If the config has no changelog (`changelog = ""`), apply the project's own change
    record instead (its AGENTS.md names it).
-4. Commit on a non-main branch.
+4. Commit on a non-main branch, staging the files by name (never `git add -A`).
 5. ⏸ Push the branch?
 Done: commit on a non-main branch, check exit 0.
 
@@ -57,9 +57,10 @@ Done: rc tag deployed to staging, staging install worked from the docs alone, no
 
 **uat**
 - `add`: append a row to the UAT log (`id | reporter | rc | severity | status | commit`,
-  severity `blocker|major|minor`, status `open`). Fix it through checkpoint.
+  severity `blocker|major|minor`, status `open`). Fix it through commit.
 - `close <id>`: status `fixed`, link the commit. Any fix means the next step is rc again.
-- `defer <id>`: only on the user's say-so, for a major they accept shipping.
+- `defer <id>`: only on the user's say-so, for a major they accept shipping. A blocker
+  can't be deferred: lower its severity with the user first, or fix it.
 - `stable?`: `RL uat`, and the user's own criteria (days with no new rc, tester installs
   confirmed), which the project's config or README names.
 Done: `RL uat` exit 0.
@@ -69,14 +70,21 @@ Done: `RL uat` exit 0.
 2. ⏸ Merge `--no-ff` to main.
 3. `RL release` (asserts HEAD == last rc, re-runs accept, dates the changelog, tags).
 4. ⏸ Push main and the tag, then `RL deploy --channel production`.
-5. Verify the deployed instance reports the version.
+5. Verify the deployed instance reports the version (`deploy_verify` in the config
+   does this inside `RL deploy`; without it, check by hand).
 6. Draft the announcement. ⏸ Send.
-7. List merged branches. ⏸ Delete.
+7. List merged branches and their worktrees; delete the clean ones (the standard's
+   §5 rule). A branch with uncommitted or unmerged work is flagged, never deleted
+   without the user's yes.
 Done: release tag on main, deployed, version verified live.
 
 ## Gotchas
 
 - A project with no testers skips rc: `RL release` on main with no rc tag bumps,
-  accepts and tags in one step.
+  accepts and tags in one step. If VERSION is already untagged (set by hand), it
+  releases that version and ignores `--bump`.
+- `rc` refuses on main: candidates are cut on the branch.
+- The UAT log may change after the rc (closing rows); `release` ignores it when
+  comparing HEAD to the rc. Any other change needs a new rc.
 - `version_files` bump the first occurrence of the old version in each file, so lines
   of history further down survive. `version_check` (if set) runs after the bump.

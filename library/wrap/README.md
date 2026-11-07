@@ -14,7 +14,7 @@ the teaching material (exported + narrated), and the continuity state (handoff).
 3. **Teaching narrative** — `YYYY-MM-DD-teaching-narrative-<slug>.md` with the
    arc: initial need → journey (what/why/how, including wrong turns) → result →
    application & benefit for the reader. Raw material for teaching content.
-4. **Handoff** — `HANDOFF.md` (or the project's `.context/` checkout protocol if
+4. **Handoff** — `.aai/HANDOFF.md` (or the project's `.context/` checkout protocol if
    it has one): state, locked decisions, next steps, open questions, what NOT to
    do. Written so a zero-memory successor can resume cold.
 5. **Memory harvest** — asks "did anything earn a permanent record?" Skill

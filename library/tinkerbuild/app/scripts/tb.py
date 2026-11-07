@@ -9,6 +9,7 @@ Run from the app folder, or pass --app DIR.
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -93,6 +94,31 @@ class App:
             timeout=timeout,
         )
         return r.returncode, (r.stdout + r.stderr)
+
+
+def scaffolded(app):
+    """Dev-and-deploy standard project: Makefile with an rc: target. Release then belongs to make."""
+    mk = app.root / "Makefile"
+    return mk.exists() and any(
+        l.startswith("rc:") for l in mk.read_text().splitlines()
+    )
+
+
+def log_change(app, line):
+    """User-facing line: root CHANGELOG.md `## Unreleased` when it has one, else .tinker/changelog.md."""
+    cl = app.root / "CHANGELOG.md"
+    if cl.exists():
+        lines = cl.read_text().splitlines(keepends=True)
+        for i, l in enumerate(lines):
+            if l.strip().lower() == "## unreleased":
+                lines.insert(i + 1, line.rstrip() + "\n")
+                cl.write_text("".join(lines))
+                return
+    app.log("changelog.md", line)
+
+
+def untracked(app):
+    return set(app.sh("git ls-files -o --exclude-standard")[1].split("\n")) - {""}
 
 
 def die(msg, code=1):
@@ -316,6 +342,7 @@ def work(app, tk):
     cfg = app.cfg()
     failure = ""
     tk["status"] = "building"
+    before = untracked(app) if (app.root / ".git").exists() else set()
     while tk["attempts"] < cfg["max_attempts"]:
         tk["attempts"] += 1
         app.save(tk)
@@ -331,13 +358,16 @@ def work(app, tk):
         if rc == 0:
             tk["status"] = "done"
             app.save(tk)
-            app.log(
-                "changelog.md",
-                f"- {time.strftime('%F')} {tk['id']} {tk['kind']}: {tk['title']}",
-            )
+            log_change(app, f"- {tk['id']} {tk['kind']}: {tk['title']}"
+                       if (app.root / "CHANGELOG.md").exists()
+                       else f"- {time.strftime('%F')} {tk['id']} {tk['kind']}: {tk['title']}")
             if (app.root / ".git").exists():
+                # stage what this step touched: tracked changes (-u) plus files that
+                # appeared during it; never pre-existing stray untracked files
+                new = " ".join(shlex.quote(f) for f in sorted(untracked(app) - before))
                 app.sh(
-                    f"git add -A && git commit -q -m 'tinker: {tk['id']} {tk['title']}'"
+                    f"git add -u && {'git add -- ' + new + ' && ' if new else ''}"
+                    f"git commit -q -m {shlex.quote('tinker: ' + tk['id'] + ' ' + tk['title'])}"
                 )
             return True
         failure = out
@@ -391,11 +421,20 @@ def cmd_release(app, a):
         die(
             "QA failed; fix tickets filed. Run `tb.py run`, then release again (or --allow-known-issues)."
         )
+    if scaffolded(app):
+        # dev-and-deploy standard: make owns VERSION, the changelog date and the tag
+        rc, out = app.sh(f"make release BUMP={shlex.quote(a.bump)}")
+        print(out)
+        if rc:
+            die("make release failed (see output above); nothing tagged by tb", rc)
+        app.notify("released via make release")
+        return
     if not (app.root / ".git").exists():
         die("not a git repo; nothing to tag", 2)
     rc, out = app.sh("git tag -l 'v[0-9]*'")
     tag = f"v{len(out.split()) + 1}"
-    app.sh(f"git add -A && git commit -q -m 'release {tag}'; git tag {tag}")
+    # stage tracked changes only; a release must not sweep in stray new files
+    app.sh(f"git add -u && git commit -q -m 'release {tag}'; git tag {tag}")
     app.log("changelog.md", f"- {time.strftime('%F')} released {tag}")
     app.notify(f"released {tag}")
 
@@ -418,6 +457,10 @@ def main():
     s.set_defaults(fn=cmd_run)
     s = sub.add_parser("release")
     s.add_argument("--allow-known-issues", action="store_true")
+    s.add_argument(
+        "--bump", default="patch", choices=("patch", "minor", "major"),
+        help="version bump; used only when the app has a Makefile with an rc: target",
+    )
     s.set_defaults(fn=cmd_release)
     s = sub.add_parser("ticket")
     s.add_argument("op", choices=("add", "list", "set"))

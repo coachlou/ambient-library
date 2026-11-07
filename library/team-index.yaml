@@ -548,31 +548,33 @@ context-mgr:
   source_hash: 70827b8b857d
 session:
   description: Runs session check-in/check-out against a project's .context/ store; use for
-    "what should I work on", "resume work", "checkpoint", "session check-in/check-out". Requires
-    (or offers to bootstrap) a .context/ directory.
-  summary: 'Runs the check-in, checkpoint, check-out and status rituals against a project''s
-    .context/ store, the shared brain every agent, model or CLI window reads on entry and
-    updates on exit. Needs a repo with .context/CHARTER.md, STATE.md, LOG.md and DECISIONS.md;
-    if the store is missing it asks before bootstrapping, never silently. Check-in verifies
-    the store, inspects a short-lived lock file, reads STATE and recent LOG, flags Doing tasks
-    stale beyond four hours, picks a task by assignee, focus or the user''s override, moves
-    it to Doing and reports in a few lines. Checkpoint stamps a progress note and a top LOG
-    block without changing task status. Check-out commits code first, sets the outcome (Done,
-    Ready-for-Review with a commit SHA, Doing, Needs-Rework), appends a LOG entry, optionally
-    records a DECISIONS entry, and commits .context/ separately. Status is a read-only board
-    summary. Also covers blind reviewer discipline for #review tasks (read the diff before
-    the doer''s log) and bootstrapping a new store. Refuses to rewrite append-only history,
-    to create a parallel .context/ in a worktree, to hold the lock for a whole session, or
-    to invent work when nothing matches. Stage: operate, the per-session bookends of any project
-    already using the context-mgr scaffold.'
+    "what should I work on", "resume work", "session check-in/check-out". Requires (or offers
+    to bootstrap) a .context/ directory.
+  summary: 'Thin alias for the checkpoint skill''s Session mode (Mode 2). It runs the multi-agent
+    continuity protocol against a project''s `.context/` store at the repo root: CHARTER.md,
+    STATE.md, LOG.md, DECISIONS.md and a short-lived `lock` file. Check-in treats every arrival
+    as a stranger. It reads STATE and the five newest LOG entries, skims DECISIONS for proposed-supersede
+    blocks, flags Doing tasks older than 4h, and claims one Todo, in this order: explicit
+    @role, then #focus match, then a user override. With no match it reports idle and never
+    invents work. The claim moves the task to Doing and stamps it with worker@worktree and
+    a start time. Other modes are status (read the board without claiming), mid-session checkpoint
+    (a progress: note on the Doing task) and check-out. Check-out appends to the LOG and needs
+    a commit SHA before a task can be marked Ready-for-Review. The lock is held for seconds
+    and only around mutations. Inputs: an existing `.context/` store (shared across worktrees
+    by symlink) and, optionally, an agent role or focus. Output: an updated STATE/LOG/DECISIONS
+    plus a 2–4 line report (task taken, active objective, Needs-Lou items, decisions awaiting
+    ratification). It will not bootstrap `.context/` without asking, rewrite append-only history,
+    create a parallel store in a worktree, or restate the protocol (it defers to checkpoint''s
+    instructions.md). Stage: it opens and closes every working session in a project that context-mgr
+    has already set up.'
   requests:
-  - What should I work on in this project?
-  - Resume work where the last session left off
-  - Check me in to this project and pick up the next task
-  - Checkpoint my progress, I'm mid-task
-  - Wrap up and check out, log what I did
-  - What's the status of the board right now, who is doing what?
-  - Review the commit for T-14 using the reviewer protocol
+  - what should I work on?
+  - resume work on this project
+  - session check-in
+  - check out and log what I did this session
+  - what's happening on this project right now?
+  - quick save, I'm not done with this task yet
+  - grab the next task for my role from the board
   not_for:
   - checkpoint: wins when the goal is distilling conversation state into .aai/checkpoint.md
       before /compact or /clear, rather than updating the .context/ task board.
@@ -582,41 +584,43 @@ session:
       narrative and memory harvest, not just a .context/ check-out.
   - capture-chat: wins when the user only wants the conversation exported as portable markdown,
       with no task or state bookkeeping.
+  - trigger-runner: wins for running due standing intentions from .aai/triggers.md at session
+      start, not claiming tasks from STATE
+  - project-index: wins for "what have I been working on" across many project folders instead
+      of inside one project's task board
   stage: operate
-  source_hash: b947daa5c2bc
+  source_hash: bd54aed31223
 checkpoint:
   description: Preserves conversation context across compaction and hands off work across
     sessions, agents, and CLI windows — distills since-last-checkpoint state into the project's
     .aai/checkpoint.md before /compact or /clear, writes a verified handoff note for the next
     session, or runs the .context/ store check-in/check-out protocol; use for "checkpoint",
-    "handoff", "checkpoint before compact", "save context before clearing", "session check-in",
-    "wrap up".
-  summary: 'Keeps work alive across context loss in three modes. Compact mode is the default
-    and runs on "/checkpoint" or before /compact or /clear. It takes the conversation since
-    the last checkpoint and turns it into conclusions, not a transcript: decisions with a
-    one-line reason, current state, files touched, open questions and the exact next step
-    (file:line). It writes these to <project-root>/.aai/checkpoint.md. It creates .aai/ if
-    needed and moves a legacy root checkpoint.md into it. Each run rewrites a 5–15 line "Current
-    state" header and adds a dated section beneath it, newest first. Older dated sections
-    are never edited. It then tells the user to run /compact or /clear, which it cannot run
-    itself. Handoff mode writes a checked note for the next session. Session mode runs the
-    .context/ store protocol (CHARTER, STATE, LOG, DECISIONS): check-in with a short-lived
-    lock, flagging stale Doing tasks and claiming a task by role or focus; a mid-session checkpoint
-    that adds a progress line and a LOG entry; check-out that commits code first, needs a
-    SHA for Ready-for-Review, pairs a review task and asks whether any decisions should be
-    promoted; a read-only status view; and blind reviewer discipline. It will not create .context/
-    without confirmation, rewrite append-only history, or do the full close-out of commit,
-    export, narrative and memory harvest. Inputs are the live conversation and the repo root.
-    Stage: continuity, used mid-session or at the end of a session.'
+    "handoff", "checkpoint before compact", "save context before clearing", "session check-in".
+  summary: 'Context-continuity skill with three modes. COMPACT (the default, for "/checkpoint"
+    or any save before /compact or /clear) reads the conversation since the last checkpoint
+    and the existing <repo-root>/.aai/checkpoint.md. It moves a legacy root-level checkpoint.md
+    into .aai/ if one exists, then makes two writes: it rewrites a 5–15 line "Current state"
+    header (objective, status, next action, open questions) and adds a dated delta section
+    on top (done with a one-line why, files touched, open items, exact next step at file:line).
+    It records conclusions, not transcripts, and never rewrites old dated sections. It cannot
+    run /compact itself, so it ends by telling the user to run it. HANDOFF checks live state
+    and writes a durable note for a cold-start successor, into harness project memory if there
+    is one, else .aai/handoff.md. SESSION runs the multi-agent .context/ store protocol: check-in
+    (lock, read CHARTER/STATE/LOG/DECISIONS, flag stale Doing tasks over 4h, claim a task
+    by assignee or focus), a mid-session checkpoint (progress note plus a LOG entry, status
+    unchanged), check-out (commit code first, set Done, Ready-for-Review with SHA, Needs-Rework
+    or leave in Doing, append LOG, promote decisions), a read-only status view, and blind
+    reviewer discipline. It refuses to create a .context/ store without confirmation and never
+    makes a parallel store in a worktree. It is a mid-session or end-of-session continuity
+    step, not a full close-out.'
   requests:
   - checkpoint before I compact
-  - save the context, I'm about to /clear this chat
-  - write a handoff note so tomorrow's session can pick this up
-  - session check-in — what should I work on?
-  - quick save where I am on T-014
-  - check out, this task is ready for review
-  - what's happening on this project's board right now?
-  - the context window is getting long, distill what we've decided so far
+  - save context, I'm about to /clear
+  - write a handoff for the next session
+  - hand this off so another agent can pick it up cold
+  - update .aai/checkpoint.md with where we are
+  - quick save progress on this task
+  - context window's getting long, preserve what matters
   not_for:
   - session: wins as the dedicated check-in and check-out skill for a project's .context/
       store when the user wants only that protocol.
@@ -628,7 +632,7 @@ checkpoint:
   - teaching-block-synthesized: the session should become a publishable article showing reasoning
       and wrong turns, not an internal handoff.
   stage: operate
-  source_hash: b67e5f275fbd
+  source_hash: 4384ff806cb8
 aimm-newsletter:
   description: Sends a newsletter email to all members of a named Google Contacts group; use
     for "send this to [group]", "send the newsletter", "email the group". Previews recipients
@@ -1456,29 +1460,30 @@ grill:
   description: Converges on a decision or spec via one high-leverage question at a time with
     a decisions ledger, then executes; use for "grill me", "interview me", "ask me questions
     one at a time".
-  summary: Serial interview that converges a vague request, decision or spec into locked decisions,
-    then switches to autonomous execution. Input is any ambiguous task or situation. It privately
-    maps unknowns and ranks them by how much each answer changes what gets built (architecture
-    forks, then scope, then quality bar, then preferences), discarding curiosity-only gaps.
-    It then asks exactly one question per turn, each with a one-sentence why-it-matters and
-    a recommended default with the tradeoff named, so a busy user can answer yes. After each
-    answer it restates a one-line Locked decision and re-ranks the remaining gaps. Locked
-    answers are never reopened unless new information invalidates them. If destructive or
-    irreversible operations are in scope, the risk posture (originals preserved, dry-run first)
-    is asked first. It stops when no remaining unknown would change the next action, not when
-    everything is known, and a request like ask me three questions is honoured. It declares
-    Aligned with the constraints as an explicit contract, writes decisions.md (Locked, Constraints
-    and risk posture, Out of scope, Open) or appends to the project's .context or spec doc,
-    and then executes without further should-I questions. It refuses to batch questions or
-    re-litigate. Stage is plan, upstream of building.
+  summary: 'Grill settles a decision, spec, or plan that is too vague to act on. It interviews
+    the user serially: one question per turn, never a batch. Each answer is locked before
+    the next question is picked, because earlier answers change what should be asked next.
+    Input is any request, situation, or existing spec with unknowns. Grill ranks the gaps
+    privately by how much each answer changes what gets built: architecture forks first, then
+    scope boundaries, quality bars, and preferences. If anything destructive or irreversible
+    is in scope, risk posture is always a top gap: copy instead of move, dry-run before live.
+    Each question comes with a one-line note on why it matters and a recommended default with
+    its tradeoff. Each answer is reflected back as a one-line "Locked:" decision. Grill refuses
+    to bundle questions, to reopen locked decisions without new information, and to keep asking
+    once no remaining unknown would change the next action. It ends with an explicit "Aligned.
+    Proceeding autonomously within…" contract. It then writes a decisions ledger (Locked,
+    Constraints/risk posture, Out of scope, Open) to the `## Decisions` section of spec/SPEC.md,
+    or to the project''s .context/ or spec doc, or else to decisions.md. Then it executes
+    right away and does not come back with questions the ledger already answers. Pipeline
+    stage: the upfront alignment step before building or writing.'
   requests:
-  - grill me
-  - interview me before you start
-  - ask me questions one at a time
-  - ask me three questions to make sure we're on the same page, then proceed
-  - help me decide between these two approaches
-  - I have a vague idea for a tool, pin it down with me
-  - get aligned with me and then just run with it
+  - Grill me on this before you start building
+  - Interview me one question at a time until you know what I want
+  - Ask me three questions to make sure we're on the same page, then proceed
+  - I'm not sure what I want here — ask me questions one at a time
+  - Before you touch my files, pin down what's safe to change
+  - Help me decide between these two approaches by asking me what matters
+  - Ask me whatever you need to spec this feature, then just go do it
   not_for:
   - grill-with-prototype: wins only when the user explicitly asks for a prototype, mockup,
       clickable demo or wireframes while specifying an app, ending in SPEC.md.
@@ -1490,8 +1495,14 @@ grill:
       of being interviewed.
   - irreplaceable-edge: wins when the open-ended conversation is about the user's competitive
       moat against AI.
-  stage: plan
-  source_hash: 39a038d55829
+  - ambient-folder: wins when the interview is about a folder's purpose in order to stamp
+      an .aai/ scaffold
+  - audit-fix: wins when a plan or change already exists and needs adversarial hole-poking
+      rather than clarification
+  - cognitive-operations: wins when the user wants structured thinking frameworks (pre-mortems,
+      mental models) applied to a problem rather than being interviewed
+  stage: setup
+  source_hash: d7561b724b94
 grill-with-prototype:
   description: Builds a clickable prototype of an app's screens live in a local dashboard
     while interviewing for requirements, ending in a SPEC.md; use only when the user asks
@@ -2069,30 +2080,31 @@ wrap:
   description: Full session close-out ritual — commit, export conversation, teaching narrative,
     handoff, memory harvest; use for "wrap up", "close out", "export this conversation". For
     a plain .context/ checkpoint, prefer session.
-  summary: 'Full session close-out ritual run at the end of a substantial working session
-    so value is not lost. It treats a session as producing three products: committed work,
-    raw teaching material, and continuity state. Input is the current session plus the project''s
-    git state; no other files are required. Six ordered steps, each skippable only with a
-    stated reason: (1) land the work with git status and git remote -v, stage specific files,
-    commit with a why-message, merge finished branches or worktrees to main, and push only
-    when a remote exists and push permission was granted; (2) export the conversation to chat_exports/YYYY-MM-DD-slug-conversation.md;
-    (3) write a teaching narrative (need, journey with wrong turns, result, application and
-    benefit) with local paths replaced by placeholders; (4) produce a handoff, either via
-    the .context/ check-out protocol or an overwritten HANDOFF.md with state, locked decisions,
-    ordered next steps, open questions and what not to do, tested by whether a zero-memory
-    agent could continue; (5) harvest only what earned permanence, such as a gotcha appended
-    to a failed skill, a durable fact saved as memory, or a reusable asset flagged as a promotion
-    candidate, where "nothing earned a memory" is a valid outcome; (6) report a checklist
-    with clickable paths, skipped steps, and any decision needed from the user. Refuses to
-    push without permission, to git add -A, to move instead of copy, or to pad the narrative
-    with tool output. Stage: close-out, end of session.'
+  summary: 'End-of-session close-out ritual that makes a substantial working session leave
+    three products: committed work, raw teaching material, and continuity state. Runs six
+    ordered steps. (1) Land the work: git status and remote check, stage specific files (never
+    `git add -A`), commit with a why-message, merge finished branches with `--no-ff`, and
+    sweep merged branches and their worktrees. Idle branches with unmerged work are kept,
+    flagged, and dated. It never pushes without a remote and explicit permission. (2) Export
+    the conversation to `chat_exports/YYYY-MM-DD-<slug>-conversation.md`, using a project
+    export tool if one exists, otherwise user turns verbatim and assistant turns summarized.
+    (3) Write a teaching narrative (need → journey with wrong turns → result → reader benefit)
+    with local paths replaced by placeholders. (4) Write the handoff: run the `.context/`
+    check-out if that store exists, otherwise overwrite `.aai/HANDOFF.md` with state, locked
+    decisions, next steps, open questions, branches kept, and what NOT to do. (5) Harvest
+    only what earned it: gotchas go into the failing skill, durable user facts go to memory,
+    reusable assets become promotion candidates. It never promotes unilaterally. (6) Report
+    a checklist with paths, skipped steps, and decisions needed first. Inputs: the current
+    session, a git repo (optional), and the project root. It copies artifacts rather than
+    moving them. It is the terminal stage of a session and the step before a fresh-agent resume.'
   requests:
   - wrap up this session
-  - close out, commit everything and write the handoff
-  - export this conversation and write up what we did
-  - I'm done for today, save state so the next agent can pick up
-  - wrap it, and tell me if anything earned a memory
-  - end of session ritual with a teaching narrative
+  - let's close out — commit everything, write the handoff, and save the conversation
+  - we're done for today, do the full wrap
+  - close out this session and capture what we learned for teaching
+  - commit, clean up merged branches, and leave a handoff for the next agent
+  - 'end of session: export the chat, write the narrative, harvest any gotchas'
+  - wrap it up so a fresh agent can pick this up tomorrow
   not_for:
   - checkpoint: wins when the user only wants to save context before a compact or clear, or
       run the plain .context/ check-in or check-out, with no commit or export.
@@ -2104,8 +2116,10 @@ wrap:
       session with diagrams and rendered HTML, not raw narrative material.
   - extract-codify-patterns: wins when they want the full look-over-my-shoulder bundle (README,
       brief, chat export, vault artifacts) for sharing.
-  stage: close-out
-  source_hash: 93ca52cff6b2
+  - release-lane: wins when the user wants to cut a release candidate, promote to production,
+      or move commit groups through the release loop.
+  stage: operate
+  source_hash: 2f500d4098fc
 aimm-commands:
   description: Library of 66 named AIMM prompt commands (skeptic, canon-lock, blind-spot-scanner,
     transcript-miner, ...); use for "/aimm:<name>", "run the skeptic", or any request naming
@@ -2491,30 +2505,34 @@ software-dev-factory:
   description: Installs and operates the software development factory, a governed SDLC controller
     that drives your own Claude Code or Codex CLI through plan, red, green and review against
     an approved spec, as a folder's agentic function with one git repository per product under
-    projects/; use for "set up the software dev factory here", "make this folder a software
-    factory", "approve a spec", "run the factory", "update my software-dev-factory".
-  summary: 'Installs and operates the software development factory, a governed SDLC controller,
-    as a folder''s agentic function. It takes a spec the owner approved by exact bytes and
-    walks it through plan, red, green and review, driving the owner''s own signed-in Claude
-    Code or Codex CLI as labour. Each hand-off is verified by code reading real artifacts
-    (the actual diff and test output), so a worker''s "done" advances nothing; evidence lands
-    in git refs. Install writes .aai/ (owned), a vendored .ailib/ with the bundled controller
-    in app/, a root ./factory launcher, and projects/ holding one git repo per product, via
-    the ambient-folder installer; re-running is the update path. Operation uses ./factory
-    init, approve, run, verdict and diagnose. Needs macOS (sandbox-exec confinement, opt out
-    with FACTORY_CONFINEMENT=none on Linux or WSL2), Node 22.12+ and a signed-in CLI. It refuses
-    to approve specs, record verdicts or merge on the owner''s behalf, never starts a run
-    that spends subscription quota without explicit go-ahead, and the controller never commits,
-    pushes, releases or deploys. Never edit .ailib in a target folder. One operation per request.
-    Stage: setup and operate, the build-governance stage after a spec exists.'
+    projects/; use for "set up the software dev factory here", "approve a spec", "run the
+    factory", "update my software-dev-factory".
+  summary: 'Installs and operates the software development factory, a governed SDLC controller.
+    It turns a folder into a factory with one git repository per product under projects/<name>/.
+    It takes a spec the owner has approved by its exact bytes and walks it through plan, red
+    (failing tests), green (implementation) and review. The labour is the owner''s own signed-in
+    Claude Code or Codex CLI. Code checks every stage hand-off against real artifacts: the
+    actual diff and the actual test output. A worker saying "done, tests pass" advances nothing.
+    Evidence is stored in git refs (run.json). Inputs: a target folder; macOS with Node 22.12.0+
+    and sandbox-exec, or FACTORY_CONFINEMENT=none on WSL2 or Linux; a signed-in claude or
+    codex CLI (FACTORY_ADAPTER, FACTORY_ADAPTER_EXECUTABLE); a spec file per run. Produces:
+    an .aai/ scaffold (identity, purpose, instructions, factory.env); a vendored .ailib/software-dev-factory/
+    bundle that works offline; a ./factory launcher; and per-project runs that park at review,
+    along with a verdict file for the owner to sign. Verbs: install/update, init, approve,
+    run, verdict, diagnose, inspect, and a maintainer sync from the app repo''s ambient-distro/.
+    Refuses to: commit, push, merge, release or deploy; approve a spec or record a verdict
+    on the owner''s behalf; start a run (it spends subscription quota) without an explicit
+    go-ahead; install into the library repo; or edit .ailib/ in place. Stage: it is the build-and-verify
+    controller that sits after the spec is written and before release.'
   requests:
-  - Set up the software dev factory in this folder
-  - Make this folder a software factory with a governed build process
-  - Approve this spec and run the factory on it
-  - Run the factory against specs/login.spec.md and park at review
-  - Record the verdict on the review for this run
-  - Update my software-dev-factory to the latest version
-  - Diagnose why the factory run stopped at baseline
+  - set up the software dev factory in this folder
+  - approve specs/login.spec.md for the billing project
+  - run the factory on this spec and stop at review
+  - create a new product repo in my factory called invoicer
+  - why did my factory run park at baseline? diagnose it
+  - record my review verdict for that run
+  - update my software-dev-factory to the latest bundle
+  - drive Codex through red/green against my approved spec with evidence I can audit
   not_for:
   - solofactory: wins when the owner wants the local-first factory with an interview, PRD,
       subscription build, gates and localhost deploy rather than spec-byte approval and plan/red/green/review.
@@ -2526,37 +2544,40 @@ software-dev-factory:
       as a git repo is needed, with no governed run lifecycle.
   - ambient-folder: wins for generic folder ambient setup or re-syncing vendored skills unrelated
       to the factory.
+  - release-lane: wins once the code exists and the user wants commit groups, release candidates,
+      UAT logs and promotion to production, which the factory refuses to do.
   stage: operate
-  source_hash: 6e610689372b
+  source_hash: 35776e43d9a7
 wbs-toolkit:
   description: Installs and operates the outcome-driven WBS toolkit as a folder's agentic
-    planning and verified execution function; use for "set up WBS here", "spec this project",
-    "run the WBS", or "update the WBS toolkit".
-  summary: 'Installs and operates the outcome-driven WBS toolkit as a folder''s planning and
-    verified-execution function. Install input is a target project path; it runs the ambient-folder
-    installer (a no-write --check plan first, then the real run, or a curl bootstrap one-liner)
-    and writes .aai/ (identity, instructions, context), a vendored .ailib/wbs-toolkit/app/
-    snapshot holding the pinned Python CLI, the wbs-prd and wbs-exec skills, docs and schema,
-    a wbs.sh launcher, and appended CLAUDE.md and AGENTS.md anchors. Requires Python 3.10+,
-    with uv preferred and PyYAML as fallback. An INSTALL.md runbook covers non-technical owners
-    on macOS and Windows WSL2. Operating inside an installed project: run the requirements
-    interview or "wbs.sh init docs/prd.md", then loop "wbs.sh next", "start <node>", implement,
-    "done <node>". When done returns awaiting_proof_approval, review the integrated evidence
-    with the owner before "approve-proof". "status" shows progress, strategy and Proof Slice
-    state; "strategy legacy_bottom_up" only on explicit owner choice. Output is a .wbs/ work
-    tree of confirmed results, traceable leaf work packages, and verified code. Refuses to
-    edit .ailib/wbs-toolkit/ by hand (update by re-running the installer; personalise via
-    .aai/skills/wbs-toolkit/), warns that done and approve-proof execute declared shell verification
-    commands so only trusted projects qualify, and runs no server and holds no API credentials.
-    Also covers library-owner sync via scripts/sync-distro.sh. Stage: setup, then operate.'
+    planning and verified execution function; use for "set up WBS here", "spec this project
+    as a WBS tree", "run the WBS", or "update the WBS toolkit".
+  summary: 'Installs and operates an outcome-driven Work Breakdown Structure (WBS) toolkit
+    as a project''s planning and verified-execution function. Setup uses the ambient-folder
+    installer (dry-run with --check, then confirm the target path). It writes an owned .aai/
+    profile, a vendored .ailib/wbs-toolkit/app/ with a pinned Python CLI, PRD and execution
+    skills, a schema and docs, plus a wbs.sh launcher and CLAUDE.md/AGENTS.md anchors. Needs
+    Python 3.10+ and preferably uv, otherwise PyYAML already installed. Planning starts from
+    a relentless requirements interview (the vendored wbs-prd skill) or an existing PRD (`wbs.sh
+    init docs/prd.md`). Either path compiles confirmed user outcomes into a traceable .wbs/tree.yaml
+    plus context.md. Execution loops one eligible leaf at a time: next → start (returns a
+    work package) → implement → done. `done` runs the declared shell verification commands.
+    When a cross-branch Proof Slice shows the first architectural journey working, it stops
+    at awaiting_proof_approval until the owner explicitly runs approve-proof. `status` reports
+    progress, strategy and Proof Slice state. legacy_bottom_up traversal is allowed only when
+    the owner chooses it. Updates re-run the installer, which refreshes .ailib/ and never
+    touches .aai/ or .wbs/ state. It refuses to run a server, keep API credentials, edit vendored
+    .ailib/ by hand (forking goes to .aai/skills/), or run verification in untrusted projects.
+    Pipeline stage: spec-to-verified-code. It is the tree-structured planning-plus-execution
+    layer for software projects.'
   requests:
-  - set up WBS here
-  - spec this project before we build it
-  - run the WBS, what's the next work package
-  - update the WBS toolkit in this folder
-  - turn this PRD into a work tree and execute it
-  - approve the proof slice
-  - install the WBS toolkit for a non-technical client on a Mac
+  - Set up WBS in this repo
+  - Spec this project out as a WBS tree before we write any code
+  - Turn docs/prd.md into a WBS and start executing it
+  - Run the WBS and implement the next work package
+  - What's the status of the tree, and are we waiting on proof approval?
+  - The proof slice passed, let's review it and approve it
+  - Update the WBS toolkit in this project to the latest version
   not_for:
   - vibe: wins when the user wants a fast conversational test-build loop on a small app, not
       a formal spec tree.
@@ -2568,8 +2589,8 @@ wbs-toolkit:
       not a code work breakdown.
   - to-issues: wins when the plan should become tracker issues or tickets rather than a local
       .wbs tree.
-  stage: setup
-  source_hash: f4a6ff7073b2
+  stage: setup, operate
+  source_hash: 8bdc1809895c
 token-activity-graph:
   description: Builds an interactive self-contained HTML graph of token usage by day, app,
     and model with live pricing; use for "build a token activity graph", "show my token usage",
@@ -2655,30 +2676,32 @@ vibe:
     code a ...", asks to install or set up vibe in a folder, or works in a folder whose .aai/instructions.md
     marks it as a vibe project. Also handles "vibe off". Do not use for a plain "I want to
     build" outside a vibe folder, or for WBS or formal spec requests.
-  summary: 'Persistent, test-first build loop for local web apps and CLIs, switched on per
-    folder (a vibe stamp in .aai/instructions.md) or per session ("vibe on", "/vibe"). The
-    user describes a change in plain words; the skill touches them twice, at ask and at accept.
-    Inputs: the request, plus the folder''s existing stack if code exists (Vite, React, TypeScript,
-    Hono or FastAPI, SQLite, Vitest or pytest, Playwright by default for new apps). It sizes
-    the request into tier S, M or L, writes observable acceptance checks and assumptions,
-    asks at most five questions with proposed defaults, and confirms one-way doors (data model,
-    auth, paid services, deleting data). Then it writes failing tests first, builds, and runs
-    gates in order: build, unit tests, e2e, runtime console-error guard, screenshots at 1280px
-    and 390px, docs gate. Each gate is green only if run this turn and exit 0, max five attempts
-    per gate. Non-trivial diffs get a cold subagent review. Output is committed local code
-    at green, updated README, PRD, FUNCSPEC, USERGUIDE and PLAN.md, a log in .aai/memory/vibe/log.md,
-    and a shown result. Refuses to weaken, skip or delete tests, fake missing secrets or mocks
-    as real, push to a remote, use git add -A, or overwrite existing .aai files. Large specs
-    (over about 12 components or several people) graduate to a WBS workflow. Stage: build,
-    the implementation loop after requirements are roughly known.'
+  summary: 'Vibe is a persistent, test-first build loop for local web apps and CLIs. The user
+    takes part twice per request: they ask, and they accept. Inputs: a plain-language change,
+    bug ("it breaks when X") or new-app idea, plus the current folder. Vibe turns on in folder
+    mode (a vibe stamp in .aai/instructions.md) or session mode ("vibe on"). "vibe off" turns
+    it off. It sorts each request by tier: S is a small change or bug, M is one feature or
+    a one-screen app, and L is a multi-screen app. Tier L runs Define and then a component
+    loop driven by PLAN.md. Vibe writes acceptance checks and assumptions, and asks at most
+    5 questions, each with a default. It always confirms one-way doors: data model, auth,
+    paid services, deleting data, and the stack. It writes failing unit and Playwright tests
+    first, then builds. It runs gates G1–G6: build, unit, e2e, runtime console errors, screenshots
+    at 1280 and 390px, and docs. Each gate gets at most 5 attempts. At green it commits locally.
+    Output: a working app with permanent regression tests, PRD/FUNCSPEC/PLAN docs (or spec/SPEC.md
+    in scaffolded projects), a .aai/ stamp and log, and a demo at accept. On first use it
+    bootstraps the folder: git init, the default stack (Vite+React+TS, Hono, SQLite), and
+    the test harness. It refuses to weaken tests, fake secrets or mocks, push, `git add -A`,
+    or migrate stacks. It hands off to formal WBS or spec work past ~12 components or more
+    than one person.'
   requests:
-  - vibe on, let's build a small expense tracker web app
-  - vibe code a CLI that renames my photos by date
-  - it breaks when I click Save twice, fix it
-  - add a dark mode toggle to this app and show me
+  - vibe on — let's build a habit tracker
+  - vibe code a little CLI that renames my photos by date
   - set up vibe in this folder
-  - keep going on the plan, next component
-  - build me a one-screen app, test it, and screenshot the result
+  - add a dark mode toggle to the app
+  - it breaks when I save an empty title, fix it
+  - continue — next component in the plan
+  - 'let''s vibe this: a local recipe manager with search'
+  - vibe off
   not_for:
   - wbs-toolkit: wins when the project is large, multi-person, or needs a formal WBS spec
       and verified execution tree rather than a conversational build loop.
@@ -2690,8 +2713,12 @@ vibe:
       one question at a time before any code.
   - fresh-eyes: wins when the task is walking existing docs or onboarding cold with a zero-context
       agent, not building or changing the app.
-  stage: build
-  source_hash: 3a8ebb664f4e
+  - tinkerbuild: user says "tinkerbuild" explicitly or the folder has a .tinker/ directory
+      with a ticket queue
+  - grill-with-prototype: user wants a clickable mockup and SPEC.md from an interview, not
+      a working built app
+  stage: operate
+  source_hash: d583aa13e851
 init-dev-project:
   description: Scaffolds a folder into the dev-and-deploy standard (lanes, make verbs with
     a release lane, spec/src/tests/deploy/docs layout, .aai/ with identity, purpose and the
@@ -2742,36 +2769,37 @@ init-dev-project:
   stage: setup
   source_hash: 3079fcd81fe0
 release-lane:
-  description: Moves work through the release loop (checkpoint commits, status, optional system
+  description: Moves work through the release loop (commit groups, status, optional system
     test, release candidates to staging, a UAT issue log, promotion to production) with each
-    project's commands in .aai/skills/release-lane/project.toml; use for "checkpoint this",
+    project's commands in .aai/skills/release-lane/project.toml; use for "commit this group",
     "cut an rc", "send it to testers", "log this bug from testing", "is it stable", "release
     it".
-  summary: 'Runs the release loop for a project that is already scaffolded and under git:
-    checkpoint commits (repeat) → optional systest → release candidate → staging plus testers
-    → UAT issue log (fixes go back through checkpoint, then another rc) → promotion to production.
-    Inputs: a git repo, the release_lane.py script (from .ailib/ or the plugin root), and
-    a data-only .aai/skills/release-lane/project.toml that holds each project''s check, accept,
-    deploy, changelog and version_files settings. Never fork the skill per project; change
-    the config. The script asserts every gate it can check. Exit 1 means a gate held and is
-    reported to the user, not edited around. Exit 2 means the config is broken. Artifacts:
-    commits on a non-main branch, changelog "Unreleased" lines, vX.Y.Z-rc.N tags, tests/acceptance/runs/<date>.md
-    reports, a UAT log table (id, reporter, rc, severity, status, commit), drafted tester
-    notes and announcements, a --no-ff merge to main, and a release tag whose tree must match
-    the last rc. Read-only status adds a docs-drift report. It won''t push, merge, deploy,
-    message testers or users, defer an issue, or delete a branch without a yes in chat for
-    each one. It won''t work around wrong install docs; those become UAT issues. Projects
-    without testers skip rc and release in one step. Stage: after build and before and through
-    production rollout.'
+  summary: 'Runs a project''s release loop. Each project sets its commands in .aai/skills/release-lane/project.toml
+    (data only, defaults in release_lane.py DEFAULTS), and the skill drives them through release_lane.py,
+    which checks every gate a script can check. Modes: commit (group the diff and propose
+    splits, `RL check`, require a test change plus a changelog `## Unreleased` line when behavior
+    changed, commit on a non-main branch with files staged by name); status (read-only, plus
+    docs drift since the last tag); systest (optional; the accept command and a browser console
+    pass, written to tests/acceptance/runs/<date>.md); rc (confirm the bump, sync the docs,
+    tag vX.Y.Z-rc.N, deploy to staging, install from the shipped docs exactly as written,
+    draft the tester note); uat (add/close/defer rows in the UAT log with blocker/major/minor
+    severity; blockers can''t be deferred, `RL uat` must exit 0); release (--no-ff merge to
+    main, assert HEAD''s tree equals the last rc, re-run accept, date the changelog, tag,
+    deploy to production, check the live version, draft the announcement, prune merged clean
+    branches and worktrees). It works on a git repo that has VERSION, a changelog and the
+    config. It never pushes, merges, deploys or messages testers or users without a yes for
+    each one. It never works around a failed gate (exit 1) and never forks itself for per-project
+    paths. It is the stage after building and before production, downstream of init-dev-project''s
+    scaffold.'
   requests:
-  - Checkpoint this. Commit what I've got on the feature branch.
-  - Cut an rc and push it to staging.
-  - Send the new candidate to the testers.
-  - Log this bug Maria found in rc.2. It's a blocker.
-  - Is it stable enough to ship yet?
-  - Release it to production and tag it.
-  - What's changed since the last tag, and are the docs out of date?
-  - Run a system test before we cut the candidate.
+  - commit this group
+  - cut an rc and push it to staging
+  - send the release candidate to testers
+  - log this bug a tester found in rc.2
+  - is it stable enough to ship?
+  - release it to production
+  - what's changed since the last tag, and are the docs behind?
+  - run the system test before we cut a candidate
   not_for:
   - checkpoint: wins when "checkpoint" means saving conversation context before /compact or
       a handoff, not a git commit
@@ -2783,40 +2811,41 @@ release-lane:
       than moving a version toward production
   - to-issues: wins when a plan or PRD needs breaking into tracker tickets, not when bugs
       found in UAT get logged against an rc
-  stage: release
-  source_hash: 91ba0d87cc2c
+  - vibe: wins for the fast test-build-screenshot-commit loop on a local app; release-lane
+      handles versioned rcs, UAT and production promotion.
+  - software-dev-factory: wins for driving plan/red/green/review against an approved spec;
+      release-lane only moves finished work toward release.
+  stage: operate
+  source_hash: 67f2eba1b702
 tinkerbuild:
-  description: 'Personal-app software factory: idea to UI to walking skeleton, then a no-HITL
-    build/check loop for features and fixes, light testing, and a pre-release QA pass; harness-agnostic
-    with Claude Code, Codex and Orca adapters; use for "tinkerbuild", "tinker build", "add
-    a feature", "fix this", "new personal app", "run the tickets", "release my app".'
-  summary: 'Personal-app software factory for a single builder. It installs into a folder
-    through the ambient-folder bootstrap (`bootstrap.sh tinkerbuild [target]`, Python 3.10+).
-    The canonical code is vendored under `.ailib/tinkerbuild/` and the user-owned scaffold
-    lives in `.aai/`. Re-running the install updates the vendored code, and `--check` reports
-    drift without writing. `./tb.sh init` creates a `.tinker/` ticket store. The workflow
-    in `.ailib/tinkerbuild/app/instructions.md` then takes an idea through UI mockups to a
-    walking skeleton. After that comes a no-human-in-the-loop build/check loop: `./tb.sh ticket
-    add --kind feature|fix --title "..."` queues work and `./tb.sh run` works through the
-    queue. For each ticket, the driver builds, runs light tests and the project''s `check_cmd`,
-    and only then marks the ticket done and commits it. Error reports and in-app "report a
-    problem" buttons feed new tickets into the same queue. A pre-release QA pass gates "release
-    my app". Adapters let it run under Claude Code, Codex or Orca. Inputs are an app idea
-    or an existing tinkerbuild folder plus a feature or bug description. Outputs are a running
-    personal app, a ticket history and one commit per passing ticket. It refuses to mark tickets
-    done or commit by hand, and it never edits `.ailib/` (overrides are copied into `.aai/skills/tinkerbuild/`).
-    It is not built for formal specs, governed team SDLCs or deployment pipelines. Stage:
-    the whole idea-to-release lifecycle for hobby or personal apps, mostly the build/operate
-    loop.'
+  description: Personal-app software factory (idea to UI to walking skeleton, then a no-HITL
+    build/check loop, light testing, pre-release QA). Use ONLY when the user says "tinkerbuild"
+    or "tinker build" explicitly, or the working folder contains a `.tinker/` directory. Do
+    not trigger on generic "add a feature", "fix this", "new app" or "release" requests.
+  summary: 'tinkerbuild is a personal-app software factory for a single builder. It is installed
+    into a folder through the ambient-folder bootstrap (`bootstrap.sh -- tinkerbuild [target]`,
+    Python 3.10+). That writes a user-owned `.aai/` and a vendored `.ailib/tinkerbuild/`,
+    which is never edited by hand; overrides go in `.aai/skills/tinkerbuild/`. Re-running
+    the install updates it, and `--check` reports drift. `./tb.sh init` creates the `.tinker/`
+    state directory. Inputs: an app idea, then feature or fix requests entered as tickets
+    (`./tb.sh ticket add --kind feature --title "..."`). Pipeline stages from `app/instructions.md`:
+    idea → UI design/mockups → walking skeleton → no-HITL ticket loop (`./tb.sh run`) → light
+    testing → pre-release QA. Artifacts: a running personal app, a ticket queue, and per-ticket
+    commits. Only the `run` driver marks a ticket done or commits, and only after `check_cmd`
+    passes. It refuses hand-marked tickets and manual commits. It triggers only on an explicit
+    "tinkerbuild"/"tinker build" or when a `.tinker/` directory exists. It does not handle
+    generic "add a feature", "fix this", "new app" or "release" requests outside such a folder.
+    It has no formal spec or PRD approval gate, no multi-product `projects/` layout, and no
+    staging/UAT release lane. It is a lightweight solo loop and sits between vibe''s interactive
+    iteration and the governed factories.'
   requests:
-  - tinkerbuild a little habit-tracker app for me
-  - set up tinker build in this folder so I can start a new personal app
-  - 'add a feature to my app: export my entries as CSV'
-  - 'fix this bug: the save button does nothing after I edit a note'
-  - I've queued a bunch of tickets, run them all without asking me
-  - wire a 'report a problem' button into the app that files a ticket
-  - do the QA pass and release my app
-  - update the tinkerbuild install in this folder and tell me what drifted
+  - tinkerbuild a habit tracker app for me
+  - set up tinker build in this folder
+  - 'tinkerbuild: add a dark-mode toggle ticket and run the loop'
+  - work the tickets in .tinker
+  - tinker build — take my recipe-box idea from mockups to a walking skeleton
+  - run tinkerbuild's pre-release QA pass on my app
+  - update my tinkerbuild install
   not_for:
   - vibe: wins when the user wants a live, interactive "vibe on" session with screenshots
       after each change, or works in a folder marked as a vibe project, rather than a queued
@@ -2829,8 +2858,10 @@ tinkerbuild:
       a SPEC.md from a requirements interview, not a built app.
   - init-dev-project: wins when the user wants a bare folder scaffolded to the dev-and-deploy
       standard (lanes, make verbs, spec/src/tests layout) with no build loop.
-  stage: build
-  source_hash: edb79fd51505
+  - release-lane: the user wants commit groups, release candidates to staging, a UAT issue
+      log, and promotion to production
+  stage: operate
+  source_hash: b9b499ec18cf
 session-observatory:
   description: Builds a Langfuse-style observability dashboard from local AI coding session
     logs (Claude Code + Codex) for the last 7 days — stdlib-only parser, single-file HTML

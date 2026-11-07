@@ -164,7 +164,75 @@ def test_legacy_release_without_rc():
         assert "v0.1.1" in sh(repo, "git", "tag").stdout.split()
 
 
+def add_unreleased(repo, line="- change"):
+    cl = repo / "CHANGELOG.md"
+    cl.write_text(cl.read_text().replace("## Unreleased\n", f"## Unreleased\n{line}\n"))
+
+
+def test_gates():
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = make_repo(tmp)
+        add_unreleased(repo)
+        commit(repo, "change")
+
+        # rc refuses on main
+        code, out = lane(repo, "rc")
+        assert code == 1 and "branch" in out, out
+        sh(repo, "git", "checkout", "-qb", "feature")
+
+        # require_files fails before VERSION is touched
+        cfg = repo / ".aai/skills/release-lane/project.toml"
+        base = cfg.read_text()
+        cfg.write_text(base + 'require_files = ["notes-{version}.md"]\n')
+        commit(repo, "require notes")
+        code, out = lane(repo, "rc")
+        assert code == 1 and "notes-0.1.1.md" in out, out
+        assert (repo / "VERSION").read_text() == "0.1.0\n"
+        cfg.write_text(base)
+        commit(repo, "drop require")
+
+        # bad toml is a usage error, not a traceback
+        cfg.write_text("check = \n")
+        commit(repo, "bad toml")
+        code, out = lane(repo, "status")
+        assert code == 2 and "Traceback" not in out, out
+        cfg.write_text(base)
+        commit(repo, "good toml")
+
+        # run from a subfolder: git and commands agree on the repo
+        (repo / "sub").mkdir()
+        r = sh(repo / "sub", sys.executable, str(SCRIPT), "rc")
+        assert r.returncode == 0, r.stdout + r.stderr
+        assert "v0.1.1-rc.1" in sh(repo, "git", "tag").stdout
+
+        # uat: deferred blocker blocks, unknown status is a usage error
+        uat = repo / "tests/acceptance/UAT.md"
+        uat.write_text(UAT_HEAD + "| U1 | sam | rc.1 | blocker | deferred | |\n")
+        code, out = lane(repo, "uat")
+        assert code == 1 and "U1" in out, out
+        uat.write_text(UAT_HEAD + "| U1 | sam | rc.1 | blocker | wontfix | |\n")
+        assert lane(repo, "uat")[0] == 2
+        uat.write_text(UAT_HEAD + "| U1 | sam | rc.1 | blocker | fixed | x |\n")
+        assert lane(repo, "uat")[0] == 0
+
+        # closing a UAT row after the rc does not block release
+        commit(repo, "close U1")
+        sh(repo, "git", "checkout", "-q", "main")
+        sh(repo, "git", "merge", "-q", "--no-ff", "feature", "-m", "merge")
+        code, out = lane(repo, "release")
+        assert code == 0, out
+
+        # deploy_verify must report the version
+        sh(repo, "git", "update-index", "--assume-unchanged", str(cfg))  # config edit, same tagged HEAD
+        cfg.write_text(base + 'deploy_verify = "test {version} = 9.9.9"\n')
+        code, out = lane(repo, "deploy", "--channel", "production")
+        assert code == 1 and "not reporting 0.1.1" in out, out
+        cfg.write_text(base + 'deploy_verify = "test {version} = 0.1.1"\n')
+        assert lane(repo, "deploy", "--channel", "production")[0] == 0
+
+
 if __name__ == "__main__":
     test_full_lane()
     test_legacy_release_without_rc()
+    test_gates()
     print("ok")

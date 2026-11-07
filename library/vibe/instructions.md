@@ -57,6 +57,30 @@ finished result. The user touches each request twice: **ask** and **accept**.
   rewrite the file to the form of `<skill>/templates/aai/context.md` in the
   same checkpoint. Move any content that the docs do not have into `FUNCSPEC.md`.
 
+## Scaffolded projects (dev-and-deploy standard)
+
+A folder is **scaffolded** when it has a `Makefile` with an `rc:` target and
+`deploy/SHIPLIST`. There the standard owns the layout and the release, so vibe
+defers; every other rule in this file stays. Unscaffolded folders keep the flow
+below unchanged.
+
+- **Spec and tests.** `spec/SPEC.md` (What it must do / Examples / Decisions)
+  replaces `PRD.md`, `FUNCSPEC.md` and `PLAN.md`: checks become Examples there,
+  tier-L components go under its What it must do. Tests live in `tests/`
+  (`unit/`, `smoke/`, `acceptance/`), not `e2e/`. Skip the root-doc skeletons
+  in step 0.5 and G6 (`docs_gate.py`); the Docs step updates `spec/SPEC.md`,
+  `README.md` and `docs/`.
+- **Branch.** Before the loop, if on `main`, make `claude/<slug>` (a worktree
+  when `main` is in use elsewhere). Commit slices there. Merge with
+  `git merge --no-ff`, never squash.
+- **Changelog.** Each user-facing change adds one line under `## Unreleased` in
+  root `CHANGELOG.md` at the checkpoint.
+- **Release.** Only `make rc` / `make uat` / `make release` / `make deploy
+  CHANNEL=...`. Never hand-edit `VERSION` or tag by hand. See Release below.
+- **Log and handoff.** The log stays in `.aai/memory/vibe/log.md`; the session
+  handoff is `.aai/HANDOFF.md`, rewritten (with `## Branches kept`).
+  Nothing pushes without the user's say-so.
+
 ## Mode and routing
 
 - **Folder mode:** `.aai/instructions.md` contains the vibe stamp. On for every
@@ -74,7 +98,7 @@ While on, route by intent:
 | Question: "how does X work", "what's in the schema" | answer normally, change nothing |
 | Explicit git or file operation | do it normally, no loop |
 | "continue", "keep going" with a plan in progress | the component loop, next component |
-| "Spec this as a WBS", more than ~12 components, or more than one person | not vibe: suggest a formal spec or WBS workflow (graduation path) |
+| "Spec this as a WBS", more than ~12 components, or more than one person | not vibe: graduate. Scaffolded: continue in the standard (`spec/SPEC.md`, `make`). Unscaffolded: suggest `init-dev-project` first, then a formal spec or WBS workflow if still needed |
 
 At the start of each session in a vibe folder, read `.aai/context.md`, the
 last ~40 lines of `.aai/memory/vibe/log.md`, and `PLAN.md` if it exists.
@@ -88,7 +112,7 @@ The stack depends on the answers. Then bootstrap, then continue at step 2
 (tier L: write PRD and plan, then the component loop). `{{NAME}}` below means the app's name
 from step 1 (the folder name if there is none).
 
-1. `git init` if the folder is not a repo.
+1. `git init` if the folder is not a repo. In a scaffolded project, create `claude/<slug>` instead of building on `main`.
 2. **Stamp** (unless "just this session"). If `.aai/instructions.md` is
    missing, copy `<skill>/templates/aai/*.md` into `.aai/`, replacing `{{NAME}}`. If it exists without a vibe section, append the
    `## vibe mode` section of `<skill>/templates/aai/instructions.md` to it. Make
@@ -297,11 +321,16 @@ Append one entry per request (in tier L, one per component) to
 
 ## Release (only on "release" or "publish")
 
-For a folder with `distro/`. Confirm before every write.
+**Scaffolded project:** run `make rc` (testers) or `make release`, then `make
+deploy CHANNEL=staging|production` only if asked. Do not run steps 2-3 below;
+the lane bumps `VERSION`, dates `## Unreleased` and tags. Steps 4-5 (library
+publish) still apply when the folder has `distro/`.
+
+For an unscaffolded folder with `distro/`. Confirm before every write.
 
 1. Evals or tests green, tree clean, docs current.
 2. Bump `distro/.claude-plugin/plugin.json` version. Add a `CHANGELOG.md` entry.
-3. Commit and tag `vX.Y.Z`.
+3. Commit and tag `vX.Y.Z` (unscaffolded folders only).
 4. From the ambient-library dev workspace (never `~/.ailib`):
    `distro_kit.py validate <repo>`, then `distro_kit.py publish <cap> <repo> --check`.
    Show the plan.

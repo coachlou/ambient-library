@@ -22,7 +22,7 @@ until the router reads one. Optionally scope which a project uses via
 
 | Skill | What it does | How to invoke |
 |-------|-------------|---------------|
-| **init-dev-project** | Scaffolds a folder into the dev-and-deploy standard (four make verbs, spec/src/tests/deploy/docs, `.aai/`, git init + v0.0.0) | *"Init a dev project"*, *"Scaffold a new project"*, *"Set up a repo for X"* |
+| **init-dev-project** | Scaffolds a folder into the dev-and-deploy standard (verbs: run, spec, check, build, accept, rc, uat, release, deploy; spec/src/tests/deploy/docs, `.aai/`, git init + v0.0.0) | *"Init a dev project"*, *"Scaffold a new project"*, *"Set up a repo for X"* |
 | **release-lane** | Moves work through checkpoint → rc → staging → UAT → production, gates checked by script, project commands in `.aai/skills/release-lane/project.toml` | *"Cut an rc"*, *"Log this bug from testing"*, *"Release it"* |
 | **team-build** | Builds a project's `skills-manifest.yaml` from a brief: needs, shortlist, one pick per need with reason and runner-up, rationale record | *"Build the team for this project"*, *"Which skills should this project use"* |
 | **project-brief** | Creates a one-page project overview anyone can read and share | *"Write a project brief"*, *"Summarize this project"* |

@@ -29,7 +29,13 @@ no git repo → skip step 1), and say which steps were skipped and why.
 - Stage **specific files** (never `git add -A`), commit with a message that explains
   *why*, not what.
 - If working on a feature branch or worktree whose work is complete: merge to main.
-  If a worktree is fully merged and no longer needed, offer to delete it.
+  Merge with `git merge --no-ff` (never squash or fast-forward), so a release
+  candidate stays an ancestor.
+- Branch sweep, every session: delete each branch merged into `main` whose
+  worktree is clean, together with its worktree. A branch idle 14+ days with
+  uncommitted or unmerged work is never deleted without Lou's approval: flag it
+  in the closing report and list it under `## Branches kept` in
+  `.aai/HANDOFF.md` with today's date (that restarts its 14-day clock).
 - Push only per the gotcha above.
 
 ### 2. Export the conversation
@@ -60,7 +66,7 @@ leaked paths break published versions.
 ### 4. Produce the handoff
 
 If the project has a `.context/` store, run its session check-out protocol instead
-of writing a separate file. Otherwise write `HANDOFF.md` at the project root
+of writing a separate file. Otherwise write `.aai/HANDOFF.md` (create `.aai/` if missing)
 (overwrite the previous one — it describes *now*):
 
 - **State**: what's done, what's in flight, exact resume point (file, phase, failing
@@ -68,6 +74,7 @@ of writing a separate file. Otherwise write `HANDOFF.md` at the project root
 - **Locked decisions**: choices already made, so the successor doesn't re-litigate them.
 - **Next steps**: ordered, with the first one specific enough to start cold.
 - **Open questions**: genuinely unresolved items only.
+- **Branches kept**: the `## Branches kept` list from the step 1 sweep, each with the date flagged; "none" if empty.
 - **What NOT to do**: known dead ends and constraints (e.g., "no remote — don't push").
 
 High-signal test: could a fresh agent with zero conversation memory read only this

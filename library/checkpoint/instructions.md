@@ -109,7 +109,7 @@ the truth; open terminals are just doors into it.
 - **Check-in** — start of any session ("what should I work on", "resume").
 - **Checkpoint** — mid-session save without closing the task ("checkpoint",
   "save where I am", "quick save", "save progress").
-- **Check-out** — end of any session ("wrap up", "save", "log this").
+- **Check-out** — end of any session ("save", "log this").
 - **Status** — quick read of the board ("what's happening on this project")
   without claiming a task.
 - **Bootstrap** — project has no `.context/` and Lou confirms creating one.
@@ -421,18 +421,19 @@ approval pending.
 - **Record decisions and approvals as given.** Note what the user approved or
   refused, in their words, so the successor doesn't re-ask or re-litigate.
 - **One live handoff per project.** A new handoff supersedes the previous one —
-  update or delete the old file; never leave two handoffs that disagree.
+  rewrite `.aai/HANDOFF.md` in place (and drop any stale memory pointer or old
+  `.aai/handoff.md`); never leave two handoffs that disagree.
 
 ## Flow
 
 **1. Find where it goes.**
-- Harness with a persistent memory directory and a `MEMORY.md` index (Claude
-  Code auto-memory): write `session-<YYYY-MM-DD>-handoff.md` there as a
-  `type: project` memory, with a one-line pointer added to `MEMORY.md`.
-- Otherwise: `<project-root>/.aai/handoff.md` (overwrite — it describes *now*).
+Always `<project-root>/.aai/HANDOFF.md` — the dev-and-deploy standard's
+session-edge file. Rewrite it (never append); it describes *now*. Include a
+`## Branches kept` section listing branches/worktrees left alive and why. A
+one-line pointer in the harness's project memory (`MEMORY.md`) is optional.
 
 **2. Retire the previous handoff.** Read the existing one. Carry forward only its
-still-open items; delete or overwrite it (memory index: remove its line).
+still-open items; overwrite it (memory index, if any: update its line).
 
 **3. Gather facts** by command: branch and tip sha, pushed or not, dirty files
 (by name), any running process or server (pid, port, which build), the active
@@ -450,9 +451,9 @@ run or job id and its state.
 **First move:** <the single specific first action for the next session>
 ```
 
-For a memory file, frontmatter `description` is one line that carries the
-headline state (what's pushed, what's running, what's pending) — it is what the
-next session sees in the index before opening the file.
+Add `## Branches kept` (branch, worktree path, why kept) below the sections
+above. If you add a memory pointer, make its one line carry the headline state
+(what's pushed, what's running, what's pending).
 
 **5. Report** in two lines: where the note is, and the first move.
 

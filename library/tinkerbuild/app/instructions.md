@@ -44,7 +44,7 @@ work, fixes, and changes that reuse an existing pattern do not.
 
 - **In-session** (you are the agent): `TB intake`, take the oldest open ticket, follow
   `references/loop.md` yourself, then run the config's `check_cmd` and, if green,
-  `TB ticket set <id> --status done`, add a changelog line, commit. If red, retry with the output up to
+  `TB ticket set <id> --status done`, add a changelog line (under `## Unreleased` in root `CHANGELOG.md` when it has one), commit the files you touched (not `git add -A`). If red, retry with the output up to
   `max_attempts`, then `TB ticket set <id> --status parked` and tell the user.
 - **Headless** (spawn fresh agents): `TB run`. It does the same with the configured adapter. Use it
   to clear a backlog, from a script or a scheduler, or from a harness that cannot do the loop itself.

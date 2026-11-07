@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+- `make deploy` needs an explicit `CHANNEL=staging|production` (no production default) and refuses while that channel's row in `deploy/README.md` still says TODO.
+- Worktree hygiene: merged, clean branches are deleted with their worktree at session end; a branch idle 14 days with uncommitted or unmerged work is flagged, never deleted without Lou's approval, and its clock restarts. Scaffolded `HANDOFF.md` gets `## Branches kept`; `.aai/instructions.md` runs the check at session end.
+- Template fixes: rc tags are cut on the branch (the old "tags live on `main`" rule contradicted the lane); context map and verb list include `rc` and `uat`. The skill's own `make release` dates `## Unreleased` instead of taking `NOTE=`, and no longer pushes. Worktree isolation rule and a Shared state table in the `deploy/README.md` template. Rollback redeploys the previous tag. Standard decision 13.
+
 ## v0.5.0 — 2026-10-28
 - Release candidates and user testing. The scaffold vendors `release-lane` into `.ailib/release-lane/` and the Makefile's `rc`, `uat`, `release` and `deploy` call it. `make rc` cuts `vX.Y.Z-rc.N` for staging, `make uat` reads the new `tests/acceptance/UAT.md`, and `make release` promotes the last rc on `main`. `deploy` takes `CHANNEL=staging|production`, and the new `deploy/README.md` names both targets.
 - CHANGELOG `## Unreleased` replaces `NOTE=`. Merges to `main` are `--no-ff`. Per-project paths and commands go in `.aai/skills/release-lane/project.toml`. Standard decision 12.

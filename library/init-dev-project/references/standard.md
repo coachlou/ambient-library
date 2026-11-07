@@ -51,7 +51,7 @@ for the cold end-to-end run in release.
 | candidate | `make rc BUMP=patch` | `## Unreleased` has a line; check passes; VERSION bumped once (rc.1 only), acceptance passes on that candidate, tag `vX.Y.Z-rc.N`. A failed acceptance restores VERSION and tags nothing |
 | user testing | `make uat` | `tests/acceptance/UAT.md` has no open blocker and no open major that is not `deferred` |
 | release exit | `make release BUMP=patch` | on `main`, `make uat` passes and HEAD's tree equals the last rc, acceptance passes again, `## Unreleased` is dated, tag `vX.Y.Z` on `main`. With no rc it bumps, accepts and tags in one step; a failed acceptance restores VERSION and tags nothing |
-| deploy exit | `make deploy CHANNEL=staging\|production` | clean tree, HEAD carries the channel's tag (rc for staging, release for production), one smoke request against the deployed instance reports the version, and `deploy/README.md` names both targets and their rollback |
+| deploy exit | `make deploy CHANNEL=staging\|production` | clean tree, HEAD carries the channel's tag (rc for staging, release for production), one smoke request against the deployed instance reports the version, and `deploy/README.md` names both targets and their rollback. Rollback redeploys the previous tag, never a patch in place, so the tags always describe what runs |
 
 `rc`, `uat`, `release` and `deploy` run `release-lane`, vendored at
 `.ailib/release-lane/`. A project whose paths or commands differ sets them in
@@ -185,8 +185,18 @@ anything the root `.gitignore` names, so caches never reach the candidate.
   the rc number lives only in the tag `vX.Y.Z-rc.N`.
 - `main` is always releasable. Work on `claude/*` or `feat/*` in a worktree.
   rc tags are cut on the branch; merge to `main` with `--no-ff` so the last rc
-  stays an ancestor of the release, then tag on `main`. Delete the branch and
-  the worktree after.
+  stays an ancestor of the release, then tag on `main`.
+- At the end of each session, check branches and worktrees. A branch merged
+  into `main`, with a clean worktree, is deleted along with its worktree. A
+  branch idle for 14 days that still has uncommitted changes or unmerged
+  commits is never deleted: flag it to Lou in the session report and list it
+  under `## Branches kept` in `.aai/HANDOFF.md` with the date flagged. That
+  date restarts its 14-day clock. It is deleted only once its work is
+  committed and merged, or when Lou expressly approves deleting it.
+- A worktree isolates files only, not databases, ports, credentials or paid
+  APIs. Each worktree gets its own port and `runtime/`. `deploy/README.md`
+  names the shared external state (databases, hosted backends, paid provider
+  keys) and which branch may write to it.
 - Every behavior change adds a line under `## Unreleased` in CHANGELOG.md as it
   lands; `make release` dates that section. Nothing in the pipeline pushes;
   pushing a branch or tag is its own deliberate step.
@@ -211,7 +221,7 @@ anything the root `.gitignore` names, so caches never reach the candidate.
 2. `tinkering/` stays an incubator; graduation is a written decision in the
    README, not a tag (revised 2026-09-30, was "at first tag").
 3. Doctrine (closed 2026-10-02): `~/.aai/rules/coding.md` has a `## Projects`
-   section that points here and lists the seven rules agents break without it.
+   section that points here and lists the rules agents break without it.
 4. v0.2.0 (2026-09-30) adopts all four findings of a codex review: graduation
    rule, per-kind ship list, check/acceptance split, deploy proof + `data/`.
    The standard is piloted through this skill and a web app before any of it
@@ -261,9 +271,23 @@ anything the root `.gitignore` names, so caches never reach the candidate.
    no place for it. `make rc` bumps once and tags `vX.Y.Z-rc.N`; fixes fold
    into the same version as rc.2, rc.3. `make uat` reads the UAT log;
    `make release` promotes only on `main`, with uat passing and HEAD's tree
-   equal to the last rc, which is why merges are `--no-ff` (rule C) instead of
+   equal to the last rc, which is why merges are `--no-ff` (§5) instead of
    squash. `## Unreleased` replaces `NOTE=`, so the changelog is written as the
    work lands. The gates moved into the `release-lane` skill, vendored per
    project, so the how is canonical and each project's who and where is a
    config file. Piloted on a fresh scaffold: rc.1 to staging, uat, `--no-ff`
    merge, release with the changelog dated, production.
+13. v0.5.1 (2026-11-07): worktree hygiene and isolation, from a comparison
+   with a generic git-flow model. A survey found soloFactory at 9 worktrees
+   in three locations and 7 unmerged branches 47 to 66 commits behind `main`:
+   "delete after" was never enforced, so the rule names a trigger: merged
+   and clean means delete; idle 14 days with unmerged or uncommitted work
+   means flag, never delete without Lou's approval, and restart the clock.
+   HANDOFF's `## Branches kept` is the record. Worktrees share external
+   state, which had already bitten GEARS migrations and paid smoke runs, so
+   `deploy/README.md` names it. Rollback redeploys a tag so tags stay true.
+   The pre-merge safety tag was dropped from doctrine: the `--no-ff` merge's
+   first parent and the last release tag already mark the revert point.
+   Rejected: `release/*` and `hotfix/*` branches (rc tags on the feature
+   branch do that job) and CI before a second committer (unchanged, §6).
+   Deferred: a worktree sweep command, until the manual rule fails.

@@ -175,9 +175,19 @@ with tempfile.TemporaryDirectory() as tmp:
     assert not os.path.exists(
         os.path.join(p, "build", "candidate", "src", "__pycache__")
     )
+    # deploy names its channel, and refuses while that channel's README row is TODO
+    r = subprocess.run(["make", "deploy"], cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "CHANNEL=" in r.stderr, r.stderr
+    dep = ["make", "deploy", "CHANNEL=staging"]
+    r = subprocess.run(dep, cwd=p, capture_output=True, text=True)
+    assert r.returncode != 0 and "fill the staging row" in r.stderr, r.stderr
+    rd = os.path.join(p, "deploy", "README.md")
+    txt = open(rd).read()
+    open(rd, "w").write(txt.replace("for testers | TODO | TODO |", "for testers | demo | redeploy |"))
+    sh("git", "commit", "-qam", "name staging", cwd=p)
     # deploy refuses a dirty tree even on a tagged HEAD: the tag must describe what ships
     open(os.path.join(p, "src", "app.py"), "a").write("# wip\n")
-    r = subprocess.run(["make", "deploy"], cwd=p, capture_output=True, text=True)
+    r = subprocess.run(dep, cwd=p, capture_output=True, text=True)
     assert r.returncode != 0 and "not clean" in r.stderr, r.stderr
     sh("git", "checkout", "--", "src/app.py", cwd=p)
     # existing deploy/: a ship list the owner already wrote is kept, not overwritten

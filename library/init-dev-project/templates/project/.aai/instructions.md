@@ -21,10 +21,15 @@ or documenting {{name}}. The folder is governed by the dev-and-deploy standard.
 1. Read HANDOFF.md, then run `make` to see the numbered pipeline map.
 2. Studio mode by default: change spec/ by decision, src/ with a test, verify
    just enough. Release mode only when the user says "release".
-3. Every stage is a command: `make run`, `make check`, `make release`, `make deploy`.
+3. Every stage is a command: `make run`, `make check`, `make rc`, `make uat`,
+   `make release`, `make deploy`.
    A stage that has no passing command is not done.
-4. Before ending a session: rewrite `.aai/HANDOFF.md` (where we stopped and
-   why) and `.aai/checkpoint.md` (done / touched / open / next).
+4. Before ending a session: check branches and worktrees (`git worktree list`,
+   `git branch --no-merged main`) and apply the standard's §5 rule: delete merged,
+   clean branches with their worktrees; flag, never delete, any branch idle 14 days
+   with uncommitted or unmerged work. Then rewrite `.aai/HANDOFF.md` (where we
+   stopped and why, plus `## Branches kept`) and `.aai/checkpoint.md`
+   (done / touched / open / next).
 
 ## Outputs
 
@@ -34,7 +39,8 @@ or documenting {{name}}. The folder is governed by the dev-and-deploy standard.
 
 ## Rules
 
-- Never edit VERSION by hand; `make release` owns it.
-- Never push or tag from a branch; tags live on `main`.
+- Never edit VERSION by hand; `make rc` and `make release` own it.
+- Tag only through the lane: rc tags on the branch, release tags on `main`.
+- Never push without Lou's say-so; nothing in the pipeline pushes.
 - Empty folders are not created ahead of need.
 - Append gotchas here as real failures surface; do not restructure.

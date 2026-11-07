@@ -3,12 +3,12 @@
 | Path | What it is | Read when |
 |------|-----------|-----------|
 | README.md | what, status, run, deploy | first |
-| Makefile | the pipeline: run · check · release · deploy | before any stage |
-| VERSION, CHANGELOG.md | the only version; one line per release | at release |
+| Makefile | the pipeline: run · check · rc · uat · release · deploy | before any stage |
+| VERSION, CHANGELOG.md | the only version; one `## Unreleased` line per behavior change | at release |
 | spec/ | requirements, protocol, ADRs — what it must do | before changing src/ |
 | src/ | the thing itself; ships | when building |
 | tests/unit, tests/smoke | dev tests, every `make check` | when changing src/ |
-| tests/acceptance | production tests, only in `make release` | at release |
+| tests/acceptance | production tests, in `make rc` and `make release`; UAT.md is the tester log | at release |
 | deploy/<target>/ | config for the live target, no logic | at deploy |
 | docs/ | for the user of the thing; ships | when behavior changes |
 | tools/ | for the builder; never ships | when a check needs a script |

@@ -48,9 +48,10 @@ FM_FIELD = re.compile(r"^(name|description): (.+?)\s*$", re.M)
 TUNED_DESCRIPTIONS = {
     "capture-chat": "e6d216948e17",  # names harnesses, vault phrasings, both modes
     "chat-n-build": "3f7ee5193e45",  # more trigger examples + not-for negatives
-    "checkpoint": "776f42fe228c",  # spells out all three modes and their triggers
+    "checkpoint": "be3288c3b66a",  # spells out all three modes and their triggers
     "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
-    "release-lane": "8fabddc53808",  # lists every mode's trigger phrases
+    "release-lane": "6738268f9437",  # lists every mode's trigger phrases
+    "tinkerbuild": "173b71da5c0a",  # same text; SKILL.md is JSON-quoted (escaped quotes)
 }
 
 

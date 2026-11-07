@@ -65,7 +65,7 @@ that the ledger already answers — that's the trust the grill earned.
 
 ## Step 4 — Write the ledger
 
-Save `decisions.md` (or append to the project's `.context/`/spec doc if one exists):
+If `spec/SPEC.md` exists, append the ledger under its `## Decisions` section (same bullets, no new file). Otherwise save `decisions.md` (or append to the project's `.context/`/spec doc if one exists):
 
 ```markdown
 # Decisions — <topic> — YYYY-MM-DD

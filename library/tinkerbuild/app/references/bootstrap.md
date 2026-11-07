@@ -4,7 +4,8 @@ Run once per app, in order, recording each with `tb.py stage <name>` when it is 
 Same defaults rule as the loop: decide small things yourself, ask only what is costly to reverse.
 
 ## 1. brief  (`stage brief`)
-Write `.tinker/brief.md`, one page: what it does; who it's for (the user); the 3-5 things it must
+If `spec/SPEC.md` exists (scaffolded project), it is the brief: read it, do not write `brief.md`; changes to
+it are decisions. Otherwise write `.tinker/brief.md`, one page: what it does; who it's for (the user); the 3-5 things it must
 do; what is explicitly out of scope; where it runs (web / macOS / iOS / CLI / agent-driven).
 Ask at most 3 questions, only for gaps you cannot sensibly default.
 
