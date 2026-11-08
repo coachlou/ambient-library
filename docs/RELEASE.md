@@ -37,5 +37,5 @@ A release is **done only when `scripts/release-check.sh` exits 0.**
 7. **`scripts/release-check.sh`**: fix every FAIL line, rerun until it exits 0.
 8. **Member letter**: an unsent draft in soloFactory `notes/member-letter-*.md` is renamed to the
    new version and updated for it (version in subject, body and update prompt; a line for each
-   owner-visible change since the last *sent* SoloFactory release email (any segment), found in Resend
+   owner-visible change since the last *sent* SoloFactory email to the letter's own list, found in Resend
    broadcasts, not just this release). Part of the release, not a follow-up.
