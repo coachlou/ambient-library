@@ -32,6 +32,7 @@ async function boot() {
   if (!first) showError(new Error(NO_PROVIDER));
   renderMessages();
   renderCoverage();
+  checkUpdate().catch(() => {}); // never holds up the page
   await refreshProjects();
   const savedId = localStorage.getItem("solofactory.currentJob");
   const candidate = state.jobs.find((job) => job.id === savedId)
@@ -1235,6 +1236,28 @@ $("#start-over-button").addEventListener("click", async () => {
 const feedback = { trigger: null, markdown: null, fingerprint: null, jobId: null };
 const feedbackDialog = $("#feedback-dialog");
 
+// Update notice: a pill in the header that stays until the owner updates; details open on click.
+// A page load reuses the server's recent answer; pressing the button when no update is known asks again.
+let updateNotice = null;
+async function checkUpdate({ manual = false } = {}) {
+  const button = $("#update-button");
+  const result = await api(`/api/update${manual ? "?force=1" : ""}`).catch(() => ({ error: true }));
+  if (result.newer) {
+    updateNotice = result;
+    $("#update-text").textContent = `SoloFactory ${result.latest} is available. You have ${result.current}.`;
+    $("#update-prompt").textContent = result.prompt;
+    button.textContent = "Update available";
+    button.classList.add("update-available");
+    button.title = `${result.current} → ${result.latest}`;
+    if (manual) $("#update-pop").showPopover();
+    return;
+  }
+  if (!manual) return;
+  button.textContent = result.disabled ? "Update checks off" : result.error ? "Couldn't check" : `Up to date (${result.current})`;
+  setTimeout(() => { if (!updateNotice) button.textContent = "Check for updates"; }, 4000);
+}
+$("#update-button").addEventListener("click", () => (updateNotice ? $("#update-pop").togglePopover() : checkUpdate({ manual: true })));
+$("#update-copy").addEventListener("click", () => navigator.clipboard?.writeText($("#update-prompt").textContent).then(() => { $("#update-copy").textContent = "Copied"; }).catch(() => {}));
 $("#feedback-button").addEventListener("click", (event) => openFeedback(event.currentTarget, { mode: "improvement" }));
 $("#report-run-button").addEventListener("click", (event) => openFeedback(event.currentTarget, { mode: "problem", jobId: state.job?.id }));
 $("#feedback-close-button").addEventListener("click", () => feedbackDialog.close());

@@ -9,6 +9,12 @@
   </head>
   <body>
     <div class="shell">
+      <div id="update-pop" class="update-pop" popover>
+        <strong id="update-text"></strong>
+        <p>Update when it suits you; nothing changes until you do. Open Claude Code (or Codex) on this computer (on Windows, in the Ubuntu window) and paste:</p>
+        <pre id="update-prompt"></pre>
+        <button id="update-copy" class="button small" type="button">Copy prompt</button>
+      </div>
       <header class="topbar">
         <a class="brand" href="/" aria-label="SoloFactory home">
           <span class="brand-mark" aria-hidden="true">SF</span>
@@ -22,6 +28,7 @@
           <button id="board-button" class="button ghost small" type="button" aria-pressed="false">Factory</button>
           <button id="feedback-button" class="button ghost small" type="button">Feedback</button>
           <a class="button ghost small" href="/manual">Manual</a>
+          <button id="update-button" class="button ghost small" type="button">Check for updates</button>
           <div class="top-status"><span class="pulse"></span><span id="system-status">Checking factory</span></div>
         </div>
       </header>
