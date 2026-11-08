@@ -19,6 +19,11 @@ A release is **done only when `scripts/release-check.sh` exits 0.**
 
 1. **soloFactory** (skip if unchanged): bump `package.json`, add a PROGRESS entry, tests pass,
    `git tag v<ver>`, `git push origin main --tags`.
+   **Docs review first**, against every owner-visible change since the last tag (`git log v<prev>..`):
+   `docs/INSTALL.md` (+ `distro/INSTALL.md`) *below <ver>* update note, `docs/manual/index.html`
+   (section and Settings row), `README.md`, guides in `docs/`. Record it as a `- Docs:` bullet in
+   the PROGRESS entry ("none" with the reason if nothing changed). `npm test` fails without that
+   bullet, or when `src/` reads a `SOLOFACTORY_*` setting the manual's Settings table lacks.
 2. **ambient-library**: `scripts/sync-distro.sh --ref v<ver> solofactory ../soloFactory`, commit;
    bump `.claude-plugin/plugin.json`, commit; `git push origin main`.
 3. **aai-library**: `scripts/publish-distro.sh ../aai-library-release`, then
