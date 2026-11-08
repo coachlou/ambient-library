@@ -35,3 +35,6 @@ A release is **done only when `scripts/release-check.sh` exits 0.**
    `claude plugin marketplace update aai-library`; `claude plugin update ambient@aai-library`
    (takes effect after a Claude restart).
 7. **`scripts/release-check.sh`**: fix every FAIL line, rerun until it exits 0.
+8. **Member letter**: an unsent draft in soloFactory `notes/member-letter-*.md` is renamed to the
+   new version and updated for it (version in subject, body and update prompt; a line for each
+   owner-visible change). Part of the release, not a follow-up.
