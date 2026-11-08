@@ -11,8 +11,7 @@ A release is **done only when `scripts/release-check.sh` exits 0.**
 | `ambient-library` | coachlou/ambient-library | canonical library (this repo) |
 | `aai-library-release` | coachlou/aai-library | **publish from here** (must be clean) |
 | `aai-library` | coachlou/aai-library | working clone: fast-forward only |
-| `aimm-publish-clone` | coachlou/aimm | **publish from here** (must be clean) |
-| `aimm-shared-repo` | coachlou/aimm | working clone, has Lou's edits: fast-forward only, never publish from it |
+| `aimm-shared-repo` | coachlou/aimm | **publish from here** (must be clean; herenow/ and other local-only files are gitignored) |
 | `~/.ailib` | coachlou/aai-library | Lou's local library (non-plugin harnesses) |
 | `~/.claude/plugins/…/aai-library` | coachlou/aai-library | Claude's `ambient@aai-library` plugin |
 
@@ -24,9 +23,9 @@ A release is **done only when `scripts/release-check.sh` exits 0.**
    bump `.claude-plugin/plugin.json`, commit; `git push origin main`.
 3. **aai-library**: `scripts/publish-distro.sh ../aai-library-release`, then
    `git -C ../aai-library-release push origin main --tags`.
-4. **aimm** (members): `scripts/publish-aimm.sh ../aimm-publish-clone`, then
-   `git -C ../aimm-publish-clone push origin main`.
-5. **Working clones**: `git pull --ff-only` in `aai-library` and `aimm-shared-repo`.
+4. **aimm** (members): `scripts/publish-aimm.sh ../aimm-shared-repo`, then
+   `git -C ../aimm-shared-repo push origin main`.
+5. **Working clones**: `git pull --ff-only` in `aai-library`.
 6. **Lou's local copies**: `git -C ~/.ailib pull --ff-only`;
    `claude plugin marketplace update aai-library`; `claude plugin update ambient@aai-library`
    (takes effect after a Claude restart).

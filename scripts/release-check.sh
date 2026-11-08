@@ -38,8 +38,7 @@ repo "$GH/soloFactory"          "soloFactory (dev)"                  yes
 repo "$GH/ambient-library"      "ambient-library (canonical)"        yes
 repo "$GH/aai-library-release"  "aai-library-release (publish clone)" no
 repo "$GH/aai-library"          "aai-library (working clone)"        yes
-repo "$GH/aimm-publish-clone"   "aimm-publish-clone (publish clone)" no
-repo "$GH/aimm-shared-repo"     "aimm-shared-repo (working clone)"   yes
+repo "$GH/aimm-shared-repo"     "aimm-shared-repo (publish clone)"   no
 repo "$HOME/.ailib"             "~/.ailib (local library)"           no
 
 echo "Versions"
@@ -48,7 +47,7 @@ tag_on_remote "$GH/soloFactory" "v$SF" && ok "soloFactory v$SF tagged and pushed
   || bad "soloFactory v$SF: tag not on origin"
 for f in "ambient-library:$GH/ambient-library/library/solofactory/app/VERSION" \
          "aai-library:$GH/aai-library-release/library/solofactory/app/VERSION" \
-         "aimm:$GH/aimm-publish-clone/aai-release/solofactory/library/solofactory/app/VERSION" \
+         "aimm:$GH/aimm-shared-repo/aai-release/solofactory/library/solofactory/app/VERSION" \
          "~/.ailib:$HOME/.ailib/library/solofactory/app/VERSION"; do
   n="${f%%:*}"; p="${f#*:}"
   grep -q "solofactory $SF " "$p" 2>/dev/null && ok "$n carries solofactory $SF" \
