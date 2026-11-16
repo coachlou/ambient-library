@@ -1,13 +1,15 @@
 import http from "node:http";
 import { appendFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { JobStore } from "./store.mjs";
 import { withReviewDiagnostics } from "./review.mjs";
 import { amendmentPacket, assertBatch, validateRecoveryApproval } from "./feature-recovery.mjs";
-import { MAX_AMENDED_PLAN_BYTES, assertPlanAmendable, admitsPlanning, assertPlanInputsRevised, assertPlanReviewable, buildRecovery, buildRecoveryPacket, continuationAction, SoloFactory, withContinuation } from "./factory.mjs";
+import { MAX_AMENDED_PLAN_BYTES, assertPlanAmendable, admitsPlanning, assertPlanInputsRevised, assertPlanReviewable, buildRecovery, buildRecoveryPacket, continuationAction, previousRelease, SoloFactory, withContinuation } from "./factory.mjs";
 import { watchConfig } from "./watchdog.mjs";
 import {
+  COVERAGE_KEYS,
   INTERVIEW_RESPONSE_SCHEMA,
   briefNotices,
   runGuideTurn,
@@ -15,7 +17,7 @@ import {
   validateInterviewResult,
   validateMessages,
 } from "./interview.mjs";
-import { createProvider, detectProviderDiagnostics, discoverProviders } from "./providers.mjs";
+import { checkModels, claudeMaxTurns, createProvider, detectProviderDiagnostics, discoverProviders } from "./providers.mjs";
 import { createFixtureProvider } from "./fixture-provider.mjs";
 import { createUpdateChecker } from "./update-check.mjs";
 import { REPORTABLE_STATES, buildDiagnostics, issuesConfig, renderReport, scrub, validateFeedback } from "./feedback.mjs";
@@ -32,6 +34,8 @@ export async function createSoloFactoryServer(options = {}) {
   // .solofactory/; the distro points SOLOFACTORY_ROOT at the ambient folder.
   const root = path.resolve(options.root ?? process.env.SOLOFACTORY_ROOT ?? home);
   const activeFile = path.join(home, "active-project");
+  // Custom profiles (named model and effort choices per stage). The two built-ins are computed, never stored.
+  const profilesFile = path.join(home, "profiles.json");
   const { version } = JSON.parse(await readFile(path.join(projectRoot, "package.json"), "utf8"));
   // One JSONL line per operational error, from the server, the browser, and chat agents, for later analysis.
   // ponytail: append-only, no rotation; add a size cap if a real install ever grows it past a few MB.
@@ -85,14 +89,19 @@ export async function createSoloFactoryServer(options = {}) {
   const fixtureMode = options.fixtureMode ?? process.env.SOLOFACTORY_DEMO === "1";
   // Repair turns per gate budget. Only a smoke test lowers it, to reach an exhausted budget on a real provider.
   const maxRepairs = /^\d+$/.test(process.env.SOLOFACTORY_MAX_REPAIRS ?? "") ? Number(process.env.SOLOFACTORY_MAX_REPAIRS) : 2;
+  // Which features get a scoped review: "all" (default) or "risky" (uncased or browser checks, edited earlier proofs).
+  // Saved on each new run, so a resume keeps the value its run started with. Smoke A/B only.
+  const featureReview = process.env.SOLOFACTORY_FEATURE_REVIEW || "all";
+  if (!["all", "risky"].includes(featureReview)) throw new Error(`SOLOFACTORY_FEATURE_REVIEW must be "all" or "risky", not "${featureReview}".`);
   // Tests that exercise the owner's manual Approve path turn the automatic repair start off.
   const autoStartRepairs = options.autoStartRepairs ?? true;
   watchConfig(); // fails fast on an invalid progress window or loop threshold
-  const providerFactory = options.providerFactory ?? ((id) => {
+  claudeMaxTurns(); // and on an invalid per-turn step limit
+  const providerFactory = options.providerFactory ?? ((id, models) => {
     if (id === "fixture" && fixtureMode) return createFixtureProvider();
     // Runs made with SOLOFACTORY_DEMO=1 persist in the project; outside demo mode they can't run.
     if (id === "fixture") throw new Error("This run was made in demo mode. Start SoloFactory with SOLOFACTORY_DEMO=1 to resume it, or Dismiss it.");
-    return createProvider(id);
+    return createProvider(id, models);
   });
   const factories = new Map();
   let closing = false;
@@ -117,7 +126,7 @@ export async function createSoloFactoryServer(options = {}) {
       const projectStore = storeFor(entry.projectId);
       await projectStore.init();
       const job = await projectStore.read(entry.jobId);
-      const factory = new SoloFactory({ store: projectStore, provider: providerFactory(job.provider), maxRepairs, autoStartRepairs });
+      const factory = new SoloFactory({ store: projectStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
       factories.set(job.id, factory);
       const run = { jobId: job.id, factory };
       runs.set(entry.projectId, run);
@@ -165,7 +174,28 @@ export async function createSoloFactoryServer(options = {}) {
     await jobStore.reset(job.baseCommit);
     await jobStore.appendEvent(job.id, { type: "job.rolled_back", state: job.state, message: `App restored to the release before this run (${job.baseCommit.slice(0, 7)})` });
   };
+  // Start over and a revised brief both replace a parked run: its files go back and it stops holding the queue.
+  const supersede = async (original, jobStore) => {
+    if (!PARKED.has(original.state)) return;
+    await rollBack(original, jobStore);
+    original.dismissed = true;
+    await jobStore.writeState(original);
+  };
+  // A past run's brief can be reopened once the run has stopped or finished and nothing is running it again.
+  const revisable = (job) => (PARKED.has(job.state) || job.state === "completed") && !queue.some((entry) => entry.jobId === job.id) && ![...runs.values()].some((run) => run.jobId === job.id && !PARKED.has(job.state));
   const busyJobId = () => runs.get(active.id)?.jobId ?? null;
+  // A run persists its parked state before the scheduler releases its writer slot (the settlement reads the
+  // final state and logs a failure first). An owner acting on the parked card in that window must not get a
+  // "worker is still running" refusal, so wait, bounded, for this job's own run to settle.
+  async function settleParked(projectId, id, timeoutMs = 10_000) {
+    const run = runs.get(projectId);
+    if (run?.jobId !== id || !run.promise) return;
+    const job = await storeFor(projectId).read(id).catch(() => null);
+    if (!job || !PARKED.has(job.state)) return;
+    let timer;
+    await Promise.race([run.promise, new Promise((resolve) => { timer = setTimeout(resolve, timeoutMs); })]);
+    clearTimeout(timer);
+  }
   const schedulerStatus = () => ({ busyJobId: busyJobId(), maxActiveRuns, activeRuns: [...runs].map(([projectId, run]) => ({ projectId, jobId: run.jobId })) });
 
   async function annotateJobs(projectId, jobs) {
@@ -207,10 +237,12 @@ export async function createSoloFactoryServer(options = {}) {
           project: project.name,
           projectId: project.id,
           promise: job.brief?.promise ?? null,
+          workingName: job.brief?.workingName ?? null,
+          dismissed: !!job.dismissed,
           state: job.state,
           stage: job.stage ?? null,
           startedAt: job.startedAt ?? null,
-          elapsedMs: job.startedAt ? new Date(job.stageHistory?.at(-1)?.endedAt ?? Date.now()) - new Date(job.startedAt) : null,
+          elapsedMs: job.startedAt ? new Date(job.stageHistory?.at(-1)?.endedAt ?? job.completedAt ?? Date.now()) - new Date(job.startedAt) : null,
         };
         if (job.sdlc === "slices") {
           const total = (job.slicePlanIds ?? []).length;
@@ -288,10 +320,18 @@ export async function createSoloFactoryServer(options = {}) {
           fixtureMode,
           version,
           issues: issues ? { base: issues.base, available: true } : null,
+          profiles: { builtins: builtinProfiles(), custom: await readProfiles(profilesFile) },
           sdlcOptions: [
             { id: "slices", label: "Planned features", detail: "A reviewed feature plan first, then each feature is built, proved and reviewed before the next starts." },
           ],
         });
+      }
+      if (request.method === "PUT" && url.pathname === "/api/profiles") {
+        const body = await readJson(request);
+        const custom = validateProfiles(body.custom);
+        await mkdir(home, { recursive: true });
+        await writeFile(profilesFile, JSON.stringify({ custom }, null, 2));
+        return json(response, 200, { custom });
       }
       if (request.method === "POST" && url.pathname === "/api/interview/upload") {
         // Images cannot ride inline in the transcript, so they land in the active
@@ -310,6 +350,14 @@ export async function createSoloFactoryServer(options = {}) {
         const provider = requireProvider(body.provider, fixtureMode);
         const messages = validateMessages(body.messages);
         const dir = active.dir; // the project this turn belongs to, even if the owner switches mid-turn
+        // Queue asks for a final review of the saved draft's brief (owner edits included) before anything freezes.
+        let review = null;
+        if (body.review) {
+          const draft = await readFile(draftFile(dir), "utf8").then(JSON.parse).catch(() => null);
+          if (!draft?.guide?.brief) return json(response, 409, { error: "There is no brief in progress to review.", code: "draft_missing" });
+          const previous = draft.revises ? (await store.read(draft.revises).catch(() => null))?.brief ?? null : null;
+          review = { brief: draft.guide.brief, previous };
+        }
         const latest = (await store.list())[0];
         const current = latest ? await withReviewDiagnostics(latest, active.dir) : null;
         const runContext = current ? {
@@ -320,7 +368,7 @@ export async function createSoloFactoryServer(options = {}) {
             planFile: current.recoveryPhase.planFile ?? null, features: current.recoveryPhase.plan?.slices.length ?? 0, gaps: current.recoveryPhase.request?.checks ?? [], planBlockers: current.recoveryPhase.planBlockers ?? [], remainingRepairs: Math.max(0, (current.repairBudgetLimit ?? 0) - current.attempt) } : null,
           recoveryPacket: PARKED.has(current.state) ? buildRecoveryPacket(withContinuation({ ...current, recovery: current.recovery ?? buildRecovery(current, active.dir, undefined, { maxRepairs }) }, { maxRepairs })) : null,
         } : { project: active.id, state: "no-runs" };
-        const guide = providerFactory(provider);
+        const guide = providerFactory(provider, inputModels(body.models));
         const result = await runGuideTurn((prompt) => guide.run({
           // The guide runs inside the active project so its transcript is that project's memory
           // and the CLI picks up the project's own CLAUDE.md/.aai.
@@ -330,10 +378,59 @@ export async function createSoloFactoryServer(options = {}) {
           mode: "read",
           logPath: path.join(active.dir, ".aai", "memory", "interviews", "guide.log"),
           context: { stage: "interview" },
-        }), { skill, messages, runContext });
+        }), { skill, messages, runContext, review });
         await mkdir(path.dirname(draftFile(dir)), { recursive: true });
-        await writeFile(draftFile(dir), JSON.stringify({ provider, messages: [...messages, { role: "assistant", content: result.message }], guide: result }, null, 2));
+        // A revision keeps naming the run it revises (and the stopped run it sets aside) until it is queued or discarded.
+        const { revises, replaces = null, ownerEdits = {} } = await readFile(draftFile(dir), "utf8").then(JSON.parse).catch(() => ({}));
+        // Sections the owner rewrote in Edit mode stay as written while the Guide's brief still carries the text
+        // they replaced (it rebuilds the brief from the conversation and can lose them). Once the Guide writes
+        // something new for a section, that is a deliberate change and the owner's edit stops being held.
+        const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+        const held = {};
+        let overridden = false;
+        result.brief = { ...result.brief }; // never write into the provider's own object
+        // The turn right after an edit is the Guide's check of it: the edit stands (a conflict is the Guide's message
+        // to make), and whatever stale text the Guide wrote there counts as what the edit replaced.
+        for (const [key, edit] of Object.entries(ownerEdits)) {
+          const before = edit.fresh && !same(result.brief?.[key], edit.value) ? result.brief?.[key] ?? null : edit.before;
+          if (edit.fresh || same(result.brief?.[key], before)) {
+            if (!same(result.brief?.[key], edit.value)) overridden = true;
+            result.brief[key] = edit.value;
+          }
+          if (same(result.brief?.[key], edit.value)) held[key] = { value: edit.value, before };
+        }
+        // Reviewed: a final review returned ready for this exact brief. Any later turn or edit replaces the
+        // guide and so clears it. If an owner edit had to be put back over the Guide's text, the Guide did
+        // not review the brief as it stands, so it is not marked reviewed.
+        if (review && result.status === "ready" && !overridden) result.reviewed = true;
+        await writeFile(draftFile(dir), JSON.stringify({ provider, messages: [...messages, { role: "assistant", content: result.message }], guide: result, ...(revises && { revises, replaces }), ...(Object.keys(held).length && { ownerEdits: held }), savedAt: new Date().toISOString() }, null, 2));
         return json(response, 200, result);
+      }
+      // Change notes typed on the brief page but not yet sent to the Guide, saved so a revision can wait.
+      // Save on the brief page without a Guide turn: change notes typed but not sent, and sections the owner
+      // rewrote in Edit mode (the owner's wording is the brief; the Guide only checks it afterwards).
+      if (url.pathname === "/api/interview/draft" && request.method === "PATCH") {
+        const body = await readJson(request);
+        const { notes, edits } = body;
+        if (notes !== undefined && (typeof notes !== "string" || notes.length > 20_000)) return json(response, 400, { error: "notes must be text under 20,000 characters.", code: "draft_notes_invalid" });
+        const fields = INTERVIEW_RESPONSE_SCHEMA.properties.brief.properties;
+        const editsValid = edits === undefined || (edits && typeof edits === "object" && !Array.isArray(edits) && Object.entries(edits).every(([key, value]) =>
+          fields[key] && (fields[key].type === "array" ? Array.isArray(value) && value.every((item) => typeof item === "string") : typeof value === "string")));
+        if (!editsValid || JSON.stringify(edits ?? {}).length > 200_000) return json(response, 400, { error: "edits must map brief sections to text, or to lists of text for list sections.", code: "draft_edits_invalid" });
+        if (notes === undefined && edits === undefined) return json(response, 400, { error: "Send notes, edits, or both.", code: "draft_patch_empty" });
+        // Notes or an edit before the first answer start the draft from the opening turn.
+        const opening = makeOpeningTurn();
+        const draft = await readFile(draftFile(active.dir), "utf8").then(JSON.parse).catch(() => null)
+          ?? { provider: body.provider ?? null, messages: [{ role: "assistant", content: opening.message }], guide: opening };
+        if (!draft) return json(response, 409, { error: "There is no brief in progress to save on.", code: "draft_missing" });
+        const brief = draft.guide?.brief ?? {};
+        const ownerEdits = { ...draft.ownerEdits };
+        // Remember what each edit replaced, so a later Guide turn that still carries the old text keeps the edit.
+        for (const [key, value] of Object.entries(edits ?? {})) ownerEdits[key] = { value, before: ownerEdits[key]?.before ?? brief[key] ?? null, fresh: true };
+        const saved = { ...draft, ...(notes !== undefined && { notes }), ...(edits && { guide: { ...draft.guide, brief: { ...brief, ...edits }, reviewed: false }, ownerEdits }), savedAt: new Date().toISOString() };
+        await mkdir(path.dirname(draftFile(active.dir)), { recursive: true });
+        await writeFile(draftFile(active.dir), JSON.stringify(saved, null, 2));
+        return json(response, 200, { draft: saved });
       }
       if (url.pathname === "/api/interview/draft" && ["GET", "DELETE"].includes(request.method)) {
         if (request.method === "DELETE") { await rm(draftFile(active.dir), { force: true }); return json(response, 200, { draft: null }); }
@@ -368,7 +465,7 @@ export async function createSoloFactoryServer(options = {}) {
           const jobStore = storeOfJob(feedback.jobId);
           const job = await jobStore.read(feedback.jobId);
           if (!REPORTABLE_STATES.includes(job.state)) return json(response, 409, { error: "Diagnostics are only available for failed, interrupted, or cancelled runs.", code: "feedback_not_reportable" });
-          const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider), maxRepairs, autoStartRepairs });
+          const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
           const { summary } = await factory.telemetry(job.id);
           diagnostics = buildDiagnostics({ job, events: await jobStore.events(job.id, 500), summary, version });
         }
@@ -394,8 +491,30 @@ export async function createSoloFactoryServer(options = {}) {
         // Same scan the Guide's review screen shows. A brief posted straight here (e.g. from chat) has
         // no Guide turn to send it back to, so like the Guide's second pass it queues with notices, never a block.
         const notices = briefNotices(validated.brief);
-        const job = await store.create({ brief: validated.brief, transcript: body.transcript, provider, sdlc, notices });
-        await enqueue(active.id, job.id);
+        // A brief reopened from a past run sets aside the stopped run holding the project's queue, like Start over.
+        // The draft names that run (replaces) when it was opened; if another run holds the queue now, the owner
+        // must see that before its files are rolled back. A completed run is never rolled back or dismissed.
+        let blocker = null;
+        if (body.revises !== undefined) {
+          if (typeof body.revises !== "string" || !/^[a-z0-9-]+$/.test(body.revises)) return json(response, 400, { error: "revises must be a run id.", code: "revise_invalid" });
+          const current = runs.get(active.id)?.jobId;
+          if (current) await settleParked(active.id, current);
+          const revised = await store.read(body.revises);
+          if (!revisable(revised)) return json(response, 409, { error: "The run this brief revises is running or queued again, so this brief cannot replace it. Start over in the interview to queue this brief on its own.", code: "revise_not_parked" });
+          const holder = await blockerFor(active.id);
+          if (holder !== (body.replaces ?? null)) {
+            // Save the current holder to the draft so the owner sees it on the Queue button; the next press queues.
+            const draft = await readFile(draftFile(active.dir), "utf8").then(JSON.parse).catch(() => null);
+            if (draft?.revises === body.revises) await writeFile(draftFile(active.dir), JSON.stringify({ ...draft, replaces: holder }, null, 2));
+            const now = holder === body.revises ? `queuing now replaces run ${holder}` : holder ? `queuing now sets aside run ${holder}` : "queuing now adds a new run and sets nothing aside";
+            return json(response, 409, { error: `The stopped run holding this project changed since this brief was opened: ${now}. Check the Queue button, then press it again.`, code: "revise_blocker_changed", replaces: holder });
+          }
+          blocker = holder && (await store.read(holder));
+        }
+        const models = inputModels(body.models);
+        const job = await store.create({ brief: validated.brief, transcript: body.transcript, provider, models, sdlc, notices, featureReview });
+        if (blocker) await supersede(blocker, store);
+        await enqueue(active.id, job.id, "start", { front: Boolean(blocker) });
         await rm(draftFile(active.dir), { force: true });
         const [annotated] = await annotateJobs(active.id, [await store.read(job.id)]);
         return json(response, 202, { job: annotated, notices });
@@ -407,13 +526,15 @@ export async function createSoloFactoryServer(options = {}) {
         const job = await ensureRecovery(await jobStore.read(jobMatch[1]), jobStore);
         // Superseded plans grow without bound (36MB on a long run) and the 1.5s poll crashed the tab; the UI never reads them.
         const [{ recoveryPhaseHistory, ...annotated }] = await annotateJobs(jobProject.get(job.id) ?? active.id, [job]);
-        return json(response, 200, { job: { ...annotated, idleGaps: await jobStore.idleGaps(job.id) }, events: await jobStore.events(job.id) });
+        // Only a parked follow-on has a fallback release, and finding it reads every run's state file.
+        const previous = job.followOn && PARKED.has(job.state) && !job.dismissed ? previousRelease(job, await jobStore.list()) : null;
+        return json(response, 200, { job: { ...annotated, idleGaps: await jobStore.idleGaps(job.id), previousRelease: previous }, events: await jobStore.events(job.id) });
       }
       const telemetryMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/telemetry$/);
       if (request.method === "GET" && telemetryMatch) {
         const jobStore = storeOfJob(telemetryMatch[1]);
         const job = await jobStore.read(telemetryMatch[1]);
-        const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider), maxRepairs, autoStartRepairs });
+        const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
         return json(response, 200, await factory.telemetry(job.id));
       }
       const artifactMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/artifacts\/([a-z]+)$/);
@@ -444,6 +565,31 @@ export async function createSoloFactoryServer(options = {}) {
         await run.factory.cancel(id);
         return json(response, 202, { ok: true });
       }
+      // Reopen a past run's brief and conversation as the project's interview draft. Nothing changes on any
+      // run until the revised brief is queued; discarding the draft leaves everything as it was.
+      const reviseMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/revise$/);
+      if (request.method === "POST" && reviseMatch) {
+        const id = reviseMatch[1];
+        if ((jobProject.get(id) ?? active.id) !== active.id) return json(response, 409, { error: "Open that run's project first; a revised brief belongs to its project's interview.", code: "revise_other_project" });
+        const current = runs.get(active.id)?.jobId;
+        if (current) await settleParked(active.id, current);
+        const job = await store.read(id);
+        if (!revisable(job)) return json(response, 409, { error: "Only a stopped or finished run's brief can be revised.", code: "revise_not_parked" });
+        const ready = [...(job.transcript ?? [])].reverse().find((message) => message.role === "assistant")?.content || "Here is the brief this run was queued with. Tell me what to change.";
+        const draft = {
+          provider: job.provider,
+          messages: job.transcript?.length ? job.transcript : [{ role: "assistant", content: ready }],
+          revises: id,
+          savedAt: new Date().toISOString(),
+          // The stopped run that queuing this brief sets aside, so the review page can name it first.
+          replaces: await blockerFor(active.id),
+          // A queued brief passed the ready check, which requires every coverage area complete.
+          guide: { message: ready, status: "ready", coverage: Object.fromEntries(COVERAGE_KEYS.map((key) => [key, "complete"])), brief: job.brief, notices: job.notices ?? [] },
+        };
+        await mkdir(path.dirname(draftFile(active.dir)), { recursive: true });
+        await writeFile(draftFile(active.dir), JSON.stringify(draft, null, 2));
+        return json(response, 200, { draft });
+      }
       const pauseMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/pause$/);
       if (request.method === "POST" && pauseMatch) {
         const run = [...runs.values()].find((item) => item.jobId === pauseMatch[1]);
@@ -458,6 +604,7 @@ export async function createSoloFactoryServer(options = {}) {
         const id = dismissMatch[1];
         const projectId = jobProject.get(id) ?? active.id;
         const jobStore = storeOfJob(id);
+        await settleParked(projectId, id);
         const outcome = await exclusive(async () => {
           const job = await jobStore.read(id);
           if (!PARKED.has(job.state)) return { status: 409, body: { error: "Only a parked run can be dismissed." } };
@@ -476,6 +623,7 @@ export async function createSoloFactoryServer(options = {}) {
         const [ , id, action] = featureRecoveryMatch;
         const projectId = jobProject.get(id) ?? active.id;
         const jobStore = storeOfJob(id);
+        await settleParked(projectId, id);
         const job = await jobStore.read(id);
         const next = continuationAction(job, { maxRepairs, busy: runs.has(projectId) || queue.some(entry => entry.jobId === id) });
         if (!PARKED.has(job.state) || job.dismissed || runs.has(projectId) || queue.some(entry => entry.projectId === projectId && entry.mode !== "start")) return json(response, 409, { error: "Feature recovery requires an idle, unresolved parked run. Pause an active run first.", nextAction: next });
@@ -501,6 +649,7 @@ export async function createSoloFactoryServer(options = {}) {
         const [ , id] = amendMatch;
         const projectId = jobProject.get(id) ?? active.id;
         const jobStore = storeOfJob(id);
+        await settleParked(projectId, id);
         const job = await jobStore.read(id);
         const busy = runs.has(projectId) || queue.some(entry => entry.projectId === projectId && entry.mode !== "start");
         // Bounded, never truncated: the plan plus a small envelope; the controller repeats every check under ownership.
@@ -519,6 +668,7 @@ export async function createSoloFactoryServer(options = {}) {
         const [ , id] = inputMatch;
         const projectId = jobProject.get(id) ?? active.id;
         const jobStore = storeOfJob(id);
+        await settleParked(projectId, id);
         const busy = () => runs.has(projectId) || queue.some(entry => entry.projectId === projectId && entry.mode !== "start");
         const parked = (job) => !busy() && continuationAction(job, { maxRepairs }).action !== "none";
         if (!parked(await jobStore.read(id))) return json(response, 409, { error: "Inputs can be added only to an idle, unresolved parked run. Pause an active run first." });
@@ -543,11 +693,12 @@ export async function createSoloFactoryServer(options = {}) {
       const waiveMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/waive-proof$/);
       if (request.method === "POST" && waiveMatch) {
         const projectId = jobProject.get(waiveMatch[1]) ?? active.id;
+        await settleParked(projectId, waiveMatch[1]);
         if (runs.has(projectId) || queue.some(entry => entry.projectId === projectId && entry.mode !== "start")) return json(response, 409, { error: "Pause the active run before waiving a test." });
         const jobStore = storeFor(projectId);
         const job = await jobStore.read(waiveMatch[1]);
         const { proof, reason } = await readJson(request);
-        const factory = new SoloFactory({ store: jobStore, provider: providerFactory(job.provider), maxRepairs, autoStartRepairs });
+        const factory = new SoloFactory({ store: jobStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
         try { return json(response, 200, { job: await factory.waiveProof(job.id, String(proof ?? ""), String(reason ?? "")) }); }
         catch (error) { return json(response, 409, { error: error.message, code: error.code }); }
       }
@@ -564,6 +715,7 @@ export async function createSoloFactoryServer(options = {}) {
       const resumeMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/resume$/);
       if (request.method === "POST" && resumeMatch) {
         const projectId = jobProject.get(resumeMatch[1]) ?? active.id;
+        await settleParked(projectId, resumeMatch[1]);
         const jobStore = storeFor(projectId);
         const job = await ensureRecovery(await jobStore.read(resumeMatch[1]), jobStore);
         const next = continuationAction(job, { maxRepairs, busy: queue.some((entry) => entry.jobId === job.id) || runs.get(projectId)?.jobId === job.id });
@@ -580,7 +732,7 @@ export async function createSoloFactoryServer(options = {}) {
       if (request.method === "POST" && relaunchMatch) {
         const jobStore = storeOfJob(relaunchMatch[1]);
         const job = await jobStore.read(relaunchMatch[1]);
-        const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider), maxRepairs, autoStartRepairs });
+        const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
         factories.set(job.id, factory); // keeps the relaunched child reachable for shutdown
         try {
           return json(response, 200, { job: await factory.relaunch(job.id) });
@@ -589,9 +741,37 @@ export async function createSoloFactoryServer(options = {}) {
           throw error;
         }
       }
+      const stopAppMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/stop-app$/);
+      if (request.method === "POST" && stopAppMatch) {
+        const jobStore = storeOfJob(stopAppMatch[1]);
+        const job = await jobStore.read(stopAppMatch[1]);
+        const factory = factories.get(job.id) ?? new SoloFactory({ store: jobStore, provider: providerFactory(job.provider, job.models), maxRepairs, autoStartRepairs });
+        try {
+          return json(response, 200, { job: await factory.stopDeployment(job.id) });
+        } catch (error) {
+          if (error.code === "not_live") return json(response, 409, { error: error.message });
+          throw error;
+        }
+      }
+      // Move a queued new run one place up or down among its own project's queued new runs. Resumes and
+      // repairs keep their place at the front: they unblock the project, so they never wait behind a new brief.
+      const moveMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/queue-move$/);
+      if (request.method === "POST" && moveMatch) {
+        const body = await readJson(request);
+        if (!["up", "down"].includes(body.direction)) return json(response, 400, { error: "direction must be up or down." });
+        const at = queue.findIndex((entry) => entry.jobId === moveMatch[1]);
+        if (at < 0 || queue[at].mode !== "start") return json(response, 409, { error: "Only a queued new run can be moved." });
+        const peers = queue.map((entry, index) => ({ entry, index })).filter(({ entry }) => entry.projectId === queue[at].projectId && entry.mode === "start");
+        const mine = peers.findIndex(({ index }) => index === at);
+        const other = peers[body.direction === "up" ? mine - 1 : mine + 1];
+        if (!other) return json(response, 409, { error: `That run is already ${body.direction === "up" ? "first" : "last"} in its project's queue.` });
+        [queue[at], queue[other.index]] = [queue[other.index], queue[at]];
+        return json(response, 200, { ok: true, queue: queue.filter((entry) => entry.projectId === queue[at].projectId).map((entry) => entry.jobId) });
+      }
       const restartMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/restart$/);
       if (request.method === "POST" && restartMatch) {
         const projectId = jobProject.get(restartMatch[1]) ?? active.id;
+        await settleParked(projectId, restartMatch[1]);
         const job = await storeFor(projectId).read(restartMatch[1]);
         const { fromSlice } = await readJson(request);
         if (!PARKED.has(job.state) || queue.some((entry) => entry.jobId === job.id)) return json(response, 409, { error: "Only a parked run can be restarted from a slice." });
@@ -615,16 +795,13 @@ export async function createSoloFactoryServer(options = {}) {
       const retryMatch = url.pathname.match(/^\/api\/jobs\/([a-z0-9-]+)\/retry$/);
       if (request.method === "POST" && retryMatch) {
         const projectId = jobProject.get(retryMatch[1]) ?? active.id;
+        await settleParked(projectId, retryMatch[1]);
         const jobStore = storeFor(projectId);
         const original = await jobStore.read(retryMatch[1]);
         if (runs.get(projectId)?.jobId === original.id) return json(response, 409, { error: "That run is still active." });
-        const job = await jobStore.create({ brief: original.brief, transcript: original.transcript, provider: original.provider, notices: briefNotices(original.brief) });
+        const job = await jobStore.create({ brief: original.brief, transcript: original.transcript, provider: original.provider, models: original.models ?? null, notices: briefNotices(original.brief), featureReview: original.featureReview ?? featureReview });
         // Starting over replaces the original, so it no longer holds the queue, and the new run goes first.
-        if (PARKED.has(original.state)) {
-          await rollBack(original, jobStore);
-          original.dismissed = true;
-          await jobStore.writeState(original);
-        }
+        await supersede(original, jobStore);
         await enqueue(projectId, job.id, "start", { front: true });
         return json(response, 202, { job, retriedFrom: original.id });
       }
@@ -632,7 +809,7 @@ export async function createSoloFactoryServer(options = {}) {
       if (request.method === "GET") return serveStatic(response, url.pathname);
       return json(response, 404, { error: "Not found" });
     } catch (error) {
-      const status = error.code === "ENOENT" ? 404 : /invalid|must|unknown|coverage|transcript|message/i.test(error.message) ? 400 : 500;
+      const status = error.status ?? (error.code === "ENOENT" ? 404 : null) ?? (/invalid|must|unknown|coverage|transcript|message/i.test(error.message) ? 400 : 500);
       await logError({ source: "server", status, request: `${request.method} ${request.url.split("?")[0]}`, code: error.code, message: error.message });
       return json(response, status, { error: error.message, code: error.code ?? "request_failed" });
     }
@@ -646,6 +823,9 @@ export async function createSoloFactoryServer(options = {}) {
     async close() {
       closing = true;
       queue.length = 0;
+      // A drain already past its `closing` check launches its run after a few awaits; snapshot only
+      // once it settles, or that run is never cancelled and deploys an app after shutdown.
+      await draining;
       const live = [...runs.values()];
       await Promise.all(live.map((run) => run.factory.cancel(run.jobId, { shutdown: true }).catch(() => {})));
       await Promise.all(live.map((run) => run.promise));
@@ -678,7 +858,8 @@ async function discoverProjects(root) {
       // directly under root only git repos do, so .aai/, .ailib/, node_modules/ never appear.
       if (!parent && !(await stat(path.join(root, id, ".git")).catch(() => null))) continue;
       const runs = await new JobStore(path.join(root, id)).list();
-      const last = runs[0];
+      // Queued runs wait behind the run that holds the project, so that run (often a parked one) is the one shown.
+      const last = runs.find((r) => r.state !== "queued" && !r.dismissed) ?? runs.find((r) => !r.dismissed) ?? null;
       projects.push({ id, name: entry.name, runCount: runs.length, lastRun: last ? { id: last.id, state: last.state, createdAt: last.createdAt, workingName: last.brief?.workingName ?? null } : null });
     }
   }
@@ -713,6 +894,55 @@ async function ensureRecovery(job, store) {
       : "Recovery prepared from preserved run evidence",
   });
   return job;
+}
+
+// The built-in profiles. Claude sends no models, so its runs use the env and built-in stage choices exactly as
+// before profiles existed; its shown values are those choices. Codex names a model per stage.
+export function builtinProfiles(env = process.env) {
+  const codexModel = (fallback) => env.SOLOFACTORY_CODEX_MODEL || fallback;
+  // Matched to the Claude tiers on the effort chart: Sol medium ~ Opus medium, Sol low ~ Opus low, Terra low ~ Sonnet medium.
+  const codexEffort = (fallback) => env.SOLOFACTORY_CODEX_REASONING_EFFORT || fallback;
+  return [
+    { name: "Claude", provider: "claude", builtin: true, models: null, shown: {
+      guide: { model: env.SOLOFACTORY_CLAUDE_GUIDE_MODEL || "opus", effort: env.SOLOFACTORY_CLAUDE_GUIDE_EFFORT || "medium" },
+      plan: { model: env.SOLOFACTORY_CLAUDE_REASONING_MODEL || "opus", effort: env.SOLOFACTORY_CLAUDE_REASONING_EFFORT || "low" },
+      code: { model: env.SOLOFACTORY_CLAUDE_MODEL || "sonnet", effort: env.SOLOFACTORY_CLAUDE_EFFORT || "medium" },
+      advisor: (env.SOLOFACTORY_CLAUDE_GUIDE_ADVISOR ?? "opus") !== "",
+    } },
+    { name: "Codex", provider: "codex", builtin: true, models: {
+      guide: { model: codexModel("gpt-6.1-sol"), effort: codexEffort("medium") },
+      plan: { model: codexModel("gpt-6.1-sol"), effort: codexEffort("low") },
+      code: { model: codexModel("gpt-6.1-terra"), effort: codexEffort("low") },
+    } },
+  ];
+}
+
+function inputModels(models) {
+  try { return checkModels(models); } catch (error) { throw Object.assign(error, { status: 400 }); }
+}
+
+async function readProfiles(file) {
+  const saved = await readFile(file, "utf8").then(JSON.parse).catch(() => null);
+  try { return validateProfiles(saved?.custom ?? []); } catch { return []; }
+}
+
+// Custom profiles from the hub: a name, a provider and a model and effort per stage. Built-in names are refused.
+export function validateProfiles(list) {
+  if (!Array.isArray(list) || list.length > 50) throw Object.assign(new Error("custom must be a list of at most 50 profiles."), { status: 400 });
+  const builtins = new Set(["claude", "codex"]);
+  const seen = new Set();
+  return list.map((item) => {
+    const name = String(item?.name ?? "").trim();
+    if (!name || name.length > 40) throw Object.assign(new Error("A profile needs a name of at most 40 characters."), { status: 400 });
+    if (builtins.has(name.toLowerCase())) throw Object.assign(new Error(`${name} is a built-in profile and cannot be saved over or deleted.`), { status: 400 });
+    if (seen.has(name.toLowerCase())) throw Object.assign(new Error(`Two profiles are named ${name}.`), { status: 400 });
+    seen.add(name.toLowerCase());
+    if (!["claude", "codex"].includes(item.provider)) throw Object.assign(new Error("A profile's provider must be claude or codex."), { status: 400 });
+    let models;
+    try { models = checkModels(item.models); } catch (error) { throw Object.assign(error, { status: 400 }); }
+    if (!models) throw Object.assign(new Error("A custom profile must name its models."), { status: 400 });
+    return { name, provider: item.provider, models };
+  });
 }
 
 function requireProvider(id, fixtureMode) {
@@ -768,7 +998,12 @@ export function loopbackHost(value) {
   throw new Error(`HOST=${host} would expose SoloFactory's unauthenticated API to the network. Use 127.0.0.1 (the default).`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Compare real paths: started through a symlinked folder (macOS /tmp), argv[1] and import.meta.url differ.
+function isEntry(url) {
+  try { return Boolean(process.argv[1]) && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(url)); } catch { return false; }
+}
+
+if (isEntry(import.meta.url)) {
   const port = Number(process.env.PORT || 4173);
   let host;
   try { host = loopbackHost(process.env.HOST); } catch (error) { console.error(error.message); process.exit(1); }

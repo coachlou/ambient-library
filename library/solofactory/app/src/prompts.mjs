@@ -275,13 +275,21 @@ ready for deterministic controller verification.
 ${DATA_RULE}`;
 }
 
-export function repairPrompt(failurePath, slice = null, bugs = [], featureFile = ".factory/logs/feature.json") {
+// Owner decisions from repair planning, newest last; rendered only when there are any.
+function ownerDecisionsBlock(ownerDecisions, verb) {
+  return ownerDecisions?.length ? `The owner's decisions from repair planning, newest last. What they explicitly approve is approved: ${verb} and do not work around them.\n${ownerDecisions.map((d) => `- ${d.text ?? d}`).join("\n")}\n` : "";
+}
+
+export function repairPrompt(failurePath, slice = null, bugs = [], featureFile = ".factory/logs/feature.json", brokenTests = [], ownerDecisions = []) {
   const sliceLines = slice
     ? `
 The failure is inside slice ${slice.id} (${slice.title}), given in full below: do not read the plan file.
 Earlier completed slices must be preserved — fix only what this slice's acceptance criteria need.${slice.writes ? ` Change
 the files its writes list. If the fix needs an existing source file outside them, edit it: the controller adds it to this
-feature's writes. Never edit another feature's tests, create a new file outside the writes, or delete one; those fail its checks.` : ""}
+feature's writes. If another feature owns that file, keep the edit minimal; that feature is told. Never edit another feature's tests, create a new file outside the writes, or delete one; those fail its checks.` : ""}${brokenTests?.length ? `
+This feature's change broke an earlier feature's proof (${brokenTests.join(", ")}). If this feature's acceptance criteria
+require the new behavior, update only the expectations in that test that pin the old behavior, keeping every check it
+makes; the controller allows that edit. Otherwise fix the source.` : ""}
 ${REVIEW_BAR}
 ${featureBlock("Slice", JSON.stringify(slice, null, 2), featureFile)}`
     : "";
@@ -291,10 +299,14 @@ Release QA findings to fix. Their tests are the evidence: never edit them.
 ${bugs.map((bug) => `- ${bug.proof.command.at(-1)}: ${bug.description}`).join("\n")}`
     : "";
   return `You are the repair worker. Read ${failurePath} first, then only the parts of the frozen
-.factory contract${slice ? "" : " and plan"} that the failure touches. Fix the root cause of the recorded controller
+.factory contract${slice ? "" : " and plan"} that the failure touches. Before changing any code, write three lines:
+"Symptom: ..." (what the gate saw), "Cause: ..." (why it happens), "Files: ..." (the files at fault). End your final
+message with the same three lines. Fix the root cause of the recorded controller
 gate failure with the smallest coherent change. Do not weaken, skip, rename, or delete tests,
-health checks, metrics, build commands, or acceptance criteria.${sliceLines}${bugLines}
-Run the relevant checks and leave the app ready for the controller to rerun every gate.
+health checks, metrics, build commands, or acceptance criteria. A test that fails, then passes when rerun, is a bug
+in the app or the test (a race, an unawaited promise, a timer, shared state): find the cause and fix it; never leave it
+as "intermittent".${sliceLines}${bugLines}
+${ownerDecisionsBlock(ownerDecisions, "repair to them")}Run the relevant checks and leave the app ready for the controller to rerun every gate.
 
 ${DATA_RULE}`;
 }
@@ -303,10 +315,37 @@ ${DATA_RULE}`;
 // obligations, and the controller reran every feature and integration proof just before this turn. Re-auditing
 // each obligation from scratch duplicated that work (smoke 9: 298 s final review), so the final reviewer
 // concentrates on what no feature review could see. Every check still gets a review-result.json entry.
-const FEATURE_REVIEWED_SCOPE = `
-Every feature already passed its own proofs and scoped review; their recorded results are in
-review-request.json caseResults. Do not re-audit individual obligations from scratch.
-Spend this review on what no single feature review could see: integration (cross-feature
+// A later feature may update an earlier feature's proof test that its change broke (0cb4bd5); nothing else rereads it.
+// docs/sdlc-hardening-spec.md item 6. The controller separately fails a gate on committed credentials (secretsFailure).
+const SECURITY_RULE = `Security: check input validation at trust boundaries (request bodies, query strings, uploaded
+files), path handling under data/ (a user-supplied name must never reach outside it, e.g. through ../ or an absolute
+path), secrets committed to the tree, and unsafe defaults in any auth or sessions the brief asked for (default
+passwords, sessions that never expire, tokens in URLs). A security finding is a defect like any other: report it the
+same way.`;
+const REVIEW_POLICY_RULE = `If review-request.json names reviewPolicy, that file holds the owner's own review rules for
+this project (lines inside <!-- --> are examples, not rules): check the app against every rule and quote the rule in
+any blocker it causes. It is not evidence: never list it in a check's evidence.`;
+
+const EDITED_PROOFS_RULE = `review-request.json editedProofs (when present) maps a feature to earlier
+features' test files it changed because its change broke them. Open each and compare it with git: block when
+an edit weakened what the test proved (removed or loosened an assertion, skipped a case) instead of updating it
+to the new agreed behavior.`;
+
+// Features that skipped their scoped review (SOLOFACTORY_FEATURE_REVIEW=risky, or a batched repair plan) are the
+// exception: this review is the only obligation-level audit they get. With none, the text is unchanged.
+const featureReviewedScope = (unreviewed = []) => {
+  const ids = unreviewed.join(", ");
+  return `
+Every feature${ids ? ` except ${ids}` : ""} already passed its own proofs and scoped review; their recorded results are in
+review-request.json caseResults. Do not re-audit individual obligations from scratch, except
+the edited proofs below${ids ? ` and the features review-request.json lists as unreviewed` : ""}. ${EDITED_PROOFS_RULE}${ids ? `
+Unreviewed features (${ids}) passed their proofs but no scoped review. Find each one in the approved
+plan and audit its obligations and every check it closes from scratch: open each case's test and judge it against the bar
+below, and judge uncased checks against real behavior. Report each defect as a bug like any other.
+${REVIEW_BAR}` : ""}
+${INTEGRATION_SCOPE}`;
+};
+const INTEGRATION_SCOPE = `Spend this review on what no single feature review could see: integration (cross-feature
 interactions, shared state such as storage, config and middleware, and API consistency of routes,
 error shapes and status codes across features) and deploy readiness (the health endpoint, the
 metrics endpoint, and startup behavior: PORT, first run with missing data directories or files).
@@ -321,11 +360,11 @@ test once before reporting it and confirm it fails because of the app, not the t
 drops forbidden request headers (Host, Origin, Content-Length): when a bug depends on one, send the request with
 node:http and prove the header arrived (for example by echoing it from a stub server) before blaming the app.`;
 
-export function reviewPrompt({ featureReviewed = false } = {}) {
+export function reviewPrompt({ featureReviewed = false, unreviewed = [] } = {}) {
   return `You are the final implementation reviewer. Audit the current app against every
 requirement in .factory/PRD.md and every scenario in .factory/ACCEPTANCE.md. Inspect the real
-code and tests. ${MANUAL_RULE}${featureReviewed ? FEATURE_REVIEWED_SCOPE + "\n" : ""} Do not change application source: report each
-correctness, wiring, error-handling, accessibility, privacy or operator-documentation gap as a
+code and tests. ${MANUAL_RULE}${featureReviewed ? featureReviewedScope(unreviewed) + "\n" : ""} Do not change application source: report each
+correctness, wiring, error-handling, accessibility, privacy, security or operator-documentation gap as a
 blocker, and a repair turn fixes it under the checks. If you change source, the controller discards
 a passing verdict and reviews again. Do not deploy and do not claim a
 gate passed; the controller will rerun tests, build, health, and telemetry checks afterward.
@@ -349,6 +388,11 @@ in PRD/ACCEPTANCE and every source file review-request.json lists (attached spec
 handoffs) too; record any gap as a blocker. Never narrow, waive, delete or rewrite the
 frozen contract to match the implementation. A finished worker turn is not an approval.
 ${OWNER_DECISIONS}
+${SECURITY_RULE}
+${REVIEW_POLICY_RULE}
+If review-request.json lists flakyGates, each gate failed at final integration and passed when the controller reran
+it at once (its output holds the first failure). Treat it as a likely race in the app or its test: find the cause, and
+block when it could fail a user, not only a test run.
 Report all missing work honestly; the controller will repair within its budget or park the run. The controller rejects missing, stale, partial or
 blocked verdicts even when npm test passes.
 
@@ -447,7 +491,8 @@ export const PLAN_CHECKLIST = `A plan is blocked when:
 - a proof marked "pending": "integration" could run when its feature is built;
 - a required model, native package, runtime or tool is unverified;
 - a feature's writes miss files its obligations plainly need (a behavior shown in the UI needs the UI file, even
-  when another feature also writes it), or are broad enough to serialize the plan (a glob over a whole tree);
+  when another feature also writes it; an entry point or shared store a feature must change to wire its behavior
+  belongs in its writes), or are broad enough to serialize the plan (a glob over a whole tree);
 - a proof reruns other features' proofs (a cumulative regression or aggregate suite) instead of only its own tests.`;
 
 export function featurePlanPrompt({ followOn = false } = {}) {
@@ -608,7 +653,7 @@ case text, clause by clause.
 - The proof command exits 0 on this candidate. A check that cannot run on this machine is a blocker to
   report, never something to skip or fake.`;
 
-export function featureBuildPrompt(slice, { owned, planDigest, planFile = ".factory/slices.json", featureFile = ".factory/logs/feature.json", followOn = false, resumed = false, precheck = null, last = false }) {
+export function featureBuildPrompt(slice, { owned, planDigest, planFile = ".factory/slices.json", featureFile = ".factory/logs/feature.json", followOn = false, resumed = false, precheck = null, last = false, ownerDecisions = [], sharedEdits = [] }) {
   const { feature, commands } = sharedCommands(slice);
   return `You are the implementation worker for ONE approved feature (plan digest ${planDigest}).
 Your feature is given in full below (or in the file it names): do not read ${planFile} or other features' plans. Read the frozen
@@ -626,17 +671,21 @@ Original requirements this feature closes (prove the full wording):
 ${JSON.stringify(owned, null, 2)}
 
 ${REVIEW_BAR}
-
+A check with no cases is judged directly against real behavior, not by a test alone: make it work in the running app the way a reviewer would exercise it.
+${ownerDecisionsBlock(ownerDecisions, "build to them")}${sharedBlock(sharedEdits)}
 Build one case at a time: write its proof test, then the minimum real behavior that passes it, and run that
 proof until it passes before starting the next case, so an interrupted turn leaves passing cases, not half-wired
 code. Run only this feature's proof commands, plus targeted tests of earlier code you changed; do not run the
 whole test suite, which the controller runs at final integration and which can exhaust your 45-minute turn. Source-
-string assertions do not prove user behavior. An obligation with cases needs one node:test per case
+string assertions do not prove user behavior. Give every form control you render an accessible name (a label or aria-label)
+that says which item it acts on when it repeats per row, e.g. "Mark Read done": final review blocks on a nameless control
+(run dc4129e4: an unnamed per-habit checkbox cost a review round and a repair). An obligation with cases needs one node:test per case
 whose name contains [CASE-ID], run by its proof command without a --test-reporter flag of its own; the
 controller passes it only when every case's own test passed. Cases are read only from node:test events, so even
 a standalone script proof must import node:test and wrap each case in test(); a script that prints its own
 ok/fail lines records nothing and fails its gate. Change the files your feature's writes list. If your
-obligations need an existing source file outside them, edit it: the controller adds it to your writes. Never edit
+obligations need an existing source file outside them, edit it: the controller adds it to your writes. If another
+feature owns that file, keep the edit minimal; that feature is told. Never edit
 another feature's tests, create a new file outside your writes, or delete one; those fail its checks. Do not edit .factory contract or plan files. Before finishing,
 map each clause of each case to the assertion that proves it and add any that is missing. Do not
 deploy; the controller runs build and this feature's proof commands, then a scoped review.
@@ -644,7 +693,11 @@ deploy; the controller runs build and this feature's proof commands, then a scop
 ${DATA_RULE}`;
 }
 
-export function featureReviewPrompt(slice, featureFile = ".factory/logs/feature.json") {
+const sharedBlock = (edits, review = false) => edits?.length ? edits.map((edit) => review
+  ? `Feature ${edit.by} changed ${edit.file} (this feature's) before it was built: block if this feature broke that change.`
+  : `Feature ${edit.by} changed ${edit.file} (yours) before you were built; keep its change working.`).join("\n") + "\n" : "";
+
+export function featureReviewPrompt(slice, featureFile = ".factory/logs/feature.json", sharedEdits = []) {
   return `You are the scoped reviewer for ONE feature. Review it against every check in
 .factory/review-request.json: its obligations and the original requirements it closes. The
 controller already ran build and the feature's own proof commands on this exact candidate (the whole
@@ -655,9 +708,11 @@ targeted checks of real behavior the proofs do not exercise. A requirement with 
 check covered by cases, judge only that each case's test asserts what its case says it asserts — open the
 test, not the whole app. Judge uncased checks directly against real behavior. Earlier features are
 already reviewed: do not reread, rerun or explore their code or tests unless this feature's check
-depends on it. Later planned features may still be missing and must not
+depends on it, or the request's editedProofs lists them. ${EDITED_PROOFS_RULE} Later planned features may still be missing and must not
 block this verdict; a broad requirement this feature closes still needs full proof.
 ${OWNER_DECISIONS}
+${sharedBlock(sharedEdits, true)}${SECURITY_RULE} Judge it only in this feature's own code.
+${REVIEW_POLICY_RULE}
 ${HOST_RULE}
 
 ${REVIEW_BAR}

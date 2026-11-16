@@ -1,6 +1,7 @@
 // Verification and agent cost of one run, derived only from its event log: no second ledger.
 // Events written before feature/candidate/command fields existed are measured with labelled gaps.
 import { addUsage } from "./providers.mjs";
+import { unreviewedFeatures } from "./review.mjs";
 
 const PARKED = new Set(["job.paused", "job.failed", "job.interrupted"]);
 const RESUMED = new Set(["job.resumed", "job.restarted"]);
@@ -135,4 +136,38 @@ export function formatMeasurement(m) {
     ...m.unavailable.map((note) => `Not measured: ${note}`),
   ];
   return lines.join("\n");
+}
+
+// One smoke-ledger row per run, from its state.json and event log: the columns of the SDLC note's smoke tables.
+export function summarizeRun(state, events, { brief = state.brief?.workingName, arm = "", commit = "" } = {}) {
+  const m = measureRun(events);
+  const done = state.sliceDone ?? [];
+  const costUsd = m.tokens?.costUsd ?? null;
+  const skipped = new Set(unreviewedFeatures(state));
+  const findings = events.filter((e) => e.type === "review.finding");
+  const reviewsRun = [state.sliceStats, state.recoveryPhase?.stats].flatMap((stats) => Object.values(stats ?? {})).reduce((sum, entry) => sum + (entry.reviews ?? 0), 0);
+  return {
+    at: state.completedAt ?? state.updatedAt ?? null, commit, brief, arm, provider: state.provider ?? null, run: state.id,
+    result: state.state === "completed" ? "passed" : `${state.state}${state.error?.code ? ` (${state.error.code})` : ""}`,
+    features: done.length, planned: state.slicePlanIds?.length ?? 0,
+    firstPass: done.filter((id) => !state.sliceStats?.[id]?.repairs).length,
+    repairs: events.filter((e) => e.type === "agent.started" && activity(labelOf(e)) === "repair").length,
+    planBlocks: events.filter((e) => e.type === "plan.blocked").length,
+    // Scoped review turns run, features that skipped theirs, final-review findings in skipped features' files,
+    // and findings in files no feature declares.
+    reviewsRun, reviewsSkipped: skipped.size,
+    skippedFindings: findings.filter((e) => skipped.has(e.feature)).length,
+    unattributedFindings: findings.filter((e) => !e.feature).length,
+    costUsd, costPerFeature: costUsd !== null && done.length ? costUsd / done.length : null,
+    wallMin: Math.round(m.wallMs / 60000),
+  };
+}
+
+const usd = (n) => n === null || n === undefined ? "n/a" : `$${n.toFixed(2)}`;
+export function formatSmokeTable(rows) {
+  return [
+    "| Date | Commit | Brief | Arm | Result | Features | First-pass | Repairs | Plan blocks | Reviews | Skipped | Skipped findings | Unattributed findings | Cost | $/feature | Wall |",
+    "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|",
+    ...rows.map((r) => `| ${r.at?.slice(0, 10) ?? ""} | ${r.commit} | ${r.brief} | ${r.arm} | ${r.result} | ${r.features} of ${r.planned} | ${r.firstPass} | ${r.repairs} | ${r.planBlocks} | ${r.reviewsRun ?? ""} | ${r.reviewsSkipped ?? ""} | ${r.skippedFindings ?? ""} | ${r.unattributedFindings ?? ""} | ${usd(r.costUsd)} | ${usd(r.costPerFeature)} | ${r.wallMin} min |`),
+  ].join("\n");
 }

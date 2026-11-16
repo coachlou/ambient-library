@@ -8,6 +8,10 @@ live telemetry dashboard.
 
 It does not request or store an OpenAI or Anthropic API key.
 
+How it works, in five diagrams: `docs/anatomy.html` — the runtime shape, the authority
+boundary between the semantic worker and the local controller, the run flow, what happens
+when a gate fails, and the top-level state machine.
+
 ## Requirements
 
 - Node.js 22 to 24; Node 24 LTS is the recommended version. The installer warns on Node 25 and up (it still installs), because some packages the factory builds with ship no prebuilt files for it yet.
@@ -22,30 +26,32 @@ It does not request or store an OpenAI or Anthropic API key.
 npm start
 ```
 
-Open <http://127.0.0.1:4173>. If that port is taken, the server says whether it is another SoloFactory (open that one) or another app (start with `PORT=5000 npm start`). The **Manual** button in the header opens the illustrated user
-manual (`docs/manual/index.html`, also served at `/manual`). Answer the Factory Guide one turn at a time, review the
-compiled brief, and choose **Queue for the factory**. Every check in the brief must be provable offline on
+Open <http://127.0.0.1:4173>. If that port is taken, the server says whether it is another SoloFactory (open that one) or another app (start with `PORT=5000 npm start`). **Menu** → **Manual** at the foot of the left rail opens the illustrated user
+manual (`docs/manual/index.html`, also served at `/manual`). Answer the Factory Guide one turn at a time in the middle of the
+page, read or edit the brief in the **Documents** panel beside it (*Draft spec*, with Read and Edit), and choose **Send to the factory**:
+the Guide gives the brief one final review first and asks if anything is missing. **Revise the spec** on a stopped or shipped run reopens its brief as a draft to resubmit. Everything saves as you go. Every check in the brief must be provable offline on
 this machine, so the Guide rewrites checks that need a live account, an operating-system change,
 the real time of day or a fixed drive path, and moves the live part to a **Checked by hand after
 install** list that no build or review chases. A keyword scan sends a ready brief back to the
 Guide once if it still finds such a check; anything left, and a brief above 12 checks, shows as
-a note on the review screen. **Attach files** drops an existing spec
+a note at the top of the brief. **Attach** drops an existing spec
 (markdown, text, JSON, YAML, CSV) straight into the conversation and lets the Guide open a
 mockup or screenshot (png, jpg, gif, webp); images are saved under the project's
 `.factory/uploads/`. The brief joins that project's run
-queue and you land back in a fresh interview, so the next release can be shaped while this
+queue and you land back on a fresh brief, so the next release can be shaped while this
 one builds. Runs in one project go one after another, each building on the last; runs in
 different projects can overlap when `SOLOFACTORY_MAX_ACTIVE_RUNS` is above 1 (default 1).
-A brief for a project that already shipped is specified as a follow-on release, and deploying
-it stops the previous release's app. **Factory** in the top bar opens the board: every run
-of every project by column, with slice progress; click a card to open that run.
+A brief for a project that already shipped is specified as a follow-on release. The previous
+release keeps running until the new one passes its deploy checks, so a failed deploy leaves it up. The **Work** list in the left rail is the board: every run
+of every project grouped as Needs you, Running, Queued and Done, with slice progress; click a row to open that run
+(switching project if needed), or use a queued row's `···` menu to remove it from the queue.
 
 A **project** is the workspace the factory builds into. Projects are discovered under
 `SOLOFACTORY_ROOT` (default: the home, `.solofactory/`): any directory in `<root>/projects/`,
 or a `<root>/<name>/` that contains `.git/`. The header selector switches projects or creates
 one; a folder you make by hand under `projects/` shows up too. Selecting a project makes it
 the current workspace: it is `git init`ed if needed, gets a project-owned `.aai/` (identity,
-context, instructions — scaffolded once, yours to edit) plus `CLAUDE.md`/`AGENTS.md` anchors,
+context, instructions, review rules — scaffolded once, yours to edit) plus `CLAUDE.md`/`AGENTS.md` anchors,
 and both the Factory Guide and the build agents run inside it. Switching projects never
 cancels a run. The app lives at the repo root; the factory commits after
 the specification and after every passed gate set; the guide transcript
@@ -74,7 +80,9 @@ factory. Resume the preserved run after restarting; its completed features remai
 
 ## Claude model settings
 
-Claude uses `sonnet` with `medium` effort for the Guide, coding, and repairs.
+Claude uses `sonnet` with `medium` effort for coding and repairs. The Guide interview uses `opus`
+with `medium` effort and an `opus` advisor (`SOLOFACTORY_CLAUDE_GUIDE_MODEL`, `SOLOFACTORY_CLAUDE_GUIDE_EFFORT`,
+`SOLOFACTORY_CLAUDE_GUIDE_ADVISOR`; set the advisor to an empty value to turn it off).
 Specification, feature planning, plan review, plan correction, recovery planning, feature review,
 and final AI review also use `opus`, with `low` effort. Model aliases
 resolve through the installed Claude Code CLI. Deterministic tests run as commands and do not use a model.
@@ -90,16 +98,7 @@ These profiles apply to Claude runs; the provider of an existing run remains
 unchanged. Update the installation and restart at a safe pause boundary to load
 new adapter settings.
 
-## Verify the factory
-
-```bash
-npm test
-```
-
-The suite exercises intake validation, API-key scrubbing, command restrictions,
-activity-aware agent timeouts, bounded same-session continuation, same-run recovery,
-failure repair, the complete HTTP workflow, a real generated Node app, health checks, and
-live metrics.
+## Try it without spending
 
 For a deterministic browser demo that does not consume subscription quota:
 
@@ -107,9 +106,11 @@ For a deterministic browser demo that does not consume subscription quota:
 SOLOFACTORY_DEMO=1 SOLOFACTORY_HOME=./solofactory-demo npm start
 ```
 
+Tests, CI and the release smoke set live in the source repository only; see `DEVELOPING.md` there.
+
 ## Report a problem or an idea
 
-**Feedback** in the top bar, or **Report this run** on a failed, interrupted, or cancelled
+**Menu** → **Feedback**, or **Report this run** on a failed, interrupted, or cancelled
 run, opens a short form and previews a markdown report. Copy it and paste it into an issue.
 The report contains what you typed plus, only when you tick the box, an allowlisted run
 summary: version, platform, error code, failed stage, gate, counts, and recent lifecycle
@@ -118,8 +119,10 @@ nothing is sent anywhere until you send it yourself. **Copy & open email** copie
 opens a message to support@coachlou.com with the subject "SoloFactory Feedback"; paste the
 report into the body.
 
-To enable the **Search existing issues** and **Open GitHub** buttons, point SoloFactory at
-your issue tracker:
+Started with `run.sh` (the member install), SoloFactory points these buttons at
+`https://github.com/coachlou/soloFactory/issues`; set `SOLOFACTORY_ISSUES_URL=` (empty) to hide them.
+From a checkout, point SoloFactory at your issue tracker to enable the **Search existing issues** and
+**Open GitHub** buttons:
 
 ```bash
 SOLOFACTORY_ISSUES_URL=https://github.com/coachlou/soloFactory/issues npm start
@@ -180,11 +183,19 @@ file never leaves your machine; `GET /api/errors?limit=50` returns the latest en
 - The one automatic continuation per stage is recorded in the run before it is dispatched, so
   Resume or a restart never grants another. When the same check fails the same way
   `SOLOFACTORY_LOOP_THRESHOLD` times (default 3, 2–10) on unchanged code, the factory stops
-  repairing and says so instead of spending the rest of the repair budget. Repairs that do
-  change the code are still bounded by the normal budget.
+  repairing and says so instead of spending the rest of the repair budget. When repairs do
+  change the code but the same check keeps failing the same way `SOLOFACTORY_SYMPTOM_THRESHOLD`
+  times in a row (default 4, 0–20, 0 turns it off; line numbers are ignored), the factory stops
+  too. With the default budget of two repairs this never fires first; it guards a raised or
+  re-granted budget.
+- Each Claude turn is limited to `SOLOFACTORY_AGENT_MAX_TURNS` tool steps (default 150, 0–1000,
+  0 turns it off). Real turns have used at most 141, most under 45. A turn that reaches the limit
+  parks the run with `agent_turn_cap` and is not continued automatically; Resume starts a fresh turn.
 - A whole run is capped at `SOLOFACTORY_MAX_RUN_WORKERS` workers (default 150, `0` turns it
-  off) and at `SOLOFACTORY_MAX_RUN_COST_USD` dollars of reported cost (default 30, `0` turns
-  it off; Claude reports this list-price figure even on a subscription, Codex reports none).
+  off), at `SOLOFACTORY_MAX_RUN_COST_USD` dollars of reported cost (default 30, `0` turns
+  it off; Claude reports this list-price figure even on a subscription, Codex reports none),
+  and at `SOLOFACTORY_MAX_RUN_TOKENS` reported tokens (default 40M, cached input included,
+  `0` turns it off; both CLIs report tokens, so this one holds on Codex).
   The next worker is not started: the run parks with `run_budget_reached`, naming what
   it has spent, and Resume allows another allotment of the same size. Every recovery approval
   screen also shows the run's spend so far (workers, tokens, cost when known, elapsed time)

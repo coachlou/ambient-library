@@ -1,6 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
-import { readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { readFile, realpath, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 const contractFiles = ["requirements.json", "PRD.md", "PLAN.md", "ACCEPTANCE.md"];
 
@@ -39,13 +41,35 @@ export function originalChecks(brief) {
 }
 
 // Scoped reviews pass their own checks and the candidate source identity the verdict must name.
-export async function prepareReview(appDir, job, { checks = originalChecks(job.brief), candidate, caseResults } = {}) {
+// Features whose scoped review never ran: skipped as low risk, or built in a batched repair plan.
+export const unreviewedFeatures = (job) => [...new Set([job.sliceStats, job.recoveryPhase?.stats]
+  .flatMap((stats) => Object.entries(stats ?? {}).filter(([, entry]) => entry.reviews === 0).map(([id]) => id)))];
+
+// SOLOFACTORY_FEATURE_REVIEW=risky: a feature needs its scoped review unless a gate can judge all of it — every
+// obligation has cases, none on the browser surface, every check it closes is cited by a case, and it edited no
+// earlier feature's proof. (Plan validation already ties closed checks to cases; the explicit check keeps the rule whole.)
+export function featureNeedsReview({ runnable, owned = [], brokenProofs = [] }) {
+  const cased = new Set(runnable.flatMap((item) => (item.cases ?? []).flatMap((entry) => entry.refs ?? [])));
+  return brokenProofs.length > 0 || owned.some((check) => !cased.has(check.id))
+    || runnable.some((item) => !item.cases?.length || item.cases.some((entry) => entry.surface === "browser"));
+}
+
+export async function prepareReview(appDir, job, { checks = originalChecks(job.brief), candidate, caseResults, editedProofs, unreviewed, flakyGates } = {}) {
+  // The owner's review rules: a field of its own, not a source. request.sources is re-verified from .factory/uploads
+  // only (uploadsOf), and widening sourceSet would flag every existing run inputs_changed.
+  const policy = await stat(path.join(appDir, ".aai", "review.md")).then((info) => info.isFile(), () => false);
   const request = {
     version: 1, jobId: job.id, token: randomUUID(), contractDigest: await contractDigest(appDir), checks,
     sources: await sourceSet(appDir, runInputs(job)),
     ...(candidate ? { candidate } : {}),
     ...(caseResults ? { caseResults } : {}),
+    // Earlier features' test files a later feature updated because its change broke them, keyed by that later feature.
+    ...(editedProofs && Object.keys(editedProofs).length ? { editedProofs } : {}),
     ...(job.ownerDecisions?.length ? { ownerDecisions: job.ownerDecisions } : {}),
+    ...(unreviewed?.length ? { unreviewed } : {}),
+    // Gates that failed at final integration and passed on the immediate rerun (FactoryRunner.verify).
+    ...(flakyGates?.length ? { flakyGates } : {}),
+    ...(policy ? { reviewPolicy: ".aai/review.md" } : {}),
   };
   if (!request.checks.length) throw new Error("Review requires at least one intake requirement or acceptance scenario.");
   await rm(path.join(appDir, ".factory", "review-result.json"), { force: true });
@@ -86,42 +110,50 @@ export async function validateReview(appDir, request) {
     status: check.status ?? "unverified", reason: typeof check.reason === "string" ? check.reason : "",
   }));
   // A failing QA test blocks the release whatever the verdict says.
-  if (failedChecks.length || report.verdict !== "pass" || report.blockers.length || bugs.length) {
-    const first = failedChecks[0];
-    const message = first ? `Review blocked: ${first.id} — ${first.text} (${first.status}).` : "Review blocked: unresolved reviewer findings.";
-    const output = [message, "", "All unfinished checks:",
-      ...failedChecks.map(check => `- ${check.id} (${check.status}): ${check.text}${check.reason ? ` — ${check.reason}` : ""}`),
-      "", "Reviewer blockers:", ...report.blockers.map(item => `- ${item}`),
-      ...(bugs.length ? ["", "Findings with failing tests (never edit these tests):", ...bugs.map(bug => `- ${bug.test}: ${bug.description}`)] : []), "",
-      "Read .factory/review-request.json, .factory/review-result.json and .factory/REVIEW.md for requirement and test details.",
-      "Implement missing behavior and execute the absent checks. Do not waive scope or change statuses merely to pass review.",
-    ].join("\n");
-    const error = new Error(message);
-    error.details = { failedChecks, blockers: report.blockers, bugs, output, logPath: ".factory/REVIEW.md" };
-    throw error;
-  }
-  seen.clear();
+  if (failedChecks.length || report.verdict !== "pass" || report.blockers.length || bugs.length) throw reviewBlocked(failedChecks, report.blockers, bugs);
+  // Bad evidence fails its check like any unfinished one, so the run can prepare a repair plan for it.
+  const badEvidence = [];
   for (const check of report.checks) {
-    if (!expected.has(check.id) || seen.has(check.id)) throw new Error("Review contains unknown or duplicate check IDs.");
-    seen.add(check.id);
-    if (check.status !== "pass") throw new Error(`Review blocked: ${check.id} is ${check.status ?? "unverified"}.`);
-    if (!Array.isArray(check.evidence) || !check.evidence.length) throw new Error(`Review check ${check.id} has no evidence.`);
-    for (const file of check.evidence) {
-      if (typeof file !== "string" || !file.trim() || path.isAbsolute(file)) throw new Error("Review evidence must be a project-relative file.");
-      const absolute = await realpath(path.resolve(root, file)).catch((error) => {
-        if (error.code === "ENOENT") throw new Error(`Review evidence ${file} for ${check.id} does not exist.`);
-        throw error;
-      });
-      const relative = path.relative(root, absolute);
-      if (relative.startsWith("..") || path.isAbsolute(relative) || /^(data|node_modules|\.git)(\/|$)/.test(relative) || /^\.factory\/(review-result|review-request)\.json$/.test(relative)) {
-        throw new Error("Review evidence cannot escape the project, read owner data or cite its own verdict.");
-      }
-      if (!(await readFile(absolute)).length) throw new Error(`Review evidence ${file} is empty.`);
-    }
+    const reason = await evidenceProblem(root, check);
+    if (reason) badEvidence.push({ id: check.id, text: request.checks.find(item => item.id === check.id).text, status: "unverified", reason });
   }
-  if (report.verdict !== "pass" || report.blockers.length) throw new Error(`Review blocked: ${report.blockers.join("; ") || "reviewer did not approve"}`);
+  if (badEvidence.length) throw reviewBlocked(badEvidence, report.blockers, bugs);
   return report;
 }
+
+function reviewBlocked(failedChecks, blockers, bugs) {
+  const first = failedChecks[0];
+  const message = first ? `Review blocked: ${first.id} — ${first.text} (${first.status})${first.reason ? `: ${first.reason}` : ""}.` : "Review blocked: unresolved reviewer findings.";
+  const output = [message, "", "All unfinished checks:",
+    ...failedChecks.map(check => `- ${check.id} (${check.status}): ${check.text}${check.reason ? ` — ${check.reason}` : ""}`),
+    "", "Reviewer blockers:", ...blockers.map(item => `- ${item}`),
+    ...(bugs.length ? ["", "Findings with failing tests (never edit these tests):", ...bugs.map(bug => `- ${bug.test}: ${bug.description}`)] : []), "",
+    "Read .factory/review-request.json, .factory/review-result.json and .factory/REVIEW.md for requirement and test details.",
+    "Implement missing behavior and execute the absent checks. Do not waive scope or change statuses merely to pass review.",
+  ].join("\n");
+  const error = new Error(message);
+  error.details = { failedChecks, blockers, bugs, output, logPath: ".factory/REVIEW.md" };
+  return error;
+}
+
+// Why a passing check's evidence cannot stand, or null when it can.
+async function evidenceProblem(root, check) {
+  if (!Array.isArray(check.evidence) || !check.evidence.length) return "no evidence cited";
+  for (const file of check.evidence) {
+    if (typeof file !== "string" || !file.trim() || path.isAbsolute(file)) return "evidence must be a project-relative file";
+    let absolute;
+    try { absolute = await realpath(path.resolve(root, file)); }
+    catch (error) { if (error.code === "ENOENT") return `evidence ${file} for ${check.id} does not exist`; throw error; }
+    const relative = path.relative(root, absolute);
+    const escapes = relative.startsWith("..") || path.isAbsolute(relative) || /^(node_modules|\.git)(\/|$)/.test(relative) || /^\.factory\/(review-result|review-request)\.json$/.test(relative);
+    // Owner data stays off limits; a fixture the app ships under data/ is tracked in git.
+    if (escapes || (/^data(\/|$)/.test(relative) && !(await tracked(root, relative)))) return `evidence ${file} escapes the project, reads owner data or cites the verdict itself`;
+    if (!(await readFile(absolute)).length) return `evidence ${file} is empty`;
+  }
+  return null;
+}
+
+const tracked = (root, file) => promisify(execFile)("git", ["ls-files", "--error-unmatch", "--", file], { cwd: root }).then(() => true, () => false);
 
 // Planning verdicts bind approval to the exact plan bytes and frozen contract; a finished turn is not approval.
 export async function preparePlanReview(appDir, job, planDigest, extra = {}) {

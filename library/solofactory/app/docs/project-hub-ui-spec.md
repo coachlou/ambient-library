@@ -1,0 +1,234 @@
+# Project hub UI (version A): implementation spec
+
+Source design: `notes/project-hub-ui-mockups/Main.dc.html` (version A, also published as the design A
+canvas). The hub is now that design and nothing else: the page is design A's own markup and styles,
+and its component logic is wired to the factory API. No markup, styles or controls from the earlier
+hub remain. The rollback point is the tag `hub-ui-pre-design-a-rebuild`.
+
+## How the page is built
+
+- `public/index.html` holds design A's template (`<script type="text/x-template" id="tpl">`).
+- `public/app.js` has three parts: a small template engine (`{{path}}`, `sc-if`, `sc-for`, a DOM
+  morph that keeps focus and scroll), design A's component class unchanged in behaviour, and a
+  `Live` class that replaces the demo data with factory state (`/api/board`, `/api/jobs`,
+  `/api/interview/draft`) and turns each design A button into the matching API call.
+- `public/styles.css` is design A's stylesheet. Colours are its neutral grays; amber and red only
+  mark attention (needs you, failed, stopped).
+
+## Layout
+
+Left rail (brand, WORK list grouped Needs you · Running · Queued · Done, Menu), header (project
+switcher, attention line, theme menu, Run · Documents · Live app tabs), the Guide thread with its
+composer in the middle, and the panel on the right. Revising a spec puts the brief in the wide
+column with Resubmit to the factory and Discard changes, exactly as design A shows it.
+
+## Left out for later
+
+These worked in the earlier hub and are not in design A, so this build drops them. Retrofit them
+into design A's layout one at a time.
+
+- Run detail: the metro run map; supervision controls; the stage rail.
+- Recovery: the recovery packet is copied to the clipboard; only the plan help packet downloads.
+- Guide thread: the earlier-messages pager, design A's pick card sizing alternatives and
+  suggestion chips (the demo chips are hidden), and Guide edits to a document outside revise mode.
+- Projects: adopting an existing folder or custom repo at New project; editing settings.
+- Manual screenshots of the new layout.
+
+## Run detail and recovery (added back)
+
+These came back in design A's own style rather than as the earlier hub's panels.
+
+- **Run Q&A and activity.** The run card in the right panel answers five questions (Moving?, Healthy?,
+  How far?, Needs you?, Safe to resume?) and shows the latest factory events as an Activity list with
+  filter chips (All, Agent, Files, Gates, Stages). It follows the selected run, else the active run, else the
+  newest one, and refreshes with the rest of the page.
+- **Recovery box.** When the factory's next step needs the owner, a Recovery section opens under the
+  run card. It states what happened and what has been spent (workers, tokens, cost, time), then
+  offers only the actions the server's `nextAction` allows:
+  - Waive a proof the owner believes is wrong (needs a reason in the note box).
+  - Approve a ready plan and continue repairs.
+  - Prepare or retry a repair plan, sending the note box as guidance to the planner.
+  - Upload a corrected plan when plan corrections are exhausted: download the plan help packet,
+    choose the JSON plan, then submit it for one review.
+  - Revise inputs and prepare a new plan, or add a spec or prototype file to the run.
+- The Guide's "Let the Guide plan a repair" button uses the same note as guidance. At an exhausted plan
+  it points to the upload instead of posting a plan that would be refused.
+
+## Guide replies in Markdown
+
+The Guide skill asks for its `message` in Markdown (short paragraphs, lists, bold, code, small
+headings). The hub renders it with a small built-in renderer that escapes the reply first, so the
+only markup on the page is what the renderer adds; links open only for http and https addresses.
+The owner's own messages stay plain text.
+
+## Draft spec before sending
+
+As soon as the Guide's brief holds anything, Documents lists it first as **Draft spec**, and it follows
+every Guide turn and every edit. It opens with Read and Edit: an edited section saves into the
+interview draft at once, and asking the Guide in the viewer runs a normal interview turn. The pick
+card names the draft spec as what the Guide read and offers **Read the draft spec** beside Send to the
+factory, so the owner can read and revise it first. Nothing is queued until Send to the factory.
+
+## Revising a stopped run's spec
+
+As in design A, a paused, parked or cancelled run offers Revise the spec on the run card, in the run
+panel and in the spec viewer (a cancelled run says Revise and resubmit). Revising reopens the brief as a
+draft of the next revision with Resubmit to the factory and Discard changes. In the viewer, telling the
+Guide what to change on a stopped run reopens the draft first and then runs the turn; the Guide's side of
+the viewer shows that conversation. While a run is building or pausing the spec stays read only, and the
+Guide says to pause the run first. List fields such as must-haves, the core workflow and acceptance
+scenarios read as lists.
+
+Resubmit to the factory queues the revised spec as a new run, because the spec stage freezes the contract
+every later stage builds against; resuming the old run would build the old spec. The server rolls the
+stopped run's files back and marks it dismissed, and the hub hides dismissed runs, so the revised run
+replaces the stopped one and a spec never shows two runs.
+
+## One final review per send
+
+Send to the factory and Resubmit run the Guide's final review once. A press while that review runs does
+nothing (before this, each press started another identical review, and three ran at once). A brief the
+review marked reviewed queues at once, and a ready brief the review rewrote queues on the next press as
+shown, without a second review, unless the owner or the Guide changes it first.
+
+## Steps that match the engine
+
+The 1-7 steps list and the progress bar follow the engine's own stage. The engine reports feature planning
+and the plan audit as part of the spec stage, and the check before each feature as a gate run, so the hub
+reads the stage label for those: planning shows as Plan, and the pre-build check as Build. Before this, a run
+that was planning still showed Feature spec, one step behind. A paused or stopped run shows the step it
+stopped at, not step 1. Build, Gates and Review run once for each planned feature, so while the run is on one of
+them the run card names the feature (for example "Step 3 of 7 · Build · Feature 3 of 7: Countdown"), and
+the run panel lists every feature under the steps with Done, Now or To do and a count of features done.
+
+## Run, queue and live app controls (added back)
+
+- **Restart from here.** On a paused, parked or cancelled run, each finished feature after the first in the run
+  panel's feature list offers Restart from here. It posts `restart` with that feature as `fromSlice`, so the
+  factory keeps what passed before it and rebuilds from that feature on.
+- **Queue order.** Queued runs in the WORK rail move up or down within their project's queue. Each move posts
+  `queue-move` with `direction` up or down; the server refuses a move past either end with 409.
+- **Revise a shipped brief.** A shipped run's spec viewer offers Revise the spec, and asking the Guide there
+  reopens it too. Both open the brief as the next revision; Resubmit builds it on the live app as a new run, and
+  the shipped run stays in Done.
+- **Live app.** The panel shows Live or Stopped. A live app offers Open the app and Stop the app (`stop-app`,
+  which stops the app and marks its deployment stopped); a stopped one offers Relaunch (`relaunch`). While it is
+  live the panel shows requests, errors, average response time, uptime and the busiest routes from the run's
+  telemetry.
+- **Resizable panes.** The projects list and the right panel each have a splitter: drag it, use the left and right
+  arrow keys (24px a press) or double-click to reset. Widths stay per browser (`solofactory.pane.nav`,
+  `solofactory.pane.panel`); the splitters hide below 900px wide, where the panes stack.
+
+The two new server routes are `POST /api/jobs/:id/stop-app` and `POST /api/jobs/:id/queue-move`. Both drive what
+the factory already does (stop a deployment, reorder the queue); no stage or gate changed.
+
+## Profiles
+
+A profile names a provider and, for each stage tier (Guide, planning and review, coding), a model and an effort.
+
+- **Built in.** Claude and Codex ship built in and cannot be renamed or deleted. Claude keeps the factory's own
+  Claude defaults (Opus medium for the Guide, Opus low for planning and review, Sonnet medium for coding, with the
+  advisor on). Codex uses `gpt-6.1-sol` medium for the Guide, `gpt-6.1-sol` low for planning and review and
+  `gpt-6.1-terra` low for coding. `SOLOFACTORY_CODEX_MODEL` and `SOLOFACTORY_CODEX_REASONING_EFFORT` still win.
+- **Changing a value.** Settings, AI and models shows the chosen profile's rows. Changing one opens a prompt: save
+  it as a new profile (named, up to 40 characters, unique) or into an existing custom profile, or discard. A
+  built-in profile is never overwritten. New, Save and Delete sit above the rows; Delete only for custom profiles,
+  and projects using a deleted profile fall back to Claude.
+- **Storage.** Custom profiles save to `profiles.json` in the factory home through `PUT /api/profiles`, which
+  refuses a built-in name, a duplicate, an unknown provider or effort, and a missing tier. The default profile and
+  each project's pick stay in the browser (`solofactory.profile`, `solofactory.profile.<project>`).
+- **Per project.** Settings shows the open project's profile; picking one there sets this project's pick and the
+  default for new projects. The Guide box button reads Profile: name and cycles this project only through the
+  profiles whose provider is signed in. Interview turns and Send to the factory carry that profile's provider and models; the job stores the
+  models and the run log records them, so a run keeps the profile it started with.
+
+## Attachments
+
+The Guide box's Attach button opens a file picker, as alpha.2 did. Text documents (Markdown, text, JSON, YAML,
+CSV) are read in the browser and ride inside the owner's turn between `--- Attached document: name ---` and
+`--- End of name ---` lines, so the Guide reads them in full. Images (PNG, JPEG, GIF, WebP) upload to
+`POST /api/interview/upload` under the project's `.factory/uploads/`, and the turn names the saved path for the
+Guide to open. Each waiting file shows as a chip above the composer ("notes.md · 2k chars", "mock.png · image")
+with an × to remove it. Send works with files and no typed text. In the thread a sent document shows as
+"Attached: name" and an image as a thumbnail; the thumbnail lives only in the open page, as in alpha.2, so after a
+reload the turn shows the image's file name instead.
+
+## Feedback, report and banners
+
+These call the same alpha.2 routes as before (`POST /api/feedback/preview`, `GET /api/update`); only the
+controls moved into design A.
+
+- **Feedback** in the Menu opens an Improvement form; **Report this run** on a stuck, paused or cancelled run
+  opens a Problem form for that run. Both forms switch between Problem and Improvement with the alpha.2 fields.
+  A failed, interrupted or cancelled run offers the diagnostics checkbox (ticked unless cancelled).
+- Preview report asks the server to render the report; missing required fields are named inline first, and
+  any edit clears the preview. Copy report, Copy & open email (to support@coachlou.com, body via the
+  clipboard, never in the link) and, when the repo has issues, Search existing issues and Open GitHub issue
+  stay disabled until there is a preview. Escape closes the form. Nothing is sent by the hub itself.
+- **Update notice.** The Menu entry reads Update available with the version when the server reports a newer
+  release, and opens the update prompt with a Copy button. Otherwise it reads Check for updates and shows the
+  result beside it for four seconds.
+- **Background run.** When the project's building run is not the one shown, a neutral strip under the header
+  says what it is doing and how many runs are queued, with View.
+- **Tab title.** The browser tab reads "(N) needs you · SoloFactory" while N projects have a failed, interrupted
+  or paused last run. The amber header line already flags them in the page, so there is no extra banner.
+
+## Function checklist (live preview)
+
+Driven on an isolated seed server (:4380, temporary home, projects habit-tracker, recipe-box and notes-app).
+
+| # | Function | Result |
+|---|---|---|
+| 1 | Page loads with no console errors | Pass after guarding projects with no thread yet |
+| 2 | WORK rail lists runs across projects; clicking one switches project and opens it | Pass; recheck on an upgraded 0.10.17 install (:4392, four projects) found only the active project listed, fixed to read `/api/board`: Needs you 3, Queued 1, Done 2, and gamma's row switches to gamma with its run open |
+| 3 | Project switcher lists projects and switches | Pass |
+| 4 | Guide thread and composer render for the selected project | Pass |
+| 5 | Documents panel lists one brief per run and opens it read-only | Pass |
+| 6 | Live app panel with no deployment says nothing is live | Pass |
+| 7 | Stopped run shows the factory's own stop reason, not demo text | Pass |
+| 8 | Revise the spec marks the run as revising and opens the brief for editing | Pass |
+| 9 | Discard changes deletes the draft and returns the run to stopped | Pass |
+| 10 | Let the Guide plan a repair resumes the run | Pass (fixture provider shipped it; next queued run started) |
+| 11 | Theme menu: Light applies and persists (`solofactory.theme`) | Pass |
+| 12 | Editing a brief section and pressing Cmd+Enter saves it, with nothing leaking into the composer | Pass after skipping events the redraw itself fires |
+| 13 | Resubmit to the factory queues the revised brief (a second press queues an unconfirmed review as shown) | Pass |
+| 14 | Remove from queue cancels a queued run | Pass |
+| 15 | Cancel run shows only on active runs; parked runs offer repair, revise, start over instead | Pass (matches the earlier hub) |
+| 16 | Run Q&A and Activity list render for a parked run; each chip shows only its kind of real factory event (agent, file edit, gate, stage) | Pass |
+| 17 | Recovery box shows the summary, spend and the actions `nextAction` allows | Pass |
+| 18 | Waive with an empty note asks for a reason; with a reason it posts `waive-proof` (200) | Pass |
+| 19 | Exhausted plan: blockers listed, help packet link, choosing a JSON plan shows its size and phase | Pass |
+| 20 | Review this plan posts `recovery-review`; the server's refusal shows inline | Pass (a dummy plan was refused with 400 as expected) |
+| 21 | Add a spec or prototype file posts `inputs` (200) | Pass |
+| 22 | Revise inputs posts `recovery-plan` with the note as guidance (202) | Pass (the seed's thin run then parked with the planner's error, shown on the run) |
+| 23 | Approve and continue repairs posts `recovery-start` with the ready plan's digest | Pass (the server accepted the digest, then refused the seed's thin plan with 409, shown inline; a real start needs a planner-made plan) |
+| 24 | A ready plan also offers the corrected-plan upload and lists its repair features and allowance | Pass |
+| 25 | Let the Guide plan a repair at an exhausted plan points to the upload and posts nothing | Pass |
+| 26 | Recovery box reads as neutral gray in light and dark at desktop width | Pass |
+| 27 | Guide replies show Markdown headings, lists, bold, code and links; script tags and javascript links stay text | Pass (unit test on the renderer) |
+| 28 | The draft spec shows in Documents while the interview runs, edits save into the draft, and the pick card opens it | Pass (unit test on the section and edit mapping) |
+| 29 | A stopped run's spec viewer offers Revise the spec, the Guide box stays in view, asking the Guide reopens the spec as a draft, and list fields read as lists | Pass (stop-watch run on the live copy; unit test on the list rendering) |
+| 30 | Resubmitting a revised spec replaces the stopped run: the old run leaves the rail, the thread and the run panel | Pass (stop-watch run on the live copy) |
+| 31 | A second Send during the final review starts no second review; a brief the ready review rewrote queues on the next press without another review | Pass (unit test on the send flow) |
+| 32 | The steps list shows Plan while the engine plans features, Build during the pre-build check, and a stopped run's last step | Pass (unit test on the mapping; live run on :4381 planning) |
+| 33 | During Build, Gates and Review the run card names the current feature, and the run panel lists every feature's state | Pass (unit test on the feature progress; live run on :4381 at feature 3 of 7) |
+| 34 | Restart from here shows only on finished features after the first of a stopped run and posts `restart` with that feature | Pass (unit test on the wiring) |
+| 35 | Queued runs move up and down within their project's queue; a move past either end is refused | Pass (server test on `queue-move`; unit test on the wiring) |
+| 36 | A shipped run's spec viewer offers Revise the spec; resubmitting keeps the shipped run in Done | Pass (server test on revise of a finished run) |
+| 37 | Live app shows Stop the app while live and Relaunch once stopped, with requests, errors, response time, uptime and busiest routes | Pass (unit test on the mapping; server tests on stop and relaunch) |
+| 38 | The projects list and right panel resize by drag, arrow keys and double-click reset, clamped and remembered | Pass (unit test on the splitter) |
+| 39 | Settings shows the profile picker; changing a row of a built-in profile prompts to save as new or into a custom profile, and Save as new writes `profiles.json` and selects it | Pass (live on :4381; server test on `PUT /api/profiles`) |
+| 40 | Built-in names are refused, and Delete is off for built-in profiles | Pass (server test; live on :4381) |
+| 41 | The Guide box button cycles profiles per project, and a deleted profile falls back to Claude | Pass (live on :4381) |
+| 42 | A job sent with a profile stores its models; a half models body is refused with 400 | Pass (server test) |
+| 43 | Codex built-in matches the effort chart (Sol medium, Sol low, Terra low), both model IDs accepted by the Codex CLI | Pass (unit test; `codex exec` with each model) |
+| 44 | Attach adds a chip per file: a document as "name · Nk chars", an image as "name · image" after its upload | Pass (live on :4381) |
+| 45 | The × on a chip removes only that file | Pass (live on :4381) |
+| 46 | A sent turn carries each document inline and each image's upload path; the thread shows the file names | Pass (unit test) |
+| 47 | Feedback opens an Improvement form; missing required fields are named; Preview report renders the server's report and enables Copy | Pass (live on :4381) |
+| 48 | Escape closes the feedback form | Pass (live on :4381) |
+| 49 | Areas and reportable states match the server; issue links carry only the title or fingerprint, never the body | Pass (unit test) |
+| 50 | Check for updates shows the result beside the Menu entry | Pass (live on :4381, "Up to date") |
+| 51 | Background-run strip and tab title count | Pass (unit test on the texts; no background run on the preview to show live) |
+| 52 | Picking Codex in Settings shows its rows (Sol medium, Sol low, Terra low, no advisor) and picking Claude restores Claude's; a Guide turn then posts provider codex with those models | Pass after reading the pick before the repaint reset the select (live on :4381; turn body captured with the network call stubbed) |
+| 53 | Settings and the Guide Profile button agree both ways; model selects and inputs use the page font; non-profile Settings rows show as text with their default and variable, not as controls | Pass (live on :4391, test/settings-ui.test.mjs) |

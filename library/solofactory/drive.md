@@ -156,8 +156,11 @@ curl -s localhost:4173/api/jobs/<id>/telemetry    # stage timings and token use
 curl -s localhost:4173/api/board                  # every project, by column
 ```
 
-A build takes minutes to hours. Check about once a minute, not in a tight loop. Report stage
-changes in one line each. When `state` is `completed`, give the owner `job.deployment.url`.
+A build takes minutes to hours, and every check you make is a model turn on the owner's
+subscription. Check about every 5 minutes, never in a tight loop, and read `/telemetry` only when
+the stage changes. If nothing has changed for 2 hours, tell the owner the build is still running,
+point them at the dashboard, and stop checking until they ask. For a long build, suggest the
+dashboard: it watches the run for free. Report stage changes in one line each. When `state` is `completed`, give the owner `job.deployment.url`.
 Artifacts are at `/api/jobs/<id>/artifacts/{prd,plan,acceptance,requirements,slices,manifest}`.
 
 A queued job with `blockedBy` is waiting behind a parked run in the same project. Tell the owner
@@ -171,7 +174,7 @@ and the same `nextAction`. Ask the owner before any of these actions:
 
 | `nextAction.action` | Meaning |
 |---|---|
-| `resume` | `POST /resume` continues from the preserved files (`recovery.canResume` is true only for this). Optional `{"features":N}` batches an approved running repair plan. Read `reason`: *SoloFactory changed since this gate failed* means Resume reruns a check that failed on an older build, with no model call (a repeat failure parks again and offers the repair plan); `run_budget_reached` means the run hit `SOLOFACTORY_MAX_RUN_WORKERS` (default 150 workers) or `SOLOFACTORY_MAX_RUN_COST_USD` (default $30 of Claude-reported cost) and Resume grants another allotment of both, so show the owner the spend first. Telemetry `spend.resume` is the card's *Safe to resume?* answer (`tone` ok, warn or bad); on bad, a Resume since the last stop verified nothing, so report the run instead of resuming again |
+| `resume` | `POST /resume` continues from the preserved files (`recovery.canResume` is true only for this). Optional `{"features":N}` batches an approved running repair plan. Read `reason`: *SoloFactory changed since this gate failed* means Resume reruns a check that failed on an older build, with no model call (a repeat failure parks again and offers the repair plan); `run_budget_reached` means the run hit `SOLOFACTORY_MAX_RUN_WORKERS` (default 150 workers) or `SOLOFACTORY_MAX_RUN_COST_USD` (default $30 of Claude-reported cost) or `SOLOFACTORY_MAX_RUN_TOKENS` (default 40M reported tokens) and Resume grants another allotment of each, so show the owner the spend first. Telemetry `spend.resume` is the card's *Safe to resume?* answer (`tone` ok, warn or bad); on bad, a Resume since the last stop verified nothing, so report the run instead of resuming again |
 | `prepare-plan` / `retry-plan` / `revise-inputs` | `POST /recovery-plan`: the repair budget is spent, a review hit its cap, a failure repeated on unchanged code, or the specs changed. Resume cannot help (a check that failed on an older build gets `resume` instead, above) |
 | `approve-plan` | a Pause left a reviewed plan unstarted: `POST /recovery-start {"planDigest":"…"}` |
 | `amend-plan` | automatic plan corrections ran out: `GET /recovery-plan-packet`, then `POST /recovery-review {"phaseId","plan"}` |
@@ -184,7 +187,7 @@ and the same `nextAction`. Ask the owner before any of these actions:
 |---|---|
 | `/api/jobs/<id>/restart` `{"fromSlice":"<slice id>"}` | re-runs from a completed slice onward (not the first; that is start over); keeps the repair count, drops stale sessions and repair plans |
 | `/api/jobs/<id>/retry` | start over: a fresh run from the same brief; the parked one is rolled back and dismissed |
-| `/api/jobs/<id>/dismiss` | sets the run aside and unblocks the project's queue; if the app shipped before, puts it back to that release (its `data/` is kept) |
+| `/api/jobs/<id>/dismiss` | sets the run aside and unblocks the project's queue; if the app shipped before, puts it back to that release (its `data/` is kept). A parked follow-on's `job.previousRelease` names that release; when `relaunchable` is true, `/dismiss` then `POST /api/jobs/<previousRelease.jobId>/relaunch` brings it back up |
 | `/api/jobs/<id>/pause`, `/cancel` | pauses or stops an active run, or dequeues a queued one |
 | `/api/jobs/<id>/relaunch` | restarts a completed app whose server stopped |
 | `/api/jobs/<id>/inputs?name=<file>` (raw body) | adds a spec file (md, txt, json, html, yaml, csv, pdf, image) to an idle parked run |
@@ -215,7 +218,11 @@ run, so Pause an active one first. `/recovery-plan` takes optional `guidance` (u
 characters) to revise a plan; the old one then can't be approved. The original full-contract
 review still gates deployment. The Guide can explain this state; chat text does not run it.
 
-Do not loop Resume after repeated review rejection; follow `nextAction`.
+Do not loop Resume after repeated review rejection; follow `nextAction`. Call `/resume`, `/retry` or
+`/recovery-plan` at most once per yes from the owner: a run that parks again needs a new yes.
+`details.loop.kind: "symptom"` (the same failure although repairs changed the code) and
+`agent_turn_cap` (a turn used its step limit) mean more of the same work will not help: explain
+the failure and its spend before offering anything.
 
 **Safeguards** hold even when the owner asks for a shortcut:
 - Never mark a live plan failed, fake an input change to unlock planning, or reset spent repair

@@ -52,7 +52,7 @@ export class JobStore {
   async scaffoldContext() {
     await mkdir(path.join(this.project, ".aai", "memory", "interviews"), { recursive: true });
     const name = path.basename(this.project);
-    for (const file of ["identity.md", "context.md", "instructions.md"]) {
+    for (const file of ["identity.md", "context.md", "instructions.md", "review.md"]) {
       const target = path.join(this.project, ".aai", file);
       if (await stat(target).catch(() => null)) continue;
       const body = await readFile(path.join(templatesRoot, file), "utf8");
@@ -112,7 +112,7 @@ export class JobStore {
   }
 
   // New runs are planned feature runs (planVersion 2). "single" stays only for callers that recreate history.
-  async create({ brief, transcript, provider, sdlc = "slices", notices = [] }) {
+  async create({ brief, transcript, provider, models = null, sdlc = "slices", notices = [], featureReview = "all" }) {
     const id = `${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`;
     const now = new Date().toISOString();
     const job = {
@@ -120,7 +120,9 @@ export class JobStore {
       state: "queued",
       stage: "Queued",
       provider,
+      ...(models && { models }),
       sdlc,
+      featureReview,
       brief,
       notices,
       transcript,

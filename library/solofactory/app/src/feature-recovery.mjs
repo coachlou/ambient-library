@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { contractDigest, originalChecks, preparePlanReview, runInputs, sourceSet, validatePlanReview, validateReview } from './review.mjs';
 import { ALL_BLOCKERS, CONSOLIDATION_RULES, CONTROLLER_FACTS, PLAN_CHECKLIST, REREVIEW } from './prompts.mjs';
-import { PLAN_SCHEMA_FIXES, assertConsolidation, failedIntegrationProofs, pendingProofFailure, recordPendingProofs, validateFeaturePlan, validateSlicePlan } from './wbs.mjs';
+import { PLAN_SCHEMA_FIXES, assertConsolidation, failedIntegrationProofs, overlaps, pendingProofFailure, recordPendingProofs, validateFeaturePlan, validateSlicePlan } from './wbs.mjs';
 
 export const digest = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 // v2 repair features close checks; v1 recovery slices (older ready phases) listed them as checks.
@@ -37,7 +37,11 @@ export function validateRecoveryPlan(raw, request, { fresh = false } = {}) {
   const keepIds = new Set(keep.map(slice => slice.id));
   // Kept copies win if the planner restates an approved feature.
   const own = Array.isArray(raw?.slices) ? raw.slices.filter(slice => !keepIds.has(slice?.id)) : raw?.slices;
-  if (request.keep && Array.isArray(own)) raw = { ...raw, slices: [...own, ...keep] };
+  // A kept copy cannot be edited by the planner, so a new feature that writes a file an independent kept feature
+  // also writes would fail the disjoint-writes check with a remedy nobody can apply. New features come first and
+  // recovery builds in order, so the controller adds that dependsOn itself.
+  const sharing = (slice) => (Array.isArray(own) ? own : []).filter(mine => Array.isArray(mine?.writes) && Array.isArray(slice.writes) && !slice.dependsOn?.includes(mine.id) && mine.writes.some(x => slice.writes.some(y => overlaps(x, y)))).map(mine => mine.id);
+  if (request.keep && Array.isArray(own)) raw = { ...raw, slices: [...own, ...keep.map(slice => sharing(slice).length ? { ...slice, dependsOn: [...(slice.dependsOn ?? []), ...sharing(slice)] } : slice)] };
   if (raw?.version === 2) {
     if (fresh) {
       const bare = (Array.isArray(own) ? own : []).filter(slice => slice?.writes === undefined).map(slice => slice?.id);
@@ -47,8 +51,7 @@ export function validateRecoveryPlan(raw, request, { fresh = false } = {}) {
     // A dependency on an already built feature is satisfied; only ids in this plan are validated.
     const built = new Set(request.completed ?? []);
     raw = { ...raw, slices: raw.slices?.map(slice => Array.isArray(slice?.dependsOn) ? { ...slice, dependsOn: slice.dependsOn.filter(dep => !built.has(dep)) } : slice) };
-    // ponytail: older kept features lack writes, so proof ownership waits until all features declare them.
-    return { ...validateFeaturePlan(raw, { jobId: request.jobId, contractDigest: request.contractDigest, checks: request.checks, closedChecks: request.closedChecks, sources: request.sources.map(item => item.path), ownership: fresh && !keep.some(slice => slice.writes === undefined) }), requestId: request.id };
+    return { ...validateFeaturePlan(raw, { jobId: request.jobId, contractDigest: request.contractDigest, checks: request.checks, closedChecks: request.closedChecks, sources: request.sources.map(item => item.path) }), requestId: request.id };
   }
   if (raw?.version !== 1 || raw.requestId !== request.id || raw.contractDigest !== request.contractDigest) throw new Error('Recovery plan does not match its request and frozen contract.');
   const normalized = validateSlicePlan(raw);
@@ -579,7 +582,7 @@ export async function runFeatureRecovery(factory, id, signal, approval = null, {
         continue;
       }
       phase.done.push(slice.id); phase.index = i + 1;
-      phase.stats[slice.id] = { commit: phase.cursor.commit, reviews: phase.cursor.reviews, repairs: job.attempt - phase.cursor.attemptBefore, verifiedAt: new Date().toISOString() };
+      phase.stats[slice.id] = { commit: phase.cursor.commit, reviews: phase.cursor.reviews, repairs: job.attempt - phase.cursor.attemptBefore, verifiedAt: new Date().toISOString(), ...(phase.cursor.shared && { shared: phase.cursor.shared }) };
       phase.cursor = null;
       await factory.store.writeState(job);
       await factory.emit(id, { type: 'recovery.slice.completed', state: job.state, message: `Verified recovery feature ${slice.id}`, slice: slice.id });

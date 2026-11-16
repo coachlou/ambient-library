@@ -66,7 +66,30 @@ export function discoverProviders() {
   ];
 }
 
-async function codexRun({ cwd, prompt, schema, logPath, signal, onEvent, mode = "write", resumeSessionId = null, context = {} }) {
+// Stage tiers a profile sets: the Guide interview, planning and every review, and the coding stages.
+const REASONING_STAGE = /^(specification(?:-|$)|feature-plan(?:-|$)|plan-review$|plan-correction-|recovery-plan-)|(?:^|-)review(?:-|$)/;
+export function stageTier(stage = "") {
+  return stage === "interview" ? "guide" : REASONING_STAGE.test(stage) ? "plan" : "code";
+}
+
+// A run's profile (job.models) names a model and effort per tier. Both are passed to a CLI as arguments.
+export const EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+const MODEL_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/i;
+export function checkModels(models) {
+  if (models == null) return null;
+  if (typeof models !== "object") throw new Error("A profile must name a model and effort for each stage.");
+  const out = {};
+  for (const tier of ["guide", "plan", "code"]) {
+    const { model, effort } = models[tier] ?? {};
+    if (!MODEL_ID.test(String(model ?? ""))) throw new Error(`The ${tier} model must be a model id such as gpt-6-luna or sonnet.`);
+    if (!EFFORTS.includes(effort)) throw new Error(`The ${tier} effort must be one of ${EFFORTS.join(", ")}.`);
+    out[tier] = { model: String(model), effort };
+  }
+  if (models.advisor !== undefined) out.advisor = Boolean(models.advisor);
+  return out;
+}
+
+async function codexRun({ cwd, prompt, schema, logPath, signal, onEvent, mode = "write", resumeSessionId = null, context = {}, models = null }) {
   await mkdir(cwd, { recursive: true });
   const idleTimeoutMs = minutesFromEnv("SOLOFACTORY_AGENT_IDLE_MINUTES", 6);
   const hardTimeoutMs = minutesFromEnv("SOLOFACTORY_AGENT_HARD_MINUTES", 45);
@@ -74,8 +97,10 @@ async function codexRun({ cwd, prompt, schema, logPath, signal, onEvent, mode = 
   const maxAutoResumes = mode === "read" ? 0 : 1;
   // Factory runs must be reproducible across retries. Do not inherit a newly
   // selected interactive model when resuming an older subscription session.
-  const model = process.env.SOLOFACTORY_CODEX_MODEL || "gpt-6.1-sol";
-  const reasoningEffort = process.env.SOLOFACTORY_CODEX_REASONING_EFFORT || "medium";
+  // A run without a profile keeps the one env model for every stage, so older runs resume as they started.
+  const tier = models?.[stageTier(context.stage)];
+  const model = tier?.model || process.env.SOLOFACTORY_CODEX_MODEL || "gpt-6.1-sol";
+  const reasoningEffort = tier?.effort || process.env.SOLOFACTORY_CODEX_REASONING_EFFORT || "medium";
   const overallStarted = Date.now();
   let sessionId = resumeSessionId;
   let autoResumes = 0;
@@ -234,25 +259,37 @@ const CLAUDE_SHELL_RULE = `Shell: you are already in the project root. Only plai
 call; a command with cd, &&, ;, |, a loop, a heredoc or a redirect is denied without running. Read files with
 Read, create and change them with Write and Edit, and search with Glob and Grep.`;
 
-async function claudeRun({ cwd, prompt, schema, logPath, signal, onEvent, mode = "write", resumeSessionId = null, context = {} }) {
+async function claudeRun({ cwd, prompt, schema, logPath, signal, onEvent, mode = "write", resumeSessionId = null, context = {}, models = null }) {
   await mkdir(cwd, { recursive: true });
-  const reasoningTask = /^(specification(?:-|$)|feature-plan(?:-|$)|plan-review$|plan-correction-|recovery-plan-)|(?:^|-)review(?:-|$)/.test(context.stage ?? "");
-  const model = reasoningTask
+  const reasoningTask = stageTier(context.stage) === "plan";
+  // The Guide interview turns a vague idea into a brief every later stage builds on, so it gets Opus at medium
+  // with an Opus advisor (Lou, 2026-11-08), not the Sonnet build profile. Turns are few, so the cost is small.
+  const guideTask = context.stage === "interview";
+  const model = guideTask
+    ? process.env.SOLOFACTORY_CLAUDE_GUIDE_MODEL || "opus"
+    : reasoningTask
     ? process.env.SOLOFACTORY_CLAUDE_REASONING_MODEL || "opus"
     // Builders and repairs on Sonnet: same review pass rate as Opus on the 2026-11-08 smokes at about a third
     // less per feature, and Opus filled a member's 5h subscription window in one run. Judgment stays on Opus.
     : process.env.SOLOFACTORY_CLAUDE_MODEL || "sonnet";
-  const effort = reasoningTask
+  const effort = guideTask
+    ? process.env.SOLOFACTORY_CLAUDE_GUIDE_EFFORT || "medium"
+    : reasoningTask
     ? process.env.SOLOFACTORY_CLAUDE_REASONING_EFFORT || "low"
     : process.env.SOLOFACTORY_CLAUDE_EFFORT || "medium";
+  // ponytail: Claude Code takes an advisor model only, not an advisor effort; the advisor runs at its own level.
+  const advisor = guideTask ? (models?.advisor === false ? "" : process.env.SOLOFACTORY_CLAUDE_GUIDE_ADVISOR ?? "opus") : "";
+  // A custom profile replaces the env and built-in choices for its stage; the built-in Claude profile sends none.
+  const tier = models?.[stageTier(context.stage)];
   // stream-json, not json: json printed nothing until exit, so 45-minute build turns left empty logs, fed the
   // watchdog nothing and had no session id to continue after a cap (SEARCH-UI, 2026-10-14). Sessions persist
   // so a capped or interrupted turn resumes its own context instead of starting cold.
-  const args = ["-p", "--output-format", "stream-json", "--verbose", "--model", model, "--effort", effort];
+  const args = ["-p", "--output-format", "stream-json", "--verbose", "--model", tier?.model || model, "--effort", tier?.effort || effort];
   if (resumeSessionId) args.push("--resume", resumeSessionId);
   // Agent turns must not inherit the owner's personal Claude Code config: on 2026-10-12 builds ran the user's
   // Fable advisor (62% of a feature's cost), an rtk hook that rewrote commands, and every claude.ai connector.
   args.push("--setting-sources", "project,local", "--strict-mcp-config");
+  if (advisor) args.push("--settings", JSON.stringify({ advisorModel: advisor }));
   args.push("--permission-mode", mode === "read" ? "plan" : "acceptEdits");
   // Headless acceptEdits silently denies unlisted shell commands, so repair agents shipped fixes they could not run
   // (~20 denials per repair on 2026-09-27; 46 across smoke 11's builds). Allow the commands the controller's own
@@ -265,6 +302,10 @@ async function claudeRun({ cwd, prompt, schema, logPath, signal, onEvent, mode =
       "Bash(node --test:*)", "Bash(node:*)", "Bash(ls:*)", "Bash(git ls-files:*)", "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", ...proofs);
   }
   if (schema) args.push("--json-schema", JSON.stringify(schema));
+  // Tool round trips per turn. 320 real turns (2026-09..11 logs) used p50 18, p99 77, max 141, so the default only
+  // stops a turn that is going round in circles; the 45-minute cap still bounds time. 0 turns it off.
+  const maxTurns = claudeMaxTurns();
+  if (maxTurns) args.push("--max-turns", String(maxTurns));
   let sessionId = resumeSessionId;
   // Usage per assistant message, kept so a killed turn still reports what it spent (see partialClaudeUsage).
   const spent = new Map();
@@ -290,6 +331,15 @@ async function claudeRun({ cwd, prompt, schema, logPath, signal, onEvent, mode =
       if (event) onEvent?.(event);
     },
   });
+  // At the cap Claude ends with an error_max_turns result (exit code varies by CLI version). It is not a timeout:
+  // no automatic continuation, so a turn that went round in circles is not given another lap.
+  const capped = result.lines.map((line) => claudeStreamLine(line).record).findLast((record) => record?.type === "result" && record.subtype === "error_max_turns");
+  if (capped) {
+    const error = new Error(`Claude Code used its ${maxTurns}-step limit for one turn without finishing. Partial work is preserved. Resume starts a fresh turn; raise SOLOFACTORY_AGENT_MAX_TURNS if this work genuinely needs more steps.`);
+    error.code = "agent_turn_cap";
+    error.details = { provider: "Claude Code", logPath, sessionId: capped.session_id ?? sessionId, maxTurns, numTurns: capped.num_turns ?? null, usage: claudeUsage(capped), durationMs: result.durationMs, canResume: true };
+    throw error;
+  }
   if (result.code !== 0) {
     throw providerFailure({
       provider: "Claude Code",
@@ -494,6 +544,13 @@ function providerFailure({ provider, result, diagnostics, logPath, sessionId, us
   return error;
 }
 
+export function claudeMaxTurns(env = process.env) {
+  const raw = env.SOLOFACTORY_AGENT_MAX_TURNS;
+  if (raw === undefined || raw === "") return 150;
+  if (!/^\d+$/.test(raw) || Number(raw) > 1000) throw new Error(`SOLOFACTORY_AGENT_MAX_TURNS must be a whole number from 0 to 1000 (got "${raw}").`);
+  return Number(raw);
+}
+
 function minutesFromEnv(name, fallback) {
   const value = Number(process.env[name]);
   return (Number.isFinite(value) && value > 0 ? value : fallback) * 60_000;
@@ -554,8 +611,9 @@ export async function spillPrompt({ cwd, prompt, context = {} }) {
   return `Your complete instructions are in ${relative} (too long to send inline). Read that whole file first, then carry out exactly what it says; it is addressed to you.`;
 }
 
-export function createProvider(id) {
-  const guarded = (run) => async (args) => run({ ...args, prompt: await spillPrompt(args) });
+export function createProvider(id, models = null) {
+  const checked = checkModels(models);
+  const guarded = (run) => async (args) => run({ ...args, models: checked, prompt: await spillPrompt(args) });
   if (id === "codex") return { id, run: guarded(codexRun) };
   if (id === "claude") return { id, run: guarded(claudeRun) };
   throw new Error(`Unknown provider '${id}'.`);

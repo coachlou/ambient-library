@@ -1,882 +1,186 @@
-const labels = {
-  promise: "Product promise",
-  user: "Primary user",
-  problem: "Triggering problem",
-  workflow: "Core workflow",
-  mustHaves: "Must-haves",
-  nonGoals: "Non-goals",
-  dataAndAccess: "Data & access",
-  integrations: "Integrations",
-  business: "Business model",
-  visual: "Visual direction",
-  deployment: "Deployment",
-  acceptance: "Acceptance proof",
-  constraints: "Constraints",
-};
+// SoloFactory hub, design A. The page is design A's own markup (the template in index.html) and its own
+// component logic, drawn by the small engine below and wired to the factory API by the Live class at the end.
 
-const stageOrder = ["specifying", "building", "verifying", "reviewing", "deploying", "completed"];
-const state = { config: null, provider: null, messages: [], guide: null, job: null, events: [], telemetry: null, poller: null, jobs: [], busyJobId: null, projects: [], project: null };
-const $ = (selector) => document.querySelector(selector);
-const NO_PROVIDER = "No subscription is signed in yet. Follow the note under Claude Code above, then reload this page.";
-
-boot().catch(showError);
-
-async function boot() {
-  state.config = await api("/api/config");
-  const first = state.config.providers.find((provider) => provider.authenticated);
-  // No fallback to a signed-out provider: it looked selected but every request failed with its detail.
-  state.provider = first?.id ?? null;
-  state.guide = state.config.opening;
-  state.messages = [{ role: "assistant", content: state.guide.message }];
-  renderProviders();
-  if (!first) showError(new Error(NO_PROVIDER));
-  renderMessages();
-  renderCoverage();
-  checkUpdate().catch(() => {}); // never holds up the page
-  await refreshProjects();
-  const savedId = localStorage.getItem("solofactory.currentJob");
-  const candidate = state.jobs.find((job) => job.id === savedId)
-    ?? state.jobs.find((job) => PARKED.includes(job.state));
-  if (candidate) await selectRun(candidate.id);
-  else await restoreDraft();
-  // ponytail: /api/projects reads every run's state.json; fine for a handful of projects, paginate if it ever isn't
-  setInterval(() => refreshProjects().catch(() => {}), 5000);
+// ---- Template engine: parses the {{path}} / sc-if / sc-for template once, renders it to HTML, morphs the DOM.
+const VOID = new Set(["input", "br", "img", "hr", "meta", "link", "area", "base", "col", "embed", "source", "track", "wbr"]);
+function parseTpl(src) {
+  const root = { kids: [] }, stack = [root];
+  const re = /<\/([a-zA-Z][\w-]*)\s*>|<([a-zA-Z][\w-]*)((?:\s+[^\s=>\/]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?)*)\s*(\/?)>|([^<]+|<)/g;
+  let m;
+  while ((m = re.exec(src))) {
+    const top = stack[stack.length - 1];
+    if (m[1]) { const tag = m[1].toLowerCase(); for (let i = stack.length - 1; i > 0; i -= 1) if (stack[i].tag === tag) { stack.length = i; break; } continue; }
+    if (m[5] !== undefined) { top.kids.push({ t: "text", v: m[5] }); continue; }
+    const tag = m[2].toLowerCase(), attrs = [];
+    const ar = /([^\s=\/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g;
+    let a;
+    while ((a = ar.exec(m[3]))) attrs.push([a[1], a[2] ?? a[3] ?? a[4] ?? null]);
+    const node = { t: "el", tag, attrs, kids: [] };
+    top.kids.push(node);
+    if (!m[4] && !VOID.has(tag)) stack.push(node);
+  }
+  return root.kids;
 }
-
-async function refreshProjects() {
-  const [projects, listing] = await Promise.all([api("/api/projects"), api("/api/jobs")]);
-  state.projects = projects.projects;
-  state.project = projects.active;
-  state.jobs = listing.jobs;
-  state.busyJobId = listing.busyJobId;
-  const active = listing.activeRuns?.length ?? 0;
-  $("#system-status").textContent = active ? `Factory running${active > 1 ? ` (${active})` : ""}` : "Factory ready";
-  renderProjects();
-  renderRuns();
-  renderBackgroundBanner();
-  renderAttention();
-  if (!$("#board-view").classList.contains("hidden")) renderBoard(await api("/api/board"));
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+function look(sc, path) {
+  const parts = path.split(".");
+  let v = sc[parts[0]];
+  for (let i = 1; i < parts.length; i += 1) v = v == null ? undefined : v[parts[i]];
+  return v;
 }
-
-// Factory board: one column per state, a card per run, click to open it.
-const PARKED = ["failed", "cancelled", "interrupted", "paused"];
-const BOARD_COLUMNS = ["queued", "specifying", "building", "reviewing", "deploying", "parked", "completed"];
-$("#board-button").addEventListener("click", () => {
-  if ($("#board-view").classList.contains("hidden")) showBoard().catch(showError);
-  else showInterview();
-});
-
-async function showBoard() {
-  clearError();
-  stopPolling();
-  for (const id of ["interview-view", "review-view", "run-view"]) $(`#${id}`).classList.add("hidden");
-  $("#board-view").classList.remove("hidden");
-  $("#board-button").setAttribute("aria-pressed", "true");
-  renderBoard(await api("/api/board"));
-}
-
-function hideBoard() {
-  $("#board-view").classList.add("hidden");
-  $("#board-button").setAttribute("aria-pressed", "false");
-}
-
-function renderBoard(board) {
-  $("#board-capacity").textContent = `${board.active} of ${board.maxActiveRuns} active run${board.maxActiveRuns === 1 ? "" : "s"}`;
-  $("#board-columns").replaceChildren(...BOARD_COLUMNS.map((name) => {
-    const column = document.createElement("div");
-    column.className = "board-column";
-    const heading = document.createElement("h3");
-    heading.append(name, Object.assign(document.createElement("span"), { textContent: String(board.columns[name].length) }));
-    column.append(heading, ...board.columns[name].map(boardCard));
-    return column;
-  }));
-}
-
-function boardCard(card) {
-  const button = document.createElement("button");
-  button.className = "board-card";
-  button.type = "button";
-  const title = Object.assign(document.createElement("strong"), { textContent: card.promise || card.jobId });
-  const meta = Object.assign(document.createElement("small"), { textContent: `${card.project} · ${card.stage || card.state}${card.startedAt ? ` · ${formatDuration(card.elapsedMs)}` : ""}` });
-  button.append(title, meta);
-  if (card.slices) {
-    const bar = document.createElement("div");
-    bar.className = "slice-bar";
-    for (let i = 0; i < card.slices.total; i += 1) {
-      const seg = document.createElement("i");
-      if (i < card.slices.done) seg.classList.add("done");
-      else if (i === card.slices.done && !["completed", ...PARKED].includes(card.state)) seg.classList.add("current");
-      bar.append(seg);
+const shown = (v) => (v == null || typeof v === "function" || typeof v === "object" ? "" : String(v));
+const fill = (str, sc) => str.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, p) => shown(look(sc, p)));
+const raw = (str, sc) => { const m = /^\{\{\s*([\w.]+)\s*\}\}$/.exec(str ?? ""); return m ? look(sc, m[1]) : str; };
+const attrOf = (node, name) => (node.attrs.find((a) => a[0] === name) || [])[1];
+function draw(nodes, sc, H) {
+  let out = "";
+  for (const n of nodes) {
+    if (n.t === "text") { out += esc(fill(n.v, sc)); continue; }
+    if (n.tag === "sc-if") { if (raw(attrOf(n, "value"), sc)) out += draw(n.kids, sc, H); continue; }
+    if (n.tag === "sc-for") {
+      const as = attrOf(n, "as");
+      for (const item of raw(attrOf(n, "list"), sc) || []) { const inner = Object.create(sc); inner[as] = item; out += draw(n.kids, inner, H); }
+      continue;
     }
-    if (card.slices.repairs && bar.lastChild) bar.children[Math.max(0, card.slices.done - 1)].classList.add("repaired");
-    // Feature status: verified, then the cursor's substage (or blocked when parked), then planned.
-    const status = card.slices.current ? ` · ${card.slices.current} ${PARKED.includes(card.state) ? "blocked" : card.slices.substage ?? "planned"}` : "";
-    bar.title = `${card.slices.done}/${card.slices.total} features verified${status}${card.slices.repairs ? ` · ${card.slices.repairs} repair${card.slices.repairs === 1 ? "" : "s"}` : ""}${card.slices.remainingRepairs != null ? ` · ${card.slices.remainingRepairs} repair${card.slices.remainingRepairs === 1 ? "" : "s"} left` : ""}`;
-    button.append(bar);
+    const type = String(raw(attrOf(n, "type"), sc) ?? "");
+    let attrs = "";
+    for (const [k, v] of n.attrs) {
+      if (k.startsWith("hint-") || k === "sc-html") continue;
+      if (/^on[A-Z]/.test(k)) {
+        const fn = raw(v, sc);
+        if (typeof fn !== "function") continue;
+        const evt = k === "onChange" ? (n.tag === "select" || type === "checkbox" ? "change" : "input") : k === "onBlur" ? "focusout" : k.slice(2).toLowerCase();
+        attrs += ` data-on-${evt}="${H.push(fn) - 1}"`;
+        continue;
+      }
+      if (k === "checked" || k === "disabled" || k === "selected") { const val = v === null ? true : raw(v, sc); if (val && val !== "false") attrs += ` ${k}`; continue; }
+      if (k === "value" && (n.tag === "input" || n.tag === "textarea" || n.tag === "select")) { attrs += ` data-v="${esc(fill(v ?? "", sc))}"`; continue; }
+      attrs += v === null ? ` ${k}` : ` ${k}="${esc(fill(v, sc))}"`;
+    }
+    out += `<${n.tag}${attrs}>`;
+    // sc-html="{{x}}" places x as markup. Only md() output may be bound this way: it is escaped first.
+    const html = attrOf(n, "sc-html");
+    if (!VOID.has(n.tag)) out += `${html != null ? String(raw(html, sc) ?? "") : draw(n.kids, sc, H)}</${n.tag}>`;
   }
-  if (card.blockedBy) button.append(Object.assign(document.createElement("small"), { className: "blocked", textContent: `waiting on recovery of ${card.blockedBy}` }));
-  button.addEventListener("click", () => openFromBoard(card).catch(showError));
-  return button;
+  return out;
+}
+// Index-wise morph keeps focus, caret and scroll across re-renders.
+function morph(live, next) {
+  const a = live.childNodes, b = Array.from(next.childNodes);
+  b.forEach((n, i) => {
+    const o = a[i];
+    if (!o) return live.appendChild(n);
+    if (o.nodeType !== n.nodeType || o.nodeName !== n.nodeName) return live.replaceChild(n, o);
+    if (o.nodeType !== 1) { if (o.nodeValue !== n.nodeValue) o.nodeValue = n.nodeValue; return; }
+    for (const at of Array.from(o.attributes)) if (!n.hasAttribute(at.name)) o.removeAttribute(at.name);
+    for (const at of Array.from(n.attributes)) if (o.getAttribute(at.name) !== at.value) o.setAttribute(at.name, at.value);
+    morph(o, n);
+  });
+  while (a.length > b.length) live.removeChild(live.lastChild);
 }
 
-async function openFromBoard(card) {
-  if (card.projectId !== state.project) {
-    await api("/api/projects/select", { method: "POST", body: { id: card.projectId } });
-    await refreshProjects();
+// ---- The DCLogic contract design A's component is written against: state, setState, renderVals, lifecycle.
+class DCLogic {
+  constructor() { this.props = {}; }
+  setState(patch) {
+    const prev = this.state;
+    this.state = { ...prev, ...(typeof patch === "function" ? patch(prev, this.props) : patch) };
+    this.paint();
+    this.componentDidUpdate?.(this.props, prev);
   }
-  await selectRun(card.jobId);
+  mount(el) {
+    this.el = el;
+    this.tpl = parseTpl(document.getElementById("tpl").textContent);
+    for (const type of ["click", "input", "change", "keydown", "focusout", "pointerdown", "pointermove", "dblclick"]) {
+      el.addEventListener(type, (ev) => {
+        // Events the morph itself fires (focusout from a field it removes) carry handler indexes from the
+        // previous paint, which now point at other functions. They are never user input, so skip them.
+        if (this.painting || !el.contains(ev.target)) return;
+        const fns = [];
+        for (let node = ev.target; node && node !== el.parentNode; node = node.parentNode) {
+          const i = node.getAttribute?.(`data-on-${type}`);
+          if (i != null) fns.push(this.H[i]);
+        }
+        for (const fn of fns) { if (ev.cancelBubble) break; try { fn(ev); } catch (error) { showError(error); } }
+      });
+    }
+    this.paint();
+    this.componentDidMount?.();
+  }
+  paint() {
+    if (!this.el) return;
+    if (this.painting) { this.again = true; return; }
+    this.painting = true;
+    try {
+      do {
+        this.again = false;
+        const H = [], t = document.createElement("template");
+        t.innerHTML = draw(this.tpl, this.renderVals(), H);
+        this.H = H;
+        morph(this.el, t.content);
+        for (const f of this.el.querySelectorAll("[data-v]")) if (f.value !== f.dataset.v) f.value = f.dataset.v;
+        for (const f of this.el.querySelectorAll("input[type=checkbox]")) f.checked = f.hasAttribute("checked");
+      } while (this.again);
+    } finally { this.painting = false; }
+  }
 }
 
-function projectName(job) {
-  return job?.brief?.workingName || job?.id || "Untitled";
-}
-
-function option(value, text) {
-  return Object.assign(document.createElement("option"), { value, textContent: text });
-}
-
-function renderProjects() {
-  const select = $("#project-select");
-  select.replaceChildren(option("new", "+ New project…"), ...state.projects.map((project) => {
-    const marker = project.activeJobId ? "● " : "";
-    const last = project.lastRun ? `${project.lastRun.state} · ${project.runCount} run${project.runCount === 1 ? "" : "s"}` : "no runs";
-    const queued = project.queued ? ` · ${project.queued} queued` : "";
-    return option(project.id, `${marker}${project.name} · ${last}${queued}`);
-  }));
-  select.value = state.project;
-  renderQueueHint();
-}
-
-// Runs in one project share a tree, so they serialize whatever the active-run limit says;
-// say so at the moment a second brief is about to be queued instead of after it waits.
-function renderQueueHint() {
-  const project = state.projects.find((entry) => entry.id === state.project);
-  const parked = Boolean(project?.lastRun && PARKED.includes(project.lastRun.state) && !project.activeJobId);
-  const ahead = (project?.activeJobId ? 1 : 0) + (project?.queued ?? 0) + (parked ? 1 : 0);
-  $("#queue-hint").classList.toggle("hidden", !ahead);
-  if (!ahead) return;
-  const holding = parked
-    ? `a parked run, which holds the queue until you resume, restart, or dismiss it${ahead > 1 ? `, plus ${ahead - 1} queued` : ""}`
-    : `${ahead} run${ahead === 1 ? "" : "s"} ${project.activeJobId ? "active or " : ""}queued`;
-  $("#queue-hint").textContent = `${project.name} already has ${holding}. Runs in one project go one after another, each on the tree the last one leaves, so this brief waits for them whatever the active-run limit is. Independent fixes for the same app are cheaper as one brief with a must-have and an acceptance scenario each.`;
-}
-
-function renderRuns() {
-  const select = $("#run-select");
-  select.replaceChildren(option("new", "+ New run"), ...state.jobs.map((job) => {
-    const marker = job.id === state.busyJobId ? "● " : job.queuePosition ? `#${job.queuePosition} ` : "";
-    return option(job.id, `${marker}${projectName(job)} · ${job.state} · ${job.createdAt.slice(0, 10)}`);
-  }));
-  select.value = state.job?.id ?? "new";
-}
-
-// A parked latest run blocks its project until the owner acts, so it is announced on every screen
-// and in the tab title, whichever run or project is open. Cancelled runs are the owner's own choice.
+// ---- Shared factory state and helpers (kept from the previous hub; tests read some of these lines).
+const state = { job: null, project: null, amendment: null, messages: [], guide: null, revises: null, replaces: null, provider: null, projects: [], jobs: [], board: null, config: null };
+const stageOrder = ["specifying", "building", "verifying", "reviewing", "deploying", "completed"];
 const NEEDS_YOU = ["failed", "interrupted", "paused"];
 function runsNeedingYou(projects, viewingId) {
   return projects.filter((project) => NEEDS_YOU.includes(project.lastRun?.state) && project.lastRun.id !== viewingId)
     .map((project) => ({ projectId: project.id, jobId: project.lastRun.id, name: project.lastRun.workingName || project.name, state: project.lastRun.state }));
 }
-
-function renderAttention() {
-  const waiting = runsNeedingYou(state.projects, state.job?.id);
-  const all = state.projects.filter((project) => NEEDS_YOU.includes(project.lastRun?.state)).length;
-  document.title = all ? `(${all}) needs you · SoloFactory` : "SoloFactory";
-  $("#attention-banner").classList.toggle("hidden", !waiting.length);
-  if (!waiting.length) return;
-  const [first] = waiting;
-  $("#attention-text").textContent = waiting.length > 1 ? `${waiting.length} runs are stopped or paused and need you.`
-    : `“${first.name}” is ${first.state === "paused" ? "paused" : "stopped"} and needs you.`;
-  $("#attention-view-button").onclick = async () => {
-    try {
-      if (first.projectId !== state.project) await switchProject(first.projectId);
-      await selectRun(first.jobId);
-    } catch (error) { showError(error); }
-  };
+const BRIEF_SECTIONS = [
+  ["promise", "Promise", "promise"],
+  ["primaryUser", "Primary user", "user"],
+  ["problem", "Problem", "problem"],
+  ["coreWorkflow", "Core workflow", "workflow", true],
+  ["mustHaves", "Must-haves", "mustHaves", true],
+  ["nonGoals", "Non-goals", "nonGoals", true],
+  ["dataAndAccess", "Data & access", "dataAndAccess", true],
+  ["integrations", "Integrations", "integrations", true],
+  ["businessModel", "Business model", "business"],
+  ["acceptanceScenarios", "Acceptance scenarios", "acceptance", true],
+  ["visualDirection", "Visual direction", "visual"],
+  ["deployment", "Deployment", "deployment"],
+  ["constraints", "Constraints", "constraints", true],
+  ["manualChecks", "Checked by hand after install", null, true],
+];
+const DRAFT_SPEC = "Draft spec";
+// A brief's non-empty fields as document sections, in BRIEF_SECTIONS order.
+function briefSections(brief) {
+  if (!brief) return [];
+  return BRIEF_SECTIONS.filter(([key]) => brief[key] != null && brief[key] !== "" && !(Array.isArray(brief[key]) && !brief[key].length))
+    .map(([key, label, , isList]) => ({ h: label, t: isList ? [].concat(brief[key]).join("\n") : String(brief[key]), k: key, list: isList }));
 }
-
-function renderBackgroundBanner() {
-  const busy = state.busyJobId && state.busyJobId !== state.job?.id ? state.jobs.find((job) => job.id === state.busyJobId) : null;
-  const queued = state.jobs.filter((job) => job.queuePosition).length;
-  $("#background-banner").classList.toggle("hidden", !busy);
-  if (busy) $("#background-text").textContent = `“${projectName(busy)}” is ${busy.state} in the background${queued ? ` · ${queued} queued` : ""}.`;
-}
-
-$("#project-select").addEventListener("change", (event) => switchProject(event.target.value).catch(showError));
-$("#run-select").addEventListener("change", (event) => selectRun(event.target.value).catch(showError));
-$("#background-view-button").addEventListener("click", () => selectRun(state.busyJobId).catch(showError));
-
-// window.prompt is blocked in embedded browsers (the Claude desktop pane), so
-// the project name comes from a native <dialog> instead.
-const projectDialog = $("#project-dialog");
-$("#project-close-button").addEventListener("click", () => projectDialog.close());
-function askProjectName() {
-  return new Promise((resolve) => {
-    const input = $("#project-name");
-    input.value = "";
-    projectDialog.addEventListener("close", () => resolve(projectDialog.returnValue === "submit" ? input.value.trim() : ""), { once: true });
-    projectDialog.showModal();
-  });
-}
-$("#project-form").addEventListener("submit", () => projectDialog.close("submit"));
-
-// Switching projects only changes the view; runs in other projects keep going.
-async function switchProject(id) {
-  clearError();
-  const create = id === "new";
-  const body = create ? { name: await askProjectName() } : { id };
-  if (create && !body.name) return renderProjects();
-  const url = create ? "/api/projects" : "/api/projects/select";
-  await api(url, { method: "POST", body });
-  stopPolling();
-  await refreshProjects();
-  return state.jobs[0] ? selectRun(state.jobs[0].id) : showInterview();
-}
-
-async function selectRun(id) {
-  clearError();
-  if (id === "new") return showInterview();
-  const result = await api(`/api/jobs/${id}`);
-  state.job = result.job;
-  state.events = result.events;
-  state.telemetry = null;
-  state.provider = state.job.provider;
-  localStorage.setItem("solofactory.currentJob", state.job.id);
-  resetRunPanels();
-  showRun();
-  renderRuns();
-  renderBackgroundBanner();
-  await poll();
-  if (["completed", ...PARKED].includes(state.job.state)) stopPolling();
-  else startPolling();
-}
-
-function showInterview() {
-  stopPolling();
-  state.job = null;
-  state.events = [];
-  state.telemetry = null;
-  state.guide = state.config.opening;
-  state.messages = [{ role: "assistant", content: state.guide.message }];
-  localStorage.removeItem("solofactory.currentJob");
-  hideBoard();
-  $("#run-view").classList.add("hidden");
-  $("#review-view").classList.add("hidden");
-  $("#interview-view").classList.remove("hidden");
-  document.querySelectorAll(".stages li").forEach((item) => item.classList.remove("active", "done"));
-  document.querySelector('[data-stage="interview"]').classList.add("active");
-  $("#start-button").disabled = false;
-  renderProviders();
-  renderMessages();
-  renderCoverage();
-  renderRuns();
-  renderBackgroundBanner();
-  restoreDraft().catch(showError);
-}
-
-// The server saves the Guide conversation per project after every turn, so leaving the interview
-// (board, a run, another project, a reload) no longer loses it. Start or Start over clears it.
-async function restoreDraft() {
-  const { draft } = await api("/api/interview/draft");
-  if (!draft || state.job || state.messages.length > 1) return;
-  state.guide = draft.guide;
-  state.messages = draft.messages;
-  if (state.config.providers.some((provider) => provider.id === draft.provider && provider.authenticated)) state.provider = draft.provider;
-  renderProviders();
-  renderMessages();
-  renderCoverage();
-  if (state.guide.status === "ready") showReview();
-}
-
-$("#discard-draft").addEventListener("click", async () => {
-  if (!confirm("Discard this conversation and its brief and start a new one?")) return;
-  await api("/api/interview/draft", { method: "DELETE" }).catch(showError);
-  showInterview();
-});
-
-function resetRunPanels() {
-  for (const id of ["request-total", "error-total", "latency-average", "app-uptime"]) $(`#${id}`).textContent = "—";
-  $("#route-list").replaceChildren(Object.assign(document.createElement("p"), { textContent: "No app traffic yet." }));
-  $("#app-live").textContent = "Waiting";
-  $("#app-live").classList.add("muted");
-  $("#open-app").classList.add("hidden");
-  $("#relaunch-button").classList.add("hidden");
-  $("#app-url").classList.add("hidden");
-  $("#artifacts").replaceChildren(Object.assign(document.createElement("p"), { textContent: "Artifacts appear after specification." }));
-}
-
-function renderProviders() {
-  $("#provider-picker").replaceChildren(...state.config.providers.map((provider) => {
-    const button = document.createElement("button");
-    button.className = `provider ${state.provider === provider.id ? "selected" : ""}`;
-    button.disabled = !provider.authenticated || state.messages.length > 1;
-    const strong = document.createElement("strong");
-    strong.textContent = provider.label;
-    const small = document.createElement("small");
-    small.textContent = provider.detail;
-    button.append(strong, small);
-    button.addEventListener("click", () => { state.provider = provider.id; renderProviders(); });
-    return button;
-  }));
-}
-
-function renderMessages(thinking = false) {
-  $("#discard-draft").classList.toggle("hidden", state.messages.length < 2);
-  const container = $("#messages");
-  container.replaceChildren(...state.messages.map((message) => {
-    const item = document.createElement("div");
-    item.className = `message ${message.role}`;
-    item.textContent = message.content;
-    for (const src of message.images ?? []) {
-      const img = document.createElement("img");
-      img.src = src; img.alt = "Attached image"; img.className = "attachment-image";
-      item.append(img);
-    }
-    // Long user turns (pasted specs) collapse so the transcript stays readable.
-    if (message.role === "user" && message.content.length > 1_500) {
-      item.classList.add("long");
-      const toggle = document.createElement("a");
-      toggle.className = "expand";
-      toggle.textContent = "Show full message";
-      toggle.addEventListener("click", () => {
-        const open = item.classList.toggle("open");
-        toggle.textContent = open ? "Collapse" : "Show full message";
-      });
-      item.prepend(toggle);
-    }
-    return item;
-  }));
-  if (thinking) {
-    const item = document.createElement("div");
-    item.className = "message assistant thinking";
-    item.innerHTML = 'Thinking <span class="dots"><span>•</span><span>•</span><span>•</span></span>';
-    container.append(item);
+// Edited section texts (keyed by position in the shown doc) as brief edits for PATCH /api/interview/draft.
+function briefEdits(doc, edits) {
+  const out = {};
+  for (const [n, text] of Object.entries(edits || {})) {
+    const sec = doc?.sections[n];
+    if (sec) out[sec.k] = sec.list ? text.split("\n").map((line) => line.trim()).filter(Boolean) : text;
   }
-  container.scrollTop = container.scrollHeight;
+  return out;
 }
-
-function sdlcOption(id) {
-  const options = state.config?.sdlcOptions ?? [];
-  return options.find((option) => option.id === id) ?? { id: id ?? "single", label: "Single build" };
-}
-
-function renderCoverage() {
-  const coverage = state.guide.coverage;
-  const values = Object.values(coverage);
-  const score = Math.round(values.reduce((sum, value) => sum + (value === "complete" ? 1 : value === "partial" ? .5 : 0), 0) / values.length * 100);
-  $("#coverage-score").textContent = `${score}%`;
-  $("#coverage-ring").style.setProperty("--value", score);
-  $("#coverage-list").replaceChildren(...Object.entries(coverage).map(([key, value]) => {
-    const row = document.createElement("div");
-    row.className = `coverage-item ${value}`;
-    const text = document.createElement("span"); text.textContent = labels[key] ?? key;
-    const dot = document.createElement("i"); dot.title = value;
-    row.append(text, dot);
-    return row;
-  }));
-}
-
-// Attached documents ride inside the user turn: the Guide reads inline text
-// without a tool call, and nothing is stored server-side.
-const pending = [];
-$("#attach-input").addEventListener("change", async (event) => {
-  clearError();
-  for (const file of event.target.files) {
-    try {
-      if (file.type.startsWith("image/")) {
-        const response = await fetch(`/api/interview/upload?name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(body.error || `Upload failed with HTTP ${response.status}.`);
-        pending.push({ name: file.name, path: body.path, url: URL.createObjectURL(file) });
-      } else {
-        pending.push({ name: file.name, text: await file.text() });
-      }
-    } catch (error) {
-      showError(new Error(`Could not read ${file.name}: ${error.message}`));
-    }
-  }
-  event.target.value = "";
-  renderAttachments();
-});
-
-function renderAttachments() {
-  $("#attachments").replaceChildren(...pending.map((file, index) => {
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.textContent = file.path ? `${file.name} · image` : `${file.name} · ${Math.ceil(file.text.length / 1000)}k chars`;
-    const remove = document.createElement("button");
-    remove.type = "button"; remove.title = "Remove"; remove.textContent = "×";
-    remove.addEventListener("click", () => { pending.splice(index, 1); renderAttachments(); });
-    chip.append(remove);
-    return chip;
-  }));
-  $("#message-input").required = pending.length === 0;
-}
-
-function composeMessage(typed) {
-  const parts = typed ? [typed] : [];
-  for (const file of pending) {
-    if (file.path) parts.push(`Attached image: ${file.path} (open this file to view it before answering)`);
-    else parts.push(`--- Attached document: ${file.name} ---\n${file.text.trim()}\n--- End of ${file.name} ---`);
-  }
-  return parts.join("\n\n");
-}
-
-$("#message-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const input = $("#message-input");
-  const content = composeMessage(input.value.trim());
-  if (!content) return;
-  if (!state.provider) return showError(new Error(NO_PROVIDER));
-  clearError();
-  state.messages.push({ role: "user", content, images: pending.filter((file) => file.url).map((file) => file.url) });
-  input.value = "";
-  pending.length = 0;
-  renderAttachments();
-  renderMessages(true);
-  setInterviewBusy(true);
-  try {
-    const guide = await api("/api/interview/turn", { method: "POST", body: { provider: state.provider, messages: state.messages } });
-    state.guide = guide;
-    state.messages.push({ role: "assistant", content: guide.message });
-    renderMessages();
-    renderCoverage();
-    renderProviders();
-    if (guide.status === "ready") showReview();
-  } catch (error) {
-    renderMessages();
-    showError(error);
-  } finally {
-    setInterviewBusy(false);
-  }
-});
-
-function setInterviewBusy(value) {
-  $("#send-button").disabled = value;
-  $("#message-input").disabled = value;
-  $("#send-button").firstChild.textContent = value ? "Guide is thinking " : "Send answer ";
-}
-
-function showReview() {
-  $("#interview-view").classList.add("hidden");
-  $("#review-view").classList.remove("hidden");
-  renderBrief(state.guide.brief, state.guide.notices);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-$("#back-button").addEventListener("click", () => {
-  $("#review-view").classList.add("hidden");
-  $("#interview-view").classList.remove("hidden");
-});
-
-function renderBrief(brief, notices = []) {
-  const sections = [
-    ...(notices.length ? [["Before you start", notices, true]] : []),
-    ["Promise", brief.promise, true],
-    ["Primary user", brief.primaryUser],
-    ["Problem", brief.problem],
-    ["Core workflow", brief.coreWorkflow],
-    ["Must-haves", brief.mustHaves],
-    ["Non-goals", brief.nonGoals],
-    ["Data & access", brief.dataAndAccess],
-    ["Acceptance scenarios", brief.acceptanceScenarios, true],
-    ["Visual direction", brief.visualDirection],
-    ["Deployment", brief.deployment],
-    ["Constraints", brief.constraints, true],
-    ...(brief.manualChecks?.length ? [["Checked by hand after install", brief.manualChecks, true]] : []),
-  ];
-  $("#brief").replaceChildren(...sections.map(([title, value, wide]) => {
-    const section = document.createElement("section");
-    if (wide) section.className = "wide";
-    const heading = document.createElement("h3"); heading.textContent = title;
-    section.append(heading);
-    if (Array.isArray(value)) {
-      const list = document.createElement("ul");
-      for (const entry of value) { const item = document.createElement("li"); item.textContent = entry; list.append(item); }
-      section.append(list);
-    } else {
-      const paragraph = document.createElement("p"); paragraph.textContent = value || "Not specified"; section.append(paragraph);
-    }
-    return section;
-  }));
-}
-
-$("#start-button").addEventListener("click", async () => {
-  clearError();
-  $("#start-button").disabled = true;
-  try {
-    const { job } = await api("/api/jobs", {
-      method: "POST",
-      body: { provider: state.provider, transcript: state.messages, coverage: state.guide.coverage, brief: state.guide.brief },
-    });
-    // Submitted briefs queue; the owner goes straight back to shaping the next release.
-    showInterview();
-    await refreshProjects();
-    renderBackgroundBanner();
-    if (job.queuePosition) $("#system-status").textContent = `Brief queued #${job.queuePosition}`;
-  } catch (error) {
-    showError(error);
-    $("#start-button").disabled = false;
-  }
-});
-
-function showRun() {
-  hideBoard();
-  $("#review-view").classList.add("hidden");
-  $("#interview-view").classList.add("hidden");
-  $("#run-view").classList.remove("hidden");
-  document.querySelector('[data-stage="interview"]').classList.add("done");
-  $("#run-id").textContent = state.job.id;
-  $("#run-title").textContent = state.job.brief.workingName || "Building your app";
-  renderJob();
-  renderAttention();
-}
-
-async function poll() {
-  if (!state.job) return;
-  try {
-    const result = await api(`/api/jobs/${state.job.id}`);
-    state.job = result.job;
-    state.events = result.events;
-    state.telemetry = await api(`/api/jobs/${state.job.id}/telemetry`);
-    renderJob();
-    if (PARKED.includes(state.job.state)) {
-      state.pausing = false;
-      $("#pause-button").disabled = false;
-      stopPolling();
-      refreshProjects();
-    }
-  } catch (error) { showError(error); }
-}
-
-// Stages before the current one are done; a completed run has every stage done and none active.
+const sameValue = (a, b) => JSON.stringify(a ?? (Array.isArray(b) ? [] : "")) === JSON.stringify(b ?? (Array.isArray(a) ? [] : ""));
+// Per key, so a key the review only filled with its empty default (a brief from before 0.11 has no
+// manualChecks) is not a change; a whole-object compare told the owner "adjusted" after every review.
+const briefChanged = (a, b) => Object.keys({ ...a, ...b }).some((key) => !sameValue(a?.[key], b?.[key]));
 function railMarks(progressState) {
   const active = progressState === "repairing" ? "verifying" : progressState;
   const at = active === "completed" ? stageOrder.length : stageOrder.indexOf(active);
   return { active, done: stageOrder.slice(0, Math.max(0, at)) };
 }
-
-function renderJob() {
-  const job = state.job;
-  $("#run-subtitle").textContent = job.blockedBy
-    ? `Waiting on recovery of run ${job.blockedBy}: resume it, start it over, or dismiss it.`
-    : job.queuePosition
-      ? `Queued #${job.queuePosition}${job.queuedFor === "resume" ? " to resume" : ""}; starts when this project's current run finishes.`
-      : job.error?.message || statusCopy(job.state);
-  // Notes the brief was queued with (size, unprovable checks): shown here too, since a brief posted
-  // by an agent never passed the review screen.
-  const notices = job.notices ?? [];
-  $("#run-notices").classList.toggle("hidden", !notices.length);
-  $("#run-notices").replaceChildren(...notices.map((text) => Object.assign(document.createElement("li"), { textContent: text })));
-  const progressState = PARKED.includes(job.state) ? job.failedState : job.state;
-  const rail = railMarks(progressState);
-  document.querySelectorAll(".stages li").forEach((item) => {
-    item.classList.toggle("active", item.dataset.stage === rail.active);
-    if (item.dataset.stage !== "interview") item.classList.toggle("done", rail.done.includes(item.dataset.stage));
-  });
-  renderSupervision();
-  renderMap();
-  renderArtifacts();
-  renderAppMetrics();
-  renderRecovery();
-  const terminalFailure = PARKED.includes(job.state);
-  $("#cancel-button").classList.toggle("hidden", terminalFailure || job.state === "completed");
-  $("#cancel-button").textContent = job.state === "queued" ? "Remove from queue" : "Cancel run";
-  $("#pause-button").classList.toggle("hidden", !["specifying", "building", "repairing", "reviewing"].includes(job.state));
-  // The server's pendingPause survives a reload; state.pausing covers the gap until the next poll.
-  if (job.pendingPause) { $("#pause-button").textContent = `Pausing after ${job.stage}…`; $("#pause-button").disabled = true; }
-  else if (!state.pausing) $("#pause-button").textContent = "Pause";
-  $("#resume-button").textContent = job.nextAction?.action === "resume" ? job.nextAction.label : job.state === "paused" ? "Resume" : "Resume current run";
-  $("#dismiss-button").classList.toggle("hidden", !terminalFailure || Boolean(job.dismissed));
-  // nextAction is derived by the server's continuation policy; a saved banner's canResume can be stale.
-  $("#resume-button").classList.toggle("hidden", job.nextAction?.action !== "resume" || !terminalFailure);
-  $("#copy-recovery-button").classList.toggle("hidden", !job.recovery || !terminalFailure);
-  $("#start-over-button").classList.toggle("hidden", !terminalFailure);
-  $("#report-run-button").classList.toggle("hidden", !terminalFailure);
-  const url = $("#app-url");
-  url.classList.toggle("hidden", !job.deployment?.url);
-  url.textContent = job.deployment?.url ? `${job.deployment.url}${job.deployment.status === "live" ? "" : " · not running"}` : "";
-  $("#relaunch-button").classList.toggle("hidden", !(job.state === "completed" && job.deployment && job.deployment.status !== "live"));
-  if (job.state === "completed" && job.deployment?.status === "live") {
-    $("#open-app").href = job.deployment.url;
-    $("#open-app").classList.remove("hidden");
-    $("#app-live").textContent = job.waivedProofs?.length ? `Live · owner waived ${job.waivedProofs.map((bug) => bug.id).join(", ")}` : "Live";
-    $("#app-live").classList.remove("muted");
-  } else if (job.state === "completed") {
-    $("#app-live").textContent = "Stopped";
-    $("#app-live").classList.add("muted");
-  }
-}
-
-// Supervision is shown beside the lifecycle state, never instead of it.
-function renderSupervision() {
-  const watch = state.job.supervision;
-  let line = $("#supervision");
-  if (!line) {
-    line = document.createElement("p"); line.id = "supervision"; line.className = "muted";
-    $("#run-subtitle").after(line);
-  }
-  line.classList.toggle("hidden", !watch);
-  if (!watch) return;
-  const when = (iso) => iso ? `${formatDuration(Date.now() - new Date(iso).getTime())} ago` : "none yet";
-  const worker = watch.worker;
-  const waiting = worker?.kind === "command" ? ` · waiting on ${worker.gate ?? "command"} for ${formatDuration(worker.ageMs)}${worker.hardLimitMs ? ` of ${formatDuration(worker.hardLimitMs)}` : ""}` : "";
-  const used = state.job.watch?.continuations ? Object.values(state.job.watch.continuations).reduce((sum, n) => sum + n, 0) : 0;
-  line.textContent = `Supervision: ${watch.status}${watch.stage ? ` · ${watch.stage}` : ""}${waiting} · last activity ${when(watch.lastActivityAt)} · last confirmed progress ${when(watch.lastProgressAt)}`
-    + ` · ${state.job.attempt ?? 0} repairs, ${used} automatic continuation${used === 1 ? "" : "s"} used · ${watch.monitoring ? "monitored while the factory server runs" : "not monitored while parked"}`;
-}
-
-// job.attempt counts every repair since the run began; recovery limits are points on that counter.
-// Per feature: cursor.attemptBefore is where the feature started (src/feature-recovery.mjs). Per plan:
-// totalRepairLimit = start + maxRepairs × (features + 1), and maxRepairs is the feature's own window.
-// ponytail: the derived plan cap is low if the plan limit clipped the last feature's window; send maxRepairs if that matters.
-const repairUsage = (job) => {
-  const phase = job.recoveryPhase, start = phase?.cursor?.attemptBefore;
-  if (phase?.totalRepairLimit === undefined || start === undefined || job.repairBudgetLimit == null) return null;
-  const perFeature = job.repairBudgetLimit - start, planCap = perFeature * (phase.plan.slices.length + 1);
-  return { feature: [job.attempt - start, perFeature], plan: [Math.max(0, planCap - (phase.totalRepairLimit - job.attempt)), planCap] };
-};
-// Mirrors pendingProofs in src/wbs.mjs.
-const pendingProofs = (job) => (job.outstandingProofs ?? []).filter((entry) => entry.status === "pending");
-
-// Bounded like MAX_AMENDED_PLAN_BYTES in src/factory.mjs; the server repeats every check.
 const MAX_AMENDED_PLAN_BYTES = 4_000_000;
-
-// Exhausted plan corrections: explain, offer the help packet, and take a corrected plan from a file.
-// A ready plan offers the same packet and upload as an alternative to approval, for writing a replacement.
-// The selection lives in state so polling re-renders and server errors never erase it.
-function renderAmendment(features, next, phase, action) {
-  const blocked = next.action === "amend-plan";
-  const pending = state.amendment?.jobId === state.job.id && state.amendment.phaseId === phase.id ? state.amendment : null;
-  if (!pending) state.amendment = null;
-  const note = document.createElement("p"); note.textContent = blocked ? `${next.reason} ${phase.corrections ?? 0} automatic correction${phase.corrections === 1 ? "" : "s"} used; no repairs have started.` : next.alternatives.find((item) => item.action === "amend-plan").reason;
-  const packet = document.createElement("a"); packet.href = `/api/jobs/${state.job.id}/recovery-plan-packet`; packet.download = ""; packet.className = "button"; packet.textContent = "Download plan help packet";
-  const details = document.createElement("details"); details.open = Boolean(pending); details.addEventListener("toggle", () => { state.amendmentOpen = details.open; });
-  if (state.amendmentOpen) details.open = true;
-  const summary = document.createElement("summary"); summary.textContent = "Advanced: submit corrected plan for review";
-  const label = document.createElement("label"); label.htmlFor = "amendment-file"; label.textContent = "Corrected plan file (.json)";
-  const file = document.createElement("input"); file.type = "file"; file.id = "amendment-file"; file.accept = ".json,application/json";
-  const status = document.createElement("p"); status.id = "amendment-status";
-  const submit = document.createElement("button"); submit.type = "button"; submit.textContent = "Submit corrected plan for review"; submit.disabled = !pending?.plan;
-  const show = () => {
-    status.textContent = pending ? (pending.error ? pending.error : `${pending.name} (${pending.size.toLocaleString()} bytes) will be reviewed once, for recovery phase ${phase.id}.`) : "No file selected.";
-    status.className = pending?.error ? "error" : "muted"; submit.disabled = !pending?.plan;
-  };
-  file.addEventListener("change", async () => {
-    const chosen = file.files[0]; if (!chosen) return;
-    const entry = state.amendment = { jobId: state.job.id, phaseId: phase.id, name: chosen.name, size: chosen.size, plan: null, error: null };
-    if (chosen.size > MAX_AMENDED_PLAN_BYTES) entry.error = `${chosen.name} is larger than ${MAX_AMENDED_PLAN_BYTES.toLocaleString()} bytes.`;
-    else {
-      try { const plan = JSON.parse(await chosen.text()); if (!plan || typeof plan !== "object" || Array.isArray(plan)) throw new Error("not an object"); entry.plan = plan; }
-      catch { entry.error = `${chosen.name} is not a JSON repair plan.`; }
-    }
-    renderRecovery();
-  });
-  submit.addEventListener("click", async () => {
-    if (!pending?.plan) return;
-    submit.disabled = true; clearError();
-    try { await api(`/api/jobs/${state.job.id}/recovery-review`, { method: "POST", body: { phaseId: pending.phaseId, plan: pending.plan } }); state.amendment = null; await poll(); startPolling(); }
-    catch (error) { pending.error = error.message; showError(error); show(); }
-  });
-  show();
-  // A ready plan's replacement is the advanced path, so its explanation and packet sit inside the
-  // disclosure; loose, they rendered under "Prepare repair plan" and read as that button's description.
-  if (blocked) { details.append(summary, label, file, status, submit); features.append(note, packet, details); }
-  else { packet.textContent = "Download plan packet for a replacement"; details.append(summary, note, packet, label, file, status, submit); features.append(details); }
-  const alternative = blocked && next.alternatives?.[0];
-  if (alternative) { const hint = document.createElement("p"); hint.className = "muted"; hint.textContent = alternative.reason; features.append(hint); action(alternative.label, "recovery-plan"); }
-}
-
-function renderRecovery() {
-  const phase = state.job.recoveryPhase;
-  const recovery = state.job.recovery ?? (phase ? { title: phase.status === "planning" ? "Preparing repair plan" : "Repairs", summary: phase.status === "planning" ? "Planning repair features from the review findings and every spec and prototype input." : `${phase.done.length}/${phase.plan?.slices.length ?? 0} recovery features verified`, actions: [], workspace: "Preserved project workspace", automaticRetry: "Each feature has bounded repairs; final deployment requires the full original review." } : null);
-  const visible = recovery && (PARKED.includes(state.job.state) || phase);
-  $("#recovery-card").classList.toggle("hidden", !visible);
-  if (!visible) return;
-  let features = $("#feature-recovery-controls");
-  if (!features) {
-    features = document.createElement("section"); features.id = "feature-recovery-controls";
-    $("#recovery-card").append(features);
-  }
-  features.replaceChildren();
-  // The owner approves more spend here, so show what the run has already spent (server: runSpend in src/factory.mjs).
-  const spend = state.telemetry?.spend;
-  if (spend && PARKED.includes(state.job.state)) {
-    const count = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n);
-    const line = document.createElement("p"); line.id = "run-spend";
-    line.textContent = `Spent so far: ${plural(spend.workers, "worker")}, ${count(spend.tokens)} tokens, cost ${spend.costUsd == null ? "unknown" : `$${spend.costUsd.toFixed(2)}`}, ${formatSpan(spend.elapsedMs)} elapsed.${spend.grantTurns == null ? "" : ` Approving grants up to ${plural(spend.grantTurns, "repair turn")}.`}`+(spend.idleApprovals ? ` Last ${spend.idleApprovals === 1 ? "approval" : `${spend.idleApprovals} approvals`} verified no features.` : "");
-    features.append(line);
-  }
-  const action = (label, endpoint, body = {}) => {
-    const button = document.createElement("button"); button.textContent = label; button.type = "button";
-    button.addEventListener("click", async () => {
-      button.disabled = true; clearError();
-      try { await api(`/api/jobs/${state.job.id}/${endpoint}`, { method: "POST", body: endpoint === "recovery-plan" ? { ...body, guidance: $("#recovery-plan-feedback")?.value ?? "" } : endpoint === "waive-proof" ? { ...body, reason: $("#recovery-plan-feedback")?.value ?? "" } : body }); await poll(); startPolling(); }
-      catch (error) { showError(error); button.disabled = false; }
-    }); features.append(button);
-  };
-  const next = state.job.nextAction;
-  if (next?.action === "amend-plan" && phase) renderAmendment(features, next, phase, action);
-  else if (next?.action === "retry-plan" || next?.action === "revise-inputs") action(next.label, "recovery-plan");
-  // The same admission the server applies: only the policy's planning steps (and revising a ready plan) offer the planner.
-  else if (next?.action === "prepare-plan" || next?.action === "approve-plan") action("Prepare repair plan", "recovery-plan");
-  if (next?.action === "approve-plan" && phase && next.alternatives?.some((item) => item.action === "amend-plan")) renderAmendment(features, next, phase, action);
-  // The reviewer's own test is faulty: the owner's note in the box above becomes the recorded reason.
-  for (const item of next?.alternatives?.filter((entry) => entry.action === "waive-proof") ?? []) { const hint = document.createElement("p"); hint.className = "muted"; hint.textContent = item.reason; features.append(hint); if (item.repairerNote) { const note = document.createElement("pre"); note.style.whiteSpace = "pre-wrap"; note.textContent = `Last repair turn said:\n${item.repairerNote}`; features.append(note); } action(item.label, "waive-proof", { proof: item.proof }); }
-  // Owner-added specs join the run's inputs; the next plan, review or Resume sees them.
-  if (next && !["none", "factory-fix"].includes(next.action)) {
-    const label = document.createElement("label"); label.htmlFor = "input-file"; label.textContent = "Add a spec or prototype file";
-    const file = document.createElement("input"); file.type = "file"; file.id = "input-file";
-    file.addEventListener("change", async () => {
-      clearError();
-      for (const chosen of file.files) {
-        const response = await fetch(`/api/jobs/${state.job.id}/inputs?name=${encodeURIComponent(chosen.name)}`, { method: "POST", body: chosen });
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) { showError(new Error(body.error || `Upload failed with HTTP ${response.status}.`)); break; }
-      }
-      await poll();
-    });
-    features.append(label, file);
-  }
-  // Reference lists fold to one counted row and always start collapsed.
-  // Polling redraws this card, so the owner's open/closed choice is kept per title.
-  state.recoveryFolds ??= {};
-  const fold = (title) => {
-    const details = document.createElement("details"); details.className = "recovery-fold";
-    details.open = state.recoveryFolds[title] ?? false;
-    details.addEventListener("toggle", () => { state.recoveryFolds[title] = details.open; });
-    return details;
-  };
-  const list = (title, rows, folded = false) => {
-    if (!rows.length) return;
-    const items = document.createElement("ol");
-    items.append(...rows.map((text) => { const row = document.createElement("li"); row.textContent = text; return row; }));
-    if (!folded) { const heading = document.createElement("h3"); heading.textContent = title; features.append(heading, items); return; }
-    const details = fold(title);
-    const summary = document.createElement("summary"); summary.textContent = `${title} `;
-    summary.append(Object.assign(document.createElement("span"), { textContent: rows.length }));
-    details.append(summary, items); features.append(details);
-    items.scrollTop = state.recoveryFolds[`${title}:scroll`] ?? 0;
-    items.addEventListener("scroll", () => { state.recoveryFolds[`${title}:scroll`] = items.scrollTop; });
-  };
-  const incident = state.job.watch?.incident;
-  if (incident && PARKED.includes(state.job.state)) list("Incident", [`Observed: ${incident.observed}`, `Uncertain: ${incident.uncertain}`, `Tried: ${incident.tried}`, `Preserved: ${incident.preserved}`, `Next: ${state.job.nextAction?.label ?? state.job.nextAction?.reason ?? incident.nextAction}`, ...incident.logs.map((log) => `Log: ${log}`)]);
-  if (phase?.status === "plan_failed") list("Plan review blockers", phase.planBlockers ?? []);
-  if (phase?.plan) {
-    list("Remaining gaps", (phase.request?.checks ?? []).map((check) => `${check.id}: ${check.text}${check.reason ? ` — ${check.reason}` : ""}`), true);
-    // Mirrors pendingChecks in src/wbs.mjs: a check is not verified with its feature while any pending
-    // obligation in this plan, or outstanding from an earlier one, still supports it.
-    const refs = new Set([...phase.plan.slices.flatMap((slice) => slice.acceptance.filter((item) => item.proof?.pending && !(state.job.outstandingProofs ?? []).some(entry => entry.planDigest === phase.planDigest && entry.feature === slice.id && entry.obligation.id === item.id && entry.status !== "pending"))), ...pendingProofs(state.job).map((entry) => entry.obligation)].flatMap((item) => item.refs ?? []));
-    const awaiting = (slice) => (slice.closes ?? []).filter((id) => refs.has(id));
-    list("Features", phase.plan.slices.map((slice) => `${phase.done.includes(slice.id) ? "Verified" : phase.current === slice.id ? "Current" : "Pending"}: ${slice.title} (${(slice.closes ?? slice.checks).join(", ")})${awaiting(slice).length ? `; ${awaiting(slice).join(", ")} pending integration proof` : ""}`), true);
-    list("Outstanding integration proofs", pendingProofs(state.job).map((entry) => `${entry.key}: ${entry.obligation.behavior} — ${entry.obligation.proof.command.join(" ")}`));
-    list("Verification checks", phase.plan.slices.flatMap((slice) => slice.acceptance.map((item) => typeof item === "string" ? item : `${item.id}: ${item.behavior} — ${item.proof.command.join(" ")}${item.proof.pending ? " (runs at integration)" : ""}`)), true);
-    if (phase.status === "ready") { const allowance = document.createElement("p"); allowance.textContent = `Repair allowance: up to ${2 * (phase.plan.slices.length + 1)} attempts (2 per feature plus 2 for the full final review).`; features.append(allowance); }
-    const details = fold("Full plan"); const summary = document.createElement("summary"); summary.textContent = "Full plan with sources and dependencies";
-    const pre = document.createElement("pre"); pre.style.whiteSpace = "pre-wrap"; pre.textContent = JSON.stringify(phase.plan, null, 2); details.append(summary, pre); features.append(details);
-    pre.scrollTop = state.recoveryFolds["Full plan:scroll"] ?? 0; pre.addEventListener("scroll", () => { state.recoveryFolds["Full plan:scroll"] = pre.scrollTop; });
-    if (phase.status === "ready") {
-      const label = document.createElement("label"); label.htmlFor = "recovery-plan-feedback"; label.textContent = "Changes for the repair plan (optional)";
-      const feedback = document.createElement("textarea"); feedback.id = "recovery-plan-feedback"; feedback.maxLength = 6000; feedback.value = state.recoveryPlanFeedback ?? "";
-      feedback.addEventListener("input", () => { state.recoveryPlanFeedback = feedback.value; }); features.append(label, feedback);
-    }
-    if (phase.status === "ready") action("Approve and continue repairs", "recovery-start", { planDigest: phase.planDigest });
-    const usage = repairUsage(state.job);
-    if (usage) { const budget = document.createElement("p"); budget.textContent = `Repair attempts used: This feature: ${usage.feature[0]} of ${usage.feature[1]} · Plan: ${usage.plan[0]} of ${usage.plan[1]}`; features.append(budget); }
-  }
-  $("#recovery-title").textContent = recovery.title;
-  $("#recovery-summary").textContent = recovery.summary;
-  $("#recovery-actions").replaceChildren(...recovery.actions.map((action) => {
-    const item = document.createElement("li");
-    item.textContent = action;
-    return item;
-  }));
-  // Static reassurance only matters once the run has stopped.
-  $(".recovery-meta").classList.toggle("hidden", !PARKED.includes(state.job.state));
-  $("#recovery-workspace").textContent = recovery.workspace;
-  $("#recovery-retry").textContent = recovery.automaticRetry;
-  const restartable = (state.job.sliceDone ?? []).slice(1);
-  $("#recovery-restart").classList.toggle("hidden", restartable.length === 0);
-  $("#recovery-restart-buttons").replaceChildren(...restartable.map((sliceId) => {
-    const button = document.createElement("button");
-    button.className = "button ghost small";
-    button.type = "button";
-    button.textContent = sliceId;
-    button.title = `Rewind the tree to just before ${sliceId} and rebuild from there`;
-    button.addEventListener("click", () => restartFromSlice(sliceId));
-    return button;
-  }));
-}
-
-async function restartFromSlice(sliceId) {
-  clearError();
-  try {
-    await api(`/api/jobs/${state.job.id}/restart`, { method: "POST", body: { fromSlice: sliceId } });
-    await poll();
-    startPolling();
-    refreshProjects();
-  } catch (error) {
-    showError(error);
-  }
-}
-
-// The run map: the plan as a metro line, the selected stop, four status answers and the activity
-// stream. Everything is read from the job record and its event log; nothing here is a second source of truth.
-const PIPELINE_STOPS = [["specifying", "SPEC", "Write the PRD, plan and acceptance contract"], ["building", "BUILD", "Build the application"], ["verifying", "GATES", "Run the deterministic quality gates"], ["reviewing", "REVIEW", "Review against the frozen contract"], ["deploying", "DEPLOY", "Launch and check the application"]];
-const MAP_KINDS = { all: "All", agent: "Agent", file: "Files", gate: "Gates", stage: "Stages" };
-const QUIET_WARN_MS = 10 * 60_000, QUIET_BAD_MS = 30 * 60_000;
-const minutesLabel = (ms) => { const m = Math.floor(ms / 60_000); return m >= 60 ? `${Math.floor(m / 60)}h${String(m % 60).padStart(2, "0")}` : `${m}m`; };
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-function mapPlan(job) {
-  const phase = job.recoveryPhase, approved = job.approvedPlan;
-  if (phase?.plan?.slices) return { label: "Repair plan", slices: phase.plan.slices, done: phase.done ?? [], current: phase.current, stats: phase.stats ?? {}, start: phase.approvedAt };
-  if (approved?.plan?.slices) {
-    const slices = approved.plan.slices;
-    return { label: "Feature plan", slices, done: job.sliceDone ?? [], current: job.featureCursor?.id ?? slices[job.sliceIndex ?? 0]?.id, stats: job.sliceStats ?? {}, start: approved.approvedAt };
-  }
-  return null;
-}
-
-function mapStops(job) {
-  const parked = PARKED.includes(job.state), finished = job.state === "completed";
-  const live = (on) => !on ? "queued" : parked ? "blocked" : "current";
-  const plan = mapPlan(job);
-  if (!plan) {
-    const at = PIPELINE_STOPS.findIndex(([stage]) => stage === (parked ? job.failedState : job.state === "repairing" ? "verifying" : job.state));
-    const spent = stateRunningMs(job);
-    return { label: `${sdlcOption(job.sdlc).label} · ${job.provider}`, stops: PIPELINE_STOPS.map(([stage, id, title], index) => ({ id, title, deps: [], ms: spent[stage] ?? 0, status: finished || (at >= 0 && index < at) ? "done" : live(index === at) })) };
-  }
-  let last = Date.parse(plan.start) || null;
-  const stops = plan.slices.map((slice) => {
-    const stat = plan.stats[slice.id] ?? {}, done = plan.done.includes(slice.id), current = !done && !finished && slice.id === plan.current;
-    // Running time since the previous feature was verified: pauses, stops and long silences (job.idleGaps) are subtracted.
-    const ended = done ? Date.parse(stat.verifiedAt) : current ? (parked ? Date.parse(job.updatedAt) : Date.now()) : null;
-    const ms = ended && last ? runningMs(last, ended, job.idleGaps) : 0;
-    if (done && stat.verifiedAt) last = Date.parse(stat.verifiedAt);
-    return { id: slice.id, title: slice.title, deps: (slice.dependsOn ?? []).map((dep) => plan.slices.findIndex((other) => other.id === dep)).filter((index) => index >= 0), ms, reviews: stat.reviews ?? 0, repairs: stat.repairs ?? 0, status: done ? "done" : live(current) };
-  });
-  return { label: `${plan.label} · ${plural(stops.length, "feature")} · ${job.provider}`, stops, features: true };
-}
-
-// Health watches activity, not the event log alone: the agent's streamed tool use and the workspace
-// commands it runs both count, so a long silent stretch means nothing is happening at all.
-function mapHealth(job) {
-  if (job.state === "completed") return { tone: "ok", text: "Finished" };
-  if (job.state === "queued") return { tone: "idle", text: "Queued" };
-  if (job.state === "paused") return { tone: "warn", text: "Paused · needs you" };
-  if (PARKED.includes(job.state)) return { tone: "bad", text: "Stopped · needs you" };
-  const worker = job.supervision?.worker;
-  if (worker?.kind === "command") return { tone: "ok", text: `Running ${worker.gate ?? "a check"} · ${formatSpan(worker.ageMs)}` };
-  const quiet = lastActivityAge(job);
-  if (quiet == null) return { tone: "warn", text: "No activity seen yet" };
-  const tone = quiet < QUIET_WARN_MS ? "ok" : quiet < QUIET_BAD_MS ? "warn" : "bad";
-  return { tone, text: `${tone === "ok" ? "Alive" : "Quiet"} · last activity ${formatSpan(quiet)} ago` };
-}
-
-function lastActivityAge(job) {
-  const at = Math.max(Date.parse(job.supervision?.lastActivityAt ?? "") || 0, Date.parse(state.events.at(-1)?.at ?? "") || 0);
-  return at ? Date.now() - at : null;
+function previousReleaseNote(job) {
+  const prior = job.previousRelease;
+  if (!prior) return null;
+  if (prior.live) return { text: `Previous release still running at ${prior.url}.`, relaunch: null };
+  if (prior.relaunchable) return { text: `The previous release (${prior.name}) is not running. Dismiss puts its files back; Relaunch then starts it.`, relaunch: prior.jobId, label: `Dismiss, then Relaunch ${prior.name}` };
+  return { text: `The previous release (${prior.name}) is not running. It can be relaunched once every newer run is dismissed with a rollback point.`, relaunch: null };
 }
 
 const eventKind = (entry) => entry.type.startsWith("gate.") ? "gate"
@@ -892,106 +196,6 @@ function streamRows(events, filter, cap = 300) {
   }
   return rows;
 }
-
-function renderMap() {
-  const job = state.job, { label, stops, features } = mapStops(job);
-  const live = stops.findIndex((stop) => stop.status === "current" || stop.status === "blocked");
-  const picked = state.mapPick?.job === job.id ? state.mapPick.stop : null;
-  const chosen = stops.findIndex((stop) => stop.id === picked);
-  const selected = picked === "health" ? -1 : chosen >= 0 ? chosen : live >= 0 ? live : Math.max(0, stops.map((stop) => stop.status).lastIndexOf("done"));
-  $("#map-title").textContent = label;
-  const health = mapHealth(job);
-  $("#health").className = `health-pill ${health.tone}`;
-  $("#health").setAttribute("aria-pressed", String(picked === "health"));
-  $("#health-text").textContent = health.text;
-  renderMetro(stops, selected, live);
-  renderStop(stops, selected, picked === "health", health);
-  renderAnswers(stops, live, features);
-  renderStream();
-}
-
-function renderMetro(stops, selected, live) {
-  const svg = $("#metro"), narrow = svg.clientWidth > 0 && svg.clientWidth < 520, width = narrow ? 340 : 680;
-  const perRow = Math.min(stops.length, narrow ? 5 : 9), rows = Math.ceil(stops.length / perRow), step = perRow > 1 ? (width - 100) / (perRow - 1) : 0;
-  const train = live >= 0 ? minutesLabel(stops[live].ms) : "";
-  // Rebuilt only when something visible changes, so the train's animation and keyboard focus survive polling.
-  const signature = `${perRow}|${state.job.id}|${stops.map((stop) => stop.status).join()}|${selected}|${train}`;
-  if (svg.dataset.signature === signature) return;
-  svg.dataset.signature = signature;
-  const focused = svg.contains(document.activeElement) ? document.activeElement.dataset.index : null;
-  const at = (index) => { const row = Math.floor(index / perRow), col = index % perRow; return [row % 2 ? width - 50 - col * step : 50 + col * step, 44 + row * 80]; };
-  const node = (parent, tag, attrs, text) => {
-    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (const [key, value] of Object.entries(attrs)) element.setAttribute(key, value);
-    if (text != null) element.textContent = text;
-    parent.append(element); return element;
-  };
-  svg.setAttribute("viewBox", `0 0 ${width} ${44 + (rows - 1) * 80 + 40}`);
-  svg.replaceChildren();
-  const spurs = node(svg, "g", {}), line = node(svg, "g", {});
-  stops.slice(0, -1).forEach((stop, index) => {
-    const [x0, y0] = at(index), [x1, y1] = at(index + 1), dx = x0 > width / 2 ? 56 : -56;
-    node(line, "path", { class: `track${stop.status === "done" && stops[index + 1].status !== "queued" ? " done" : ""}`, d: y0 === y1 ? `M${x0} ${y0} L${x1} ${y1}` : `M${x0} ${y0} C${x0 + dx} ${y0} ${x1 + dx} ${y1} ${x1} ${y1}` });
-  });
-  const deps = new Set(stops[selected]?.deps ?? []);
-  for (const dep of deps) {
-    const [x, y] = at(selected), [dx, dy] = at(dep);
-    node(spurs, "path", { class: "spur", d: `M${x} ${y} Q${(x + dx) / 2} ${y === dy ? y + 40 : (y + dy) / 2} ${dx} ${dy}` });
-  }
-  stops.forEach((stop, index) => {
-    const [x, y] = at(index);
-    const group = node(line, "g", { class: `stop ${stop.status}${index === selected ? " selected" : ""}${deps.has(index) ? " dep" : ""}`, tabindex: 0, role: "button", "data-index": index, "aria-pressed": String(index === selected), "aria-label": `${index + 1}. ${stop.id}, ${stop.status === "done" ? "verified" : stop.status}` });
-    node(group, "circle", { cx: x, cy: y, r: 12 });
-    node(group, "text", { x, y: y + 4 }, index + 1);
-    const pick = () => { state.mapPick = { job: state.job.id, stop: stop.id }; renderMap(); };
-    group.addEventListener("click", pick);
-    group.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(); } });
-  });
-  if (live >= 0) {
-    const [x, y] = at(live), status = stops[live].status;
-    node(line, "text", { class: `stop-name ${status}`, x, y: y - 20 }, stops[live].id);
-    const car = node(line, "g", { class: `train ${status}` });
-    node(car, "rect", { x: x + 16, y: y - 9, width: 34, height: 18, rx: 6 });
-    node(car, "text", { x: x + 33, y: y + 4 }, train);
-  }
-  if (focused != null) svg.querySelector(`[data-index="${focused}"]`)?.focus();
-}
-
-function renderStop(stops, selected, showHealth, health) {
-  const job = state.job;
-  const title = document.createElement("strong"), about = document.createElement("p"), status = document.createElement("p");
-  status.className = "stop-status";
-  if (showHealth) {
-    title.textContent = "Health";
-    about.textContent = "Watches the agent's streamed tool use, the commands it runs and the controller's events.";
-    const quiet = lastActivityAge(job);
-    status.textContent = `${health.text}${job.supervision ? ` · supervision: ${job.supervision.status}` : ""}${quiet != null ? ` · quiet ${formatSpan(quiet)}` : ""} · green under ${QUIET_WARN_MS / 60_000} minutes quiet, amber to ${QUIET_BAD_MS / 60_000}, red past that or when the run stops.`;
-    patchChildren($("#stop"), [title, about, status]);
-    return;
-  }
-  const stop = stops[selected];
-  if (!stop) { patchChildren($("#stop"), []); return; }
-  title.textContent = `${selected + 1} · ${stop.id}`;
-  about.textContent = stop.title;
-  const tone = document.createElement("span");
-  const usage = repairUsage(job);
-  if (stop.status === "done") {
-    tone.className = "ok"; tone.textContent = "Verified";
-    status.append(tone, stop.reviews || stop.repairs || stop.ms ? ` · ${formatSpan(stop.ms)} · ${stop.repairs ? plural(stop.repairs, "repair") : "no repairs"}${stop.reviews ? ` · review passed ${stop.reviews <= 1 ? "first try" : `on pass ${stop.reviews}`}` : ""}` : "");
-  } else if (stop.status === "current") {
-    tone.className = "warn"; tone.textContent = job.stage.split(" — ")[0];
-    status.append(tone, ` · ${minutesLabel(stop.ms)} so far${usage ? ` · ${usage.feature[0]} of ${usage.feature[1]} repairs used` : ""}`);
-  } else if (stop.status === "blocked") {
-    tone.className = "bad"; tone.textContent = job.state === "paused" ? "Paused" : "Stopped";
-    status.append(tone, ` · ${job.error?.message ?? statusCopy(job.state)}`);
-  } else {
-    const waiting = stop.deps.filter((dep) => stops[dep].status !== "done").map((dep) => `${dep + 1} ${stops[dep].id}`);
-    tone.className = "muted"; tone.textContent = "Queued";
-    status.append(tone, waiting.length ? ` · waits on ${waiting.join(", ")}` : " · ready when the line reaches it");
-  }
-  patchChildren($("#stop"), [title, about, status]);
-}
-
 function runningMs(from, to, gaps = []) {
   let ms = Math.max(0, to - from);
   for (const [start, end] of gaps) ms -= Math.max(0, Math.min(to, end) - Math.max(from, start));
@@ -1006,386 +210,6 @@ function stateRunningMs(job, now = Date.now()) {
   }
   return spent;
 }
-
-// Time left from running time only: median per feature (one slow feature should not drag it), the underway feature
-// credited for what it has already run, and a quartile range once there are enough samples.
-function timeLeft(stops, live) {
-  const done = stops.filter((stop) => stop.status === "done" && stop.ms > 0).map((stop) => stop.ms).sort((a, b) => a - b);
-  if (!done.length) return null;
-  const at = (q) => done[Math.min(done.length - 1, Math.floor(q * done.length))];
-  const rest = Math.max(0, stops.filter((stop) => stop.status !== "done").length - (live >= 0 ? 1 : 0));
-  const total = (per) => (live >= 0 ? Math.max(per * 0.25, per - stops[live].ms) : 0) + per * rest;
-  return { median: at(0.5), mid: total(at(0.5)), range: done.length >= 4 ? [total(at(0.25)), total(at(0.75))] : null };
-}
-
-function renderAnswers(stops, live, features) {
-  const job = state.job, parked = PARKED.includes(job.state), quiet = lastActivityAge(job);
-  const recent = state.events.findLast((entry) => eventKind(entry) !== "stage");
-  const moving = job.state === "completed" ? ["ok", "No; the run is finished."]
-    : job.state === "queued" ? ["muted", "Not yet; it is waiting in the queue."]
-      : parked ? ["bad", `No. ${job.state === "paused" ? "Paused on request." : job.error?.message ?? "The run stopped."}`]
-        : quiet != null && quiet >= QUIET_WARN_MS ? [quiet >= QUIET_BAD_MS ? "bad" : "warn", `Quiet for ${formatSpan(quiet)}. ${job.supervision?.status ?? ""}; the safety cap still bounds this turn.`]
-          : ["ok", `Yes. ${recent ? `Last activity: ${recent.message || recent.type}, ${formatSpan(Date.now() - Date.parse(recent.at))} ago.` : job.stage}`];
-  // The current feature's cases only: job.caseResults keeps every case from every feature and superseded plan.
-  const plan = mapPlan(job), slice = plan?.slices.find((item) => item.id === plan.current);
-  const usage = repairUsage(job), cases = (slice?.acceptance ?? []).flatMap((item) => item.cases ?? []).map((item) => job.caseResults?.[item.id] ?? { status: "not run" });
-  const passed = cases.filter((entry) => entry.status === "passed").length;
-  // Each figure names its scope (this feature, this plan, whole run): they differ and read alike otherwise.
-  const feature = [usage && `${usage.feature[0]} of ${usage.feature[1]} repairs used`, cases.length && `${passed} of ${cases.length} acceptance cases pass`].filter(Boolean);
-  const repairs = [feature.length && `This feature: ${feature.join(", ")}.`, usage ? `This plan: ${usage.plan[0]} of ${usage.plan[1]} repairs used.` : `Whole run: ${plural(job.attempt ?? 0, "repair")}.`].filter(Boolean).join(" ");
-  const healthy = [job.supervision?.status === "Progress needs checking" ? "warn" : usage && usage.feature[0] >= usage.feature[1] ? "warn" : "ok", repairs];
-  const verified = stops.filter((stop) => stop.status === "done");
-  const estimate = features ? timeLeft(stops, live) : null;
-  const elapsed = runningMs(Date.parse(job.startedAt || job.createdAt), job.completedAt ? Date.parse(job.completedAt) : Date.now(), job.idleGaps);
-  const far = ["", `${features ? "This plan: " : ""}${verified.length} of ${stops.length} ${features ? "features verified" : "steps done"}${live >= 0 ? `; ${features ? "feature" : "step"} ${live + 1} is ${stops[live].status === "blocked" ? "stopped" : "underway"}` : ""}.${estimate && estimate.mid > 0 ? ` About ${estimate.range ? `${formatSpan(estimate.range[0])} to ${formatSpan(estimate.range[1])}` : formatSpan(estimate.mid)} of running time left (median ${minutesLabel(estimate.median)} a feature).` : ""} Whole run${features ? " (every plan)" : ""}: ${formatSpan(elapsed)} running${usageLine(state.telemetry?.summary?.tokens?.total)}.`];
-  const next = job.nextAction;
-  const needs = parked && next && !["none", "factory-fix"].includes(next.action) ? ["bad", `Yes: ${next.label}${next.reason ? `. ${next.reason}` : ""}`]
-    : job.recoveryPhase?.status === "ready" ? ["warn", "Yes: review and approve the repair plan above."]
-      : parked ? ["bad", "Yes: the run stopped; see the recovery checkpoint above."]
-        : ["ok", "No."];
-  // Shown only where Resume is the offered step, so the owner knows whether pressing it buys progress.
-  const advice = parked && (next?.action === "resume" || job.state === "paused") ? state.telemetry?.spend?.resume : null;
-  patchChildren($("#qa"), [["Moving?", moving], ["Healthy?", healthy], ["How far?", far], ["Needs you?", needs], ...(advice ? [["Safe to resume?", [advice.tone, advice.text]]] : [])].flatMap(([question, [tone, answer]]) => [
-    Object.assign(document.createElement("dt"), { textContent: question }),
-    Object.assign(document.createElement("dd"), { textContent: answer, className: tone }),
-  ]));
-}
-
-// Polling redraws every 1.5s. Replacing nodes wholesale drops the browser's scroll anchor and the page
-// jumps, so keep each existing element and change only the text or class that differs.
-function patchChildren(parent, nodes) {
-  const old = [...parent.children];
-  if (old.length !== nodes.length || old.some((node, index) => node.tagName !== nodes[index].tagName)) { parent.replaceChildren(...nodes); return; }
-  old.forEach((node, index) => {
-    const next = nodes[index];
-    if (node.className !== next.className) node.className = next.className;
-    if (node.innerHTML !== next.innerHTML) node.replaceChildren(...next.childNodes);
-  });
-}
-
-function renderStream() {
-  state.mapFilter ??= "all";
-  if (!$("#chips").childElementCount) {
-    $("#chips").append(...Object.entries(MAP_KINDS).map(([kind, text]) => {
-      const button = Object.assign(document.createElement("button"), { type: "button", textContent: text, className: "button ghost small" });
-      button.dataset.kind = kind;
-      button.addEventListener("click", () => { state.mapFilter = kind; renderStream(); });
-      return button;
-    }));
-  }
-  for (const button of $("#chips").children) button.setAttribute("aria-pressed", String(button.dataset.kind === state.mapFilter));
-  const seen = state.streamSeen?.job === state.job.id ? state.streamSeen.at : null;
-  // Rebuild only when the rows would differ; an unchanged rebuild also resets the list's own scroll.
-  const key = `${state.job.id}|${state.mapFilter}|${state.events.length}|${state.events.at(-1)?.at}`;
-  if ($("#events").dataset.key === key) return;
-  $("#events").dataset.key = key;
-  const rows = streamRows(state.events, state.mapFilter);
-  // Newest rows land on top, so keep the row the owner is reading at the same height; at the top, stay on top for new rows.
-  const list = $("#events"), top = () => list.getBoundingClientRect().top;
-  const anchor = list.scrollTop > 4 ? [...list.children].find((row) => row.getBoundingClientRect().bottom > top()) : null;
-  const held = anchor && { at: anchor.dataset.at, offset: anchor.getBoundingClientRect().top - top() };
-  list.replaceChildren(...rows.map((entry) => {
-    const kind = eventKind(entry), failed = /failed|error/.test(entry.type);
-    const row = document.createElement("div");
-    row.className = `event${failed ? " fail" : ""}${seen && entry.at > seen ? " fresh" : ""}`;
-    const time = document.createElement("time"); time.textContent = new Date(entry.at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
-    const badge = Object.assign(document.createElement("i"), { className: `kind ${failed ? "fail" : kind}`, textContent: MAP_KINDS[kind] });
-    const text = document.createElement("span"); text.textContent = entry.message || entry.type;
-    row.append(time, badge, text); row.dataset.at = entry.at;
-    return row;
-  }));
-  const again = held && [...list.children].find((row) => row.dataset.at === held.at);
-  if (again) list.scrollTop += again.getBoundingClientRect().top - top() - held.offset;
-  state.streamSeen = { job: state.job.id, at: state.events.at(-1)?.at ?? seen };
-}
-
-$("#health").addEventListener("click", () => {
-  if (!state.job) return;
-  state.mapPick = { job: state.job.id, stop: state.mapPick?.job === state.job.id && state.mapPick.stop === "health" ? null : "health" };
-  renderMap();
-});
-
-function renderArtifacts() {
-  const canShow = stageOrder.indexOf(state.job.state) > 0 || ["failed", "completed"].includes(state.job.state);
-  if (!canShow) return;
-  const names = [["prd", "Product requirements"], ["plan", "Build plan"], ["acceptance", "Acceptance contract"], ["requirements", "Frozen input"], ["manifest", "Runtime manifest"]];
-  if (state.job.sdlc === "slices") names.splice(4, 0, ["slices", "Slice plan"]);
-  $("#artifacts").replaceChildren(...names.map(([name, label]) => {
-    const link = document.createElement("a");
-    link.className = "artifact"; link.href = `/api/jobs/${state.job.id}/artifacts/${name}`; link.target = "_blank";
-    const text = document.createElement("strong"); text.textContent = label;
-    const arrow = document.createElement("span"); arrow.textContent = "↗";
-    link.append(text, arrow); return link;
-  }));
-}
-
-// "· 398K tokens in · 14K out". No dollar figure: members run on subscriptions, and the CLI's
-// list-price cost read as an API bill. Cost stays in runs.jsonl.
-function usageLine(usage, short = false) {
-  if (!usage) return "";
-  const count = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n);
-  return short ? ` · ${count(usage.inputTokens)} in · ${count(usage.outputTokens)} out` : ` · ${count(usage.inputTokens)} tokens in · ${count(usage.outputTokens)} out`;
-}
-
-function renderAppMetrics() {
-  const app = state.telemetry?.app;
-  if (!app || app.unavailable) return;
-  const routes = Array.isArray(app.routes)
-    ? app.routes
-    : Object.entries(app.routes ?? {}).map(([path, count]) => ({ method: "", path, count }));
-  $("#request-total").textContent = app.requests.total;
-  $("#error-total").textContent = app.requests.errors;
-  $("#latency-average").textContent = `${app.latencyMs.average} ms`;
-  $("#app-uptime").textContent = formatDuration(app.uptimeSeconds * 1000);
-  $("#app-live").textContent = "Live";
-  $("#app-live").classList.remove("muted");
-  $("#route-list").replaceChildren(...routes.slice(0, 8).map((route) => {
-    const row = document.createElement("div"); row.className = "route";
-    for (const value of [route.method, route.path, String(route.count)]) { const span = document.createElement("span"); span.textContent = value; row.append(span); }
-    return row;
-  }));
-}
-
-$("#pause-button").addEventListener("click", async () => {
-  clearError();
-  try {
-    await api(`/api/jobs/${state.job.id}/pause`, { method: "POST", body: {} });
-    state.pausing = true; // ponytail: cleared when the run parks; the run keeps polling until then
-    $("#pause-button").textContent = `Pausing after ${state.job.stage}…`;
-    $("#pause-button").disabled = true;
-  } catch (error) {
-    showError(error);
-  }
-});
-
-$("#relaunch-button").addEventListener("click", async () => {
-  clearError();
-  $("#relaunch-button").disabled = true;
-  $("#relaunch-button").textContent = "Relaunching…";
-  await api(`/api/jobs/${state.job.id}/relaunch`, { method: "POST", body: {} }).catch(showError);
-  $("#relaunch-button").disabled = false;
-  $("#relaunch-button").textContent = "Relaunch app";
-  await poll();
-});
-
-$("#cancel-button").addEventListener("click", async () => {
-  await api(`/api/jobs/${state.job.id}/cancel`, { method: "POST", body: {} }).catch(showError);
-  await poll();
-  refreshProjects();
-});
-
-// A parked run holds its project's queue so nothing builds on a half-repaired tree; dismiss releases it.
-$("#dismiss-button").addEventListener("click", async () => {
-  clearError();
-  try {
-    await api(`/api/jobs/${state.job.id}/dismiss`, { method: "POST", body: {} });
-    await poll();
-    refreshProjects();
-  } catch (error) {
-    showError(error);
-  }
-});
-
-$("#resume-button").addEventListener("click", async () => {
-  clearError();
-  $("#resume-button").disabled = true;
-  try {
-    await api(`/api/jobs/${state.job.id}/resume`, { method: "POST", body: {} });
-    await poll();
-    startPolling();
-    refreshProjects();
-  } catch (error) {
-    showError(error);
-  } finally {
-    $("#resume-button").disabled = false;
-  }
-});
-
-$("#copy-recovery-button").addEventListener("click", async () => {
-  clearError();
-  try {
-    const response = await fetch(`/api/jobs/${state.job.id}/recovery-packet`);
-    if (!response.ok) throw new Error(`Recovery packet failed with HTTP ${response.status}.`);
-    await navigator.clipboard.writeText(await response.text());
-    $("#copy-recovery-button").textContent = "Copied — paste into Codex";
-    setTimeout(() => { $("#copy-recovery-button").textContent = "Copy recovery packet"; }, 2500);
-  } catch (error) {
-    showError(error);
-  }
-});
-
-$("#start-over-button").addEventListener("click", async () => {
-  clearError();
-  try {
-    const { job } = await api(`/api/jobs/${state.job.id}/retry`, { method: "POST", body: {} });
-    state.job = job;
-    state.events = [];
-    state.telemetry = null;
-    localStorage.setItem("solofactory.currentJob", job.id);
-    resetRunPanels();
-    showRun();
-    poll();
-    startPolling();
-    refreshProjects();
-  } catch (error) {
-    showError(error);
-  }
-});
-
-// Feedback dialog. Preview is rendered server-side; the browser only shows and copies the exact markdown it received.
-const feedback = { trigger: null, markdown: null, fingerprint: null, jobId: null };
-const feedbackDialog = $("#feedback-dialog");
-
-// Update notice: a pill in the header that stays until the owner updates; details open on click.
-// A page load reuses the server's recent answer; pressing the button when no update is known asks again.
-let updateNotice = null;
-async function checkUpdate({ manual = false } = {}) {
-  const button = $("#update-button");
-  const result = await api(`/api/update${manual ? "?force=1" : ""}`).catch(() => ({ error: true }));
-  if (result.newer) {
-    updateNotice = result;
-    $("#update-text").textContent = `SoloFactory ${result.latest} is available. You have ${result.current}.`;
-    $("#update-prompt").textContent = result.prompt;
-    button.textContent = "Update available";
-    button.classList.add("update-available");
-    button.title = `${result.current} → ${result.latest}`;
-    if (manual) $("#update-pop").showPopover();
-    return;
-  }
-  if (!manual) return;
-  button.textContent = result.disabled ? "Update checks off" : result.error ? "Couldn't check" : `Up to date (${result.current})`;
-  setTimeout(() => { if (!updateNotice) button.textContent = "Check for updates"; }, 4000);
-}
-$("#update-button").addEventListener("click", () => (updateNotice ? $("#update-pop").togglePopover() : checkUpdate({ manual: true })));
-$("#update-copy").addEventListener("click", () => navigator.clipboard?.writeText($("#update-prompt").textContent).then(() => { $("#update-copy").textContent = "Copied"; }).catch(() => {}));
-$("#feedback-button").addEventListener("click", (event) => openFeedback(event.currentTarget, { mode: "improvement" }));
-$("#report-run-button").addEventListener("click", (event) => openFeedback(event.currentTarget, { mode: "problem", jobId: state.job?.id }));
-$("#feedback-close-button").addEventListener("click", () => feedbackDialog.close());
-feedbackDialog.addEventListener("close", () => feedback.trigger?.focus());
-// Native <dialog> closes on Escape via the cancel event; some embedded browsers skip it, so close explicitly too.
-feedbackDialog.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); feedbackDialog.close(); } });
-for (const radio of document.querySelectorAll('#feedback-form input[name="mode"]')) radio.addEventListener("change", renderFeedbackMode);
-
-function openFeedback(trigger, { mode, jobId = null }) {
-  Object.assign(feedback, { trigger, markdown: null, fingerprint: null, jobId });
-  const form = $("#feedback-form");
-  form.reset();
-  form.querySelector(`input[name="mode"][value="${mode}"]`).checked = true;
-  $("#feedback-diagnostics-row").classList.toggle("hidden", !jobId);
-  // Cancelled runs are reportable, but the user chose to stop, so diagnostics start unticked.
-  $("#feedback-diagnostics").checked = Boolean(jobId) && state.job?.state !== "cancelled";
-  const issues = state.config?.issues;
-  $("#feedback-privacy").textContent = `Nothing is sent anywhere until you send the email${issues ? " or open GitHub" : ""} yourself.`;
-  $("#feedback-search-button").classList.toggle("hidden", !issues);
-  $("#feedback-github-button").classList.toggle("hidden", !issues);
-  setFeedbackPreview(null);
-  renderFeedbackMode();
-  feedbackDialog.showModal();
-}
-
-function renderFeedbackMode() {
-  const problem = feedbackMode() === "problem";
-  // Disabled fieldsets drop out of FormData and constraint validation, so hidden required fields never block submit.
-  $("#feedback-problem-fields").disabled = !problem;
-  $("#feedback-problem-fields").classList.toggle("hidden", !problem);
-  $("#feedback-improvement-fields").disabled = problem;
-  $("#feedback-improvement-fields").classList.toggle("hidden", problem);
-  setFeedbackPreview(null);
-}
-
-function feedbackMode() { return $("#feedback-form").elements.mode.value; }
-
-function setFeedbackPreview(result) {
-  feedback.markdown = result?.markdown ?? null;
-  feedback.fingerprint = result?.fingerprint ?? null;
-  $("#feedback-preview").textContent = feedback.markdown ?? "Choose Preview report to see exactly what will be copied.";
-  $("#feedback-redacted").classList.toggle("hidden", !result?.redacted);
-  for (const id of ["email", "copy", "search", "github"]) $(`#feedback-${id}-button`).disabled = !feedback.markdown;
-  $("#feedback-copy-button").textContent = "Copy report";
-  $("#feedback-email-button").innerHTML = "Copy &amp; open email <span>↗</span>";
-}
-
-$("#feedback-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  $("#feedback-error").classList.add("hidden");
-  if (!form.reportValidity()) return;
-  const fields = Object.fromEntries([...new FormData(form)].filter(([key]) => key !== "mode"));
-  $("#feedback-preview-button").disabled = true;
-  try {
-    const includeDiagnostics = Boolean(feedback.jobId) && $("#feedback-diagnostics").checked;
-    setFeedbackPreview(await api("/api/feedback/preview", { method: "POST", body: { mode: feedbackMode(), fields, jobId: feedback.jobId, includeDiagnostics } }));
-  } catch (error) {
-    $("#feedback-error").textContent = error.message;
-    $("#feedback-error").classList.remove("hidden");
-  } finally {
-    $("#feedback-preview-button").disabled = false;
-  }
-});
-
-async function copyFeedback(button) {
-  if (!feedback.markdown) return false;
-  try {
-    await navigator.clipboard.writeText(feedback.markdown);
-    button.textContent = "Copied";
-    return true;
-  } catch {
-    // Clipboard API needs a secure context; a LAN-hosted http:// page falls back to selecting the preview.
-    window.getSelection().selectAllChildren($("#feedback-preview"));
-    button.textContent = "Press ⌘C / Ctrl+C to copy";
-    return false;
-  }
-}
-
-$("#feedback-copy-button").addEventListener("click", (event) => copyFeedback(event.currentTarget));
-
-$("#feedback-email-button").addEventListener("click", async (event) => {
-  // Subject only; the body goes via the clipboard because reports can exceed mailto length limits.
-  const button = event.currentTarget; // currentTarget is null after the await
-  if (!(await copyFeedback(button))) return;
-  button.textContent = "Copied — paste into the email";
-  window.location.href = `mailto:support@coachlou.com?subject=${encodeURIComponent("SoloFactory Feedback")}`;
-});
-
-$("#feedback-search-button").addEventListener("click", () => {
-  const query = feedback.fingerprint ?? $("#feedback-title").value.trim().slice(0, 100);
-  window.open(`${state.config.issues.base}?q=${encodeURIComponent(`is:issue ${query}`)}`, "_blank", "noopener");
-});
-
-$("#feedback-github-button").addEventListener("click", () => {
-  const problem = feedbackMode() === "problem";
-  const title = `${problem ? "[Problem]" : "[Improvement]"} ${$("#feedback-title").value.trim()}`;
-  // Title only. The report body travels via the clipboard, never in a URL.
-  window.open(`${state.config.issues.base}/new?template=${problem ? "problem" : "improvement"}.yml&title=${encodeURIComponent(title)}`, "_blank", "noopener");
-});
-
-function startPolling() {
-  stopPolling();
-  state.poller = setInterval(poll, 1500);
-}
-
-function stopPolling() {
-  if (state.poller) clearInterval(state.poller);
-  state.poller = null;
-}
-
-function statusCopy(status) {
-  return ({ queued: "The run is queued.", specifying: "Turning the interview into a build contract.", building: "The coding agent is implementing the app.", verifying: "The controller is running the real checks.", repairing: "A failed gate is being repaired, then every gate runs again.", reviewing: "The implementation is being audited against the frozen contract.", deploying: "The app is starting and its health and metrics endpoints are being checked.", completed: "The app is live and its evidence is preserved." })[status] || "Factory activity is recorded below.";
-}
-
-// Readable at any length: 45s, 12m 05s, 2h 05m, 6d 1h.
-function formatSpan(milliseconds) {
-  const s = Math.max(0, Math.floor(milliseconds / 1000)), m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
-  const pad = (n) => String(n).padStart(2, "0");
-  return d ? `${d}d ${h % 24}h` : h ? `${h}h ${pad(m % 60)}m` : m ? `${m}m ${pad(s % 60)}s` : `${s}s`;
-}
-
-function formatDuration(milliseconds) {
-  const seconds = Math.max(0, Math.floor(milliseconds / 1000));
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
 async function api(url, options = {}) {
   const response = await fetch(url, {
     ...options,
@@ -1393,25 +217,1680 @@ async function api(url, options = {}) {
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
   const body = await response.json().catch(() => ({}));
-  if (!response.ok && !options.allow?.includes(response.status)) throw new Error(body.error || `Request failed with HTTP ${response.status}.`);
+  if (!response.ok && !options.allow?.includes(response.status)) throw Object.assign(new Error(body.error || `Request failed with HTTP ${response.status}.`), { body });
   return body;
 }
-
-function showError(error) {
-  $("#notice").textContent = error.message || String(error);
-  $("#notice").classList.remove("hidden");
-  reportError(error);
-}
-
 // Every error the owner sees also lands in the factory's error log. Fire-and-forget: a failed report stays silent.
 function reportError(error, action = "notice") {
   fetch("/api/errors", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ source: "browser", action, message: error?.stack || error?.message || String(error), jobId: state.job?.id, project: state.project }),
+    body: JSON.stringify({ source: "browser", action, message: [error?.message ?? String(error), error?.stack].filter(Boolean).join("\n"), jobId: state.job?.id, project: state.project }),
   }).catch(() => {});
 }
 window.addEventListener("error", (event) => reportError(event.error ?? event.message, "uncaught"));
 window.addEventListener("unhandledrejection", (event) => reportError(event.reason, "unhandled rejection"));
 
-function clearError() { $("#notice").classList.add("hidden"); }
+// Guide replies are Markdown. Escape first, so the only HTML on the page is what this function adds.
+// ponytail: headings, lists, code, bold/italic, http(s) links; add tables when the Guide starts writing them.
+function md(src) {
+  const inline = (s) => s
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*\w])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)"]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  const lines = esc(String(src ?? "")).split("\n");
+  let out = "", list = null, para = [];
+  const flush = () => { if (para.length) out += `<p>${inline(para.join("<br>"))}</p>`; para = []; };
+  const close = () => { if (list) out += `</${list}>`; list = null; };
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (/^```/.test(line)) {
+      flush(); close();
+      const code = [];
+      for (i += 1; i < lines.length && !/^```/.test(lines[i]); i += 1) code.push(lines[i]);
+      out += `<pre><code>${code.join("\n")}</code></pre>`;
+      continue;
+    }
+    const h = /^(#{1,3})\s+(.*)$/.exec(line);
+    const item = /^\s*(?:([-*])|\d+\.)\s+(.*)$/.exec(line);
+    if (h) { flush(); close(); out += `<h${h[1].length + 2}>${inline(h[2])}</h${h[1].length + 2}>`; }
+    else if (item) {
+      flush();
+      const tag = item[1] ? "ul" : "ol";
+      if (list !== tag) { close(); out += `<${tag}>`; list = tag; }
+      out += `<li>${inline(item[2])}</li>`;
+    } else if (!line.trim()) { flush(); close(); }
+    else { close(); para.push(line); }
+  }
+  flush(); close();
+  return out;
+}
+class Component extends DCLogic {
+  state = {
+    pid: 'nm', panel: 'run', docName: '', draft: '', nextId: 100,
+    themeMode: 'auto', themeOpen: false, groupsOpen: { needs: true, running: true, queued: true, done: false }, selRun: 0, pmOpen: false, navOpen: false, rowMenu: 0, info: null, np: null, cfgOpen: false, cfgVals: {}, cfgTouched: false, extra: [], provider: {},
+    viewer: '', viewerEdit: false, vdraft: '', activeSec: -1, secDraft: '', docEdits: {}, docAdds: {}, docChat: {},
+    runs: [
+      { id: 1, pid: 'nm', kind: 'feature', title: 'Batch re-run report', state: 'building', idx: 2, trap: true, repairs: 0 },
+      { id: 11, pid: 'nm', kind: 'fix', title: 'Pattern counts round off the last decimal', state: 'queued', idx: 0, repairs: 0 },
+      { id: 13, pid: 'nm', kind: 'feature', title: 'CSV export of the results table', state: 'queued', idx: 0, repairs: 0 },
+      { id: 15, pid: 'nm', kind: 'feature', title: 'Tag transcripts by coaching client', state: 'queued', idx: 0, repairs: 0 }
+    ],
+    threads: {
+      nm: [
+        { id: 1, type: 'user', text: 'Add a batch re-run report so I can see which transcripts changed between runs.' },
+        { id: 2, type: 'pick', kind: 'feature', sent: true, ask: 'Batch re-run report', runId: 1 },
+        { id: 3, type: 'run', runId: 1 },
+        { id: 4, type: 'guide', text: 'It is with the factory. When the gates pass I will add the report to FEATURES.md and its checks to ACCEPTANCE.md. Keep going here or switch projects. Nothing stops.' },
+        { id: 10, type: 'user', text: 'Pattern counts round off the last decimal.' },
+        { id: 11, type: 'pick', kind: 'fix', sent: true, ask: 'Pattern counts round off the last decimal', runId: 11 },
+        { id: 12, type: 'run', runId: 11 },
+        { id: 13, type: 'user', text: 'Add CSV export of the results table.' },
+        { id: 14, type: 'pick', kind: 'feature', sent: true, ask: 'CSV export of the results table', runId: 13 },
+        { id: 15, type: 'run', runId: 13 },
+        { id: 16, type: 'user', text: 'Let me tag transcripts by coaching client.' },
+        { id: 17, type: 'pick', kind: 'feature', sent: true, ask: 'Tag transcripts by coaching client', runId: 15 },
+        { id: 18, type: 'run', runId: 15 },
+        { id: 19, type: 'guide', text: 'Three runs are queued behind the batch report, in the order you sent them. Each starts by itself when the one before it ships, so each builds on the last. Reorder or remove them in the Run panel.' }
+      ],
+      al: [
+        { id: 5, type: 'user', text: 'The search box drops the last word when I paste a long title.' },
+        { id: 6, type: 'pick', kind: 'fix', sent: false, ask: 'Search drops the last word of a pasted title' }
+      ],
+      mp: [
+        { id: 7, type: 'guide', text: 'Member Portal has no documents yet. Tell me what you want to build and I will start a full brief. If the app already exists in a folder, say so and I will adopt it and write the baseline from the code.' }
+      ]
+    }
+  };
+
+  componentDidMount() { this.timer = setInterval(() => this.tick(), 3500); }
+  // Pane splitters: drag, arrow keys (24px) or double-click to reset. Widths persist per browser.
+  paneSplit(key, side, min, maxFn) {
+    const set = (w) => {
+      const panes = { ...(this.state.panes || {}) };
+      if (w == null) delete panes[key]; else panes[key] = Math.round(Math.max(min, Math.min(maxFn(), w)));
+      try { if (w == null) localStorage.removeItem(`solofactory.pane.${key}`); else localStorage.setItem(`solofactory.pane.${key}`, String(panes[key])); } catch {}
+      this.setState({ panes });
+    };
+    const pane = (ev) => { const h = ev.target.closest('[role=separator]'); return h && (side === 'left' ? h.previousElementSibling : h.nextElementSibling); };
+    const width = (ev) => { const p = pane(ev); if (!p) return null; const b = p.getBoundingClientRect(); return side === 'left' ? ev.clientX - b.left : b.right - ev.clientX; };
+    return {
+      down: (ev) => { ev.preventDefault(); ev.target.setPointerCapture?.(ev.pointerId); this.dragging = key; },
+      move: (ev) => { if (this.dragging !== key || !(ev.buttons & 1)) { if (this.dragging === key) this.dragging = null; return; } const w = width(ev); if (w != null) set(w); },
+      reset: () => set(null),
+      key: (ev) => {
+        if (ev.key !== 'ArrowLeft' && ev.key !== 'ArrowRight') return;
+        ev.preventDefault();
+        const p = pane(ev); if (!p) return;
+        const grow = (ev.key === 'ArrowRight') === (side === 'left');
+        set(p.getBoundingClientRect().width + (grow ? 24 : -24));
+      }
+    };
+  }
+  paneVals() {
+    const P = this.state.panes || {};
+    const root = () => this.el?.firstElementChild;
+    const navW = () => root()?.querySelector('nav[aria-label=Projects]')?.offsetWidth || 248;
+    const nav = this.paneSplit('nav', 'left', 180, () => 480);
+    const panel = this.paneSplit('panel', 'right', 280, () => Math.max(280, (root()?.clientWidth || 1200) - navW() - 320));
+    return {
+      navFlex: P.nav ? `0 0 ${P.nav}px` : '1 1 248px', navMax: P.nav ? 'none' : '300px',
+      panelFlex: P.panel ? `0 0 ${P.panel}px` : '1 1 420px', panelMax: P.panel ? 'none' : '520px',
+      nav, panel
+    };
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.activeSec >= 0 && (!prevState || prevState.activeSec !== this.state.activeSec)) {
+      try { const el = document.getElementById('sec-edit'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } } catch (e) {}
+    }
+  }
+
+  projectList() {
+    return [
+      { id: 'nm', name: 'Nugget Mining', live: 'Live at 127.0.0.1:4310 · release 12', hasDocs: true, url: 'http://127.0.0.1:4310', release: 'release 12' },
+      { id: 'al', name: 'Ambient Library', live: 'Live at 127.0.0.1:4322 · release 4', hasDocs: true, url: 'http://127.0.0.1:4322', release: 'release 4' },
+      { id: 'mp', name: 'Member Portal', live: 'Not built yet', hasDocs: false }
+    ].concat((this.state && this.state.extra) || []);
+  }
+
+  kinds() {
+    return {
+      fix: { label: 'Quick fix', chipBg: 'var(--raise)', chipFg: 'var(--text2)', cta: 'Send to the factory', steps: ['Fix note', 'Build', 'Gates', 'Deploy', 'Update docs'] },
+      feature: { label: 'Feature', chipBg: 'var(--raise2)', chipFg: 'var(--fg)', cta: 'Send to the factory', steps: ['Feature spec', 'Plan', 'Build', 'Gates', 'Review', 'Deploy', 'Update docs'] },
+      prd: { label: 'Full brief', chipBg: 'var(--raise)', chipFg: 'var(--text2)', cta: 'Start the interview', steps: ['Interview', 'PRD and plan', 'Planned features', 'Gates', 'Review', 'Deploy', 'Update docs'] }
+    };
+  }
+
+  why(kind, proj) {
+    if (!proj.hasDocs) return 'This project has no PRD.md, so there is no baseline to build on. One interview writes it. After that, small requests stay small.';
+    if (kind === 'fix') return 'FEATURES.md already describes this behavior, so it is a correction, not new scope. One rule changes. No new data, screen or flow. No interview needed.';
+    if (kind === 'feature') return 'PRD.md covers the product and its users. This adds one capability beside the existing ones, so a short feature spec is enough. I will ask only what the documents do not answer.';
+    return 'This changes what the product is for or how its data is shaped, so PRD.md itself has to change before anything is built.';
+  }
+
+  sizeUp(text, proj) {
+    if (!proj.hasDocs) return 'prd';
+    const t = text.toLowerCase();
+    if (/(fix|bug|typo|broken|wrong|crash|drops|error|fails)/.test(t)) return 'fix';
+    if (/(rebuild|redesign|from scratch|new app|version 2|v2|rewrite|multi-user|new prd)/.test(t)) return 'prd';
+    return 'feature';
+  }
+
+  slug(text) {
+    return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 26);
+  }
+
+  short(text) {
+    return text.length > 60 ? text.slice(0, 57) + '...' : text;
+  }
+
+  activeIn(runs, pid) {
+    return runs.find((r) => r.pid === pid && ['building', 'pausing', 'paused', 'stuck', 'revising'].indexOf(r.state) >= 0) || null;
+  }
+
+  startNext(runs) {
+    const out = runs.slice();
+    out.forEach((r, i) => {
+      if (r.state !== 'queued') return;
+      const slots = out.filter((x) => x.state === 'building' || x.state === 'pausing').length;
+      if (slots < 2 && !this.activeIn(out, r.pid)) out[i] = { ...r, state: 'building', idx: 0 };
+    });
+    return out;
+  }
+
+  tick() {
+    const s = this.state;
+    const K = this.kinds();
+    const notes = [];
+    let runs = s.runs.map((r) => {
+      const steps = K[r.kind].steps;
+      if (r.state === 'pausing') {
+        if (r.idx + 1 >= steps.length) { notes.push([r.pid, 'Shipped. The new release is live, and I updated the documents to match what was built.']); return { ...r, state: 'shipped', idx: steps.length }; }
+        notes.push([r.pid, 'Paused before ' + steps[r.idx + 1] + '. The work so far is committed and passing. Resume, restart from an earlier step, or cancel from the run panel.']);
+        return { ...r, state: 'paused', idx: r.idx + 1 };
+      }
+      if (r.state !== 'building') return r;
+      if (r.trap && steps[r.idx] === 'Gates') {
+        notes.push([r.pid, 'I parked the run. One check failed twice, even after a repair, so I stopped instead of burning more turns. Open the run to let me plan a different repair, restart from an earlier step, or cancel. Queued work in this project waits for your call.']);
+        return { ...r, state: 'stuck', trap: false };
+      }
+      if (r.idx + 1 >= steps.length) { notes.push([r.pid, 'Shipped. The new release is live, and I updated FEATURES.md and ACCEPTANCE.md to match what was built.']); return { ...r, state: 'shipped', idx: steps.length }; }
+      return { ...r, idx: r.idx + 1 };
+    });
+    runs = this.startNext(runs);
+    const threads = { ...s.threads };
+    let id = s.nextId;
+    notes.forEach((n) => { threads[n[0]] = threads[n[0]].concat([{ id: id++, type: 'guide', text: n[1] }]); });
+    this.setState({ runs: runs, threads: threads, nextId: id });
+  }
+
+  patchRun(id, patch) {
+    const runs = this.state.runs.map((r) => (r.id === id ? { ...r, ...patch } : r));
+    this.setState({ runs: this.startNext(runs) });
+  }
+
+  runLine(r, runs) {
+    const steps = this.kinds()[r.kind].steps;
+    const at = steps[Math.min(r.idx, steps.length - 1)];
+    if (r.state === 'queued') return this.activeIn(runs, r.pid) ? 'Queued · starts when the current run in this project finishes' : 'Queued · waiting for a free build slot';
+    if (r.state === 'building') return 'Step ' + (r.idx + 1) + ' of ' + steps.length + ' · ' + at + (r.repairs ? ' · repair in progress' : '');
+    if (r.state === 'pausing') return 'Pausing as soon as ' + at + ' finishes';
+    if (r.state === 'paused') return 'Paused before ' + at + ' · work so far is committed';
+    if (r.state === 'stuck') return 'Parked at ' + at + ' · the same check failed twice';
+    if (r.state === 'shipped') return 'Shipped · live · documents updated';
+    if (r.state === 'revising') return 'Revising the spec · nothing is building';
+    return 'Cancelled · nothing was deployed · the spec is kept';
+  }
+
+  alertOf(r) {
+    if (!r) return '';
+    if (r.state === 'stuck') return 'var(--red)';
+    if (r.state === 'paused') return 'var(--amber)';
+    return '';
+  }
+
+  runSegs(r) {
+    return this.kinds()[r.kind].steps.map((x, i) => ({
+      bg: r.state === 'shipped' ? 'var(--dim)' : r.state === 'cancelled' || r.state === 'queued' || r.state === 'revising' ? 'var(--track)' : i < r.idx ? 'var(--dim)' : i > r.idx ? 'var(--track)' : (this.alertOf(r) || 'var(--inv)')
+    }));
+  }
+
+  runCtrls(r) {
+    const plain = { bg: 'transparent', fg: 'var(--fg)', border: 'var(--line3)' };
+    const main = { bg: 'var(--inv)', fg: 'var(--inv-fg)', border: 'var(--inv)' };
+    const risk = { bg: 'transparent', fg: 'var(--fg)', border: 'var(--line2)' };
+    const cancel = { label: 'Cancel run', act: () => this.patchRun(r.id, { state: 'cancelled' }), ...risk };
+    const revise = { label: 'Revise the spec', act: () => this.revise(r), ...plain };
+    if (r.state === 'queued') return [{ label: 'Remove from queue', act: () => this.patchRun(r.id, { state: 'cancelled' }), ...risk }];
+    if (r.state === 'building') return [{ label: 'Pause after this step', act: () => this.patchRun(r.id, { state: 'pausing' }), ...plain }, cancel];
+    if (r.state === 'paused') return [{ label: 'Resume', act: () => this.patchRun(r.id, { state: 'building' }), ...main }, revise, cancel];
+    if (r.state === 'stuck') return [{ label: 'Let the Guide plan a repair', act: () => this.patchRun(r.id, { state: 'building', repairs: r.repairs + 1 }), ...main }, revise, cancel];
+    if (r.state === 'cancelled') return [{ ...revise, label: 'Revise and resubmit' }];
+    if (r.state === 'revising') return [{ label: 'Resubmit to the factory', act: () => this.patchRun(r.id, { state: 'queued', idx: 0, trap: false, rev: (r.rev || 1) + 1 }), ...main }, { label: 'Discard changes', act: () => this.discard(r), ...risk }];
+    return [];
+  }
+
+  showInfo(title, text) {
+    this.setState({ info: { title: title, text: text } });
+  }
+
+  moreCtrls(r) {
+    const out = [];
+    if (r.state === 'stuck' || r.state === 'paused') {
+      out.push({ label: 'Copy recovery packet', act: () => this.showInfo('Copy recovery packet', 'Copies a summary of the parked run, with its stage, error, last check output and changed files, to paste into Claude Code or Codex for help.') });
+    }
+    if (r.state === 'stuck' || r.state === 'cancelled') {
+      out.push({ label: 'Start over from scratch', act: () => {
+        const st = this.state;
+        const runs = st.runs.map((x) => (x.id === r.id ? { ...x, state: 'dismissed' } : x)).concat([{ id: st.nextId, pid: r.pid, kind: r.kind, title: r.title, state: 'queued', idx: 0, repairs: 0 }]);
+        const th = st.threads[r.pid].map((m) => (m.runId === r.id ? { ...m, runId: st.nextId } : m));
+        this.setState({ nextId: st.nextId + 1, runs: this.startNext(runs), selRun: st.nextId, threads: { ...st.threads, [r.pid]: th } });
+      } });
+    }
+    if (r.state === 'stuck' || r.state === 'paused' || r.state === 'cancelled') {
+      out.push({ label: 'Report this run', act: () => this.showInfo('Report this run', 'Opens the Feedback form with this run\'s diagnostics: version, platform, error code, failed stage, check, counts and recent event types. Never your brief, transcript, agent output or file paths. Nothing is sent until you send it.') });
+    }
+    if (r.state === 'cancelled') {
+      out.push({ label: 'Dismiss', act: () => this.patchRun(r.id, { state: 'dismissed' }) });
+    }
+    return out;
+  }
+
+  settingsDefs() {
+    const lv = [['low', 'Low'], ['medium', 'Medium'], ['high', 'High']];
+    return [
+      { title: 'AI and models', fields: [
+        { key: 'provider', label: 'Builds with', type: 'select', def: 'Claude Code', options: [['Claude Code', 'Claude Code'], ['Codex', 'Codex']], help: 'For new requests. You can switch one project from the Guide box.' },
+        { key: 'claudeModel', label: 'Claude: coding model', type: 'select', def: 'sonnet', options: [['sonnet', 'sonnet'], ['opus', 'opus'], ['haiku', 'haiku']], env: 'SOLOFACTORY_CLAUDE_MODEL', help: 'Writes and repairs the code.' },
+        { key: 'claudeEffort', label: 'Claude: coding effort', type: 'select', def: 'medium', options: lv, env: 'SOLOFACTORY_CLAUDE_EFFORT', help: 'More effort is slower and uses more of your subscription.' },
+        { key: 'claudeReason', label: 'Claude: planning and review model', type: 'select', def: 'opus', options: [['opus', 'opus'], ['sonnet', 'sonnet']], env: 'SOLOFACTORY_CLAUDE_REASONING_MODEL', help: 'Specification, feature plan, plan review and final review.' },
+        { key: 'claudeReasonEffort', label: 'Claude: planning and review effort', type: 'select', def: 'low', options: lv, env: 'SOLOFACTORY_CLAUDE_REASONING_EFFORT', help: '' },
+        { key: 'guideModel', label: 'Claude: Guide model', type: 'select', def: 'opus', options: [['opus', 'opus'], ['sonnet', 'sonnet']], env: 'SOLOFACTORY_CLAUDE_GUIDE_MODEL', help: 'Runs the conversation with you.' },
+        { key: 'guideEffort', label: 'Claude: Guide effort', type: 'select', def: 'medium', options: lv, env: 'SOLOFACTORY_CLAUDE_GUIDE_EFFORT', help: '' },
+        { key: 'guideAdvisor', label: 'Claude: Guide advisor', type: 'toggle', def: true, env: 'SOLOFACTORY_CLAUDE_GUIDE_ADVISOR', help: 'A second opus opinion on the Guide\'s answers. Off uses less of your subscription.' },
+        { key: 'codexModel', label: 'Codex: model', type: 'text', def: 'gpt-6.1-sol', env: 'SOLOFACTORY_CODEX_MODEL', locked: true, help: 'Used for every Codex stage.' },
+        { key: 'codexEffort', label: 'Codex: reasoning effort', type: 'select', def: 'medium', options: lv, env: 'SOLOFACTORY_CODEX_REASONING_EFFORT', help: '' }
+      ] },
+      { title: 'Capacity', fields: [
+        { key: 'maxActive', label: 'Runs building at once', type: 'number', def: '1', min: '1', max: '8', env: 'SOLOFACTORY_MAX_ACTIVE_RUNS', help: 'Across different projects. Runs in one project always go one after another. More runs at once reach your subscription limits sooner.' },
+        { key: 'featureReview', label: 'Feature review', type: 'select', def: 'all', options: [['all', 'Every feature'], ['risky', 'Risky features only']], env: 'SOLOFACTORY_FEATURE_REVIEW', help: 'Reviewing every feature is safer and slower.' }
+      ] },
+      { title: 'Run safeguards', fields: [
+        { key: 'maxRepairs', label: 'Repairs per failed check', type: 'number', def: '2', min: '0', max: '10', env: 'SOLOFACTORY_MAX_REPAIRS', help: 'Repair attempts before a feature parks and asks you.' },
+        { key: 'loop', label: 'Stop after identical failures', type: 'number', def: '3', min: '2', max: '10', env: 'SOLOFACTORY_LOOP_THRESHOLD', help: 'Parks a run when the same failure repeats on unchanged code.' },
+        { key: 'workers', label: 'Agent turns per run', type: 'number', def: '150', min: '0', max: '', env: 'SOLOFACTORY_MAX_RUN_WORKERS', help: '0 turns this cap off. A parked run can be granted more.' },
+        { key: 'tokens', label: 'Tokens per run', type: 'number', def: '40000000', min: '0', max: '', env: 'SOLOFACTORY_MAX_RUN_TOKENS', help: 'Reported tokens, cached input included. 0 turns this cap off.' },
+        { key: 'cost', label: 'Cost per run', type: 'number', def: '30', min: '0', max: '', unit: 'USD', env: 'SOLOFACTORY_MAX_RUN_COST_USD', help: 'Reported cost. 0 turns this cap off.' },
+        { key: 'progress', label: 'Progress warning', type: 'number', def: '20', min: '0', max: '240', unit: 'min', env: 'SOLOFACTORY_PROGRESS_MINUTES', help: 'Warns when no feature or plan lands for this long. It never stops a run.' },
+        { key: 'gate', label: 'Check time limit', type: 'number', def: '5', min: '1', max: '60', unit: 'min', env: 'SOLOFACTORY_GATE_MINUTES', help: 'A test or proof check that runs longer is stopped. Install gets 10 minutes.' },
+        { key: 'idle', label: 'Agent silence limit', type: 'number', def: '6', min: '1', max: '', unit: 'min', env: 'SOLOFACTORY_AGENT_IDLE_MINUTES', help: 'An agent turn with no output for this long is stopped.' },
+        { key: 'hard', label: 'Agent turn limit', type: 'number', def: '45', min: '1', max: '', unit: 'min', env: 'SOLOFACTORY_AGENT_HARD_MINUTES', help: 'The longest any one agent turn may run.' }
+      ] },
+      { title: 'Updates and feedback', fields: [
+        { key: 'updateCheck', label: 'Check for updates', type: 'toggle', def: true, env: 'SOLOFACTORY_UPDATE_CHECK', help: 'One small request on start and when you ask. No background polling. It never updates by itself.' },
+        { key: 'issues', label: 'Issue tracker', type: 'text', def: '', env: 'SOLOFACTORY_ISSUES_URL', help: 'A GitHub issues page, such as https://github.com/owner/repo/issues. Turns on Search existing issues and Open GitHub in Feedback.' }
+      ] },
+      { title: 'Folders and network', restart: true, fields: [
+        { key: 'root', label: 'Projects folder', type: 'text', def: '.solofactory/', env: 'SOLOFACTORY_ROOT', help: 'Projects live in projects/ under this folder.' },
+        { key: 'home', label: 'Factory home', type: 'text', def: '.solofactory/', env: 'SOLOFACTORY_HOME', help: 'Holds the active project, the error log and factory state.' },
+        { key: 'port', label: 'Port', type: 'number', def: '4173', min: '1024', max: '65535', env: 'PORT', help: 'Where this page is served.' },
+        { key: 'host', label: 'Address', type: 'text', def: '127.0.0.1', env: 'HOST', help: 'Loopback addresses only. Anything else is refused, because the factory has no sign-in.' }
+      ] }
+    ];
+  }
+
+  specName(r) {
+    return (r.kind === 'fix' ? 'fixes/' : 'specs/') + this.slug(r.title) + '.md';
+  }
+
+  discard(r) {
+    const st = this.state;
+    const key = r.pid + '|' + this.specName(r);
+    const edits = { ...st.docEdits }; delete edits[key];
+    const adds = { ...st.docAdds }; delete adds[key];
+    const runs = st.runs.map((x) => (x.id === r.id ? { ...x, state: r.from, change: '' } : x));
+    this.setState({ runs: this.startNext(runs), docEdits: edits, docAdds: adds, activeSec: -1, secDraft: '', viewerEdit: false });
+  }
+
+  revise(r) {
+    const runs = this.state.runs.map((x) => (x.id === r.id ? { ...x, state: 'revising', from: r.state, change: '' } : x));
+    this.setState({ runs: this.startNext(runs), viewer: this.specName(r), viewerEdit: true });
+  }
+
+  submit(text) {
+    const t = (text || '').trim();
+    if (!t) return;
+    const s = this.state;
+    const pid = s.pid;
+    const proj = this.projectList().find((p) => p.id === pid);
+    const kind = this.sizeUp(t, proj);
+    const msgs = s.threads[pid].concat([
+      { id: s.nextId, type: 'user', text: t },
+      { id: s.nextId + 1, type: 'pick', kind: kind, sent: false, ask: this.short(t) }
+    ]);
+    this.setState({ draft: '', nextId: s.nextId + 2, threads: { ...s.threads, [pid]: msgs } });
+  }
+
+  setKind(pid, id, kind) {
+    const s = this.state;
+    const msgs = s.threads[pid].map((m) => (m.id === id ? { ...m, kind: kind } : m));
+    this.setState({ threads: { ...s.threads, [pid]: msgs } });
+  }
+
+  sendPick(pid, id) {
+    const s = this.state;
+    const pick = s.threads[pid].find((m) => m.id === id);
+    if (pick.kind === 'prd') {
+      const msgs = s.threads[pid].map((m) => (m.id === id ? { ...m, sent: true } : m)).concat([{ id: s.nextId, type: 'guide', text: 'Interview started. First question: who uses this, and what should they be able to do on day one? I will skip any topic your documents already answer, and you can leave and come back; the brief saves as we go.' }]);
+      this.setState({ nextId: s.nextId + 1, threads: { ...s.threads, [pid]: msgs } });
+      return;
+    }
+    const runId = s.nextId;
+    const runs = this.startNext(s.runs.concat([{ id: runId, pid: pid, kind: pick.kind, title: pick.ask, state: 'queued', idx: 0, repairs: 0 }]));
+    const started = runs.find((r) => r.id === runId).state === 'building';
+    const msgs = s.threads[pid].map((m) => (m.id === id ? { ...m, sent: true, runId: runId } : m)).concat([
+      { id: s.nextId + 1, type: 'run', runId: runId },
+      { id: s.nextId + 2, type: 'guide', text: started ? 'It is with the factory. This card stays live, so you can watch or manage the run from here. Switch projects and send the next thing whenever you like.' : 'Queued. Runs in one project go one after another, so each builds on the last. It starts by itself when the way is clear.' }
+    ]);
+    this.setState({ nextId: s.nextId + 3, runs: runs, panel: 'run', threads: { ...s.threads, [pid]: msgs } });
+  }
+
+  baseDocs(pid) {
+    const proj = this.projectList().find((x) => x.id === pid);
+    if (!proj || !proj.hasDocs) return [];
+    const who = pid === 'nm' ? 'People mining coaching transcripts for reusable insights.' : 'One reader keeping a personal library of ambient recordings.';
+    return [
+      { name: 'PRD.md', tag: 'Product', note: 'Baseline · rewritten as built after the last release', sections: [{ h: 'Who it is for', t: who }, { h: 'What it does today', t: 'Every shipped capability, in plain language. The Guide treats this as settled and does not ask about it again.' }, { h: 'Not in scope', t: 'Things you already ruled out, so a request that crosses this line is flagged as a product change.' }] },
+      { name: 'FEATURES.md', tag: 'Feature map', note: 'One entry per capability, with screens and files', sections: [{ h: 'Purpose', t: 'The map the Guide uses to tell a fix from a feature. If a request lands inside an entry, it is a fix. If it lands beside the entries, it is a feature.' }, { h: 'Entries', t: 'Ingest · Patterns · Search · Dashboard · Re-run' }] },
+      { name: 'ACCEPTANCE.md', tag: 'Checks', note: 'Every check the gates prove on each run', sections: [{ h: 'Purpose', t: 'One observable scenario per capability. A fix adds or corrects one check. A feature adds a few. A full brief rewrites the set.' }] },
+      { name: '.aai/context.md', tag: 'Context', note: 'Yours to edit · read on every turn', sections: [{ h: 'Purpose', t: 'Standing rules and preferences for this project, so you never repeat them in a request.' }] }
+    ];
+  }
+
+  docsFor(pid) {
+    const K = this.kinds();
+    const extra = this.state.threads[pid]
+      .filter((m) => m.type === 'pick' && m.sent && m.kind !== 'prd')
+      .map((m) => ({
+        name: (m.kind === 'fix' ? 'fixes/' : 'specs/') + this.slug(m.ask) + '.md',
+        tag: m.kind === 'fix' ? 'Fix note' : 'Feature spec',
+        note: 'Written by the Guide from this conversation',
+        sections: [
+          { h: 'Request', t: m.ask },
+          { h: 'Size', t: K[m.kind].label + '. Steps: ' + K[m.kind].steps.join(', ') + '.' },
+          { h: 'Builds on', t: 'PRD.md and FEATURES.md as they stand. Nothing already decided there was asked again.' },
+          { h: 'After the run', t: 'FEATURES.md and ACCEPTANCE.md are updated to the behavior that actually shipped.' }
+        ]
+      }));
+    return extra.reverse().concat(this.baseDocs(pid));
+  }
+
+  renderVals() {
+    const s = this.state;
+    const K = this.kinds();
+    const list = this.projectList();
+    const current = list.find((p) => p.id === s.pid);
+    const tones = { run: 'var(--fg)', ask: 'var(--text2)', idle: 'var(--muted2)' };
+    const shownRun = (pid) => {
+      const mine = s.runs.filter((r) => r.pid === pid && r.state !== 'dismissed');
+      return this.activeIn(s.runs, pid) || mine[mine.length - 1] || null;
+    };
+    const statusOf = (p) => {
+      const act = this.activeIn(s.runs, p.id);
+      const th = s.threads[p.id] || [];
+      if (act && act.state === 'stuck') return { t: 'Needs you · run parked', tone: 'ask' };
+      if (act && act.state === 'paused') return { t: 'Paused · waiting for you', tone: 'ask' };
+      if (act && act.state === 'revising') return { t: 'Revising a spec', tone: 'ask' };
+      if (th.some((m) => m.type === 'pick' && !m.sent)) return { t: 'Needs you · confirm the plan', tone: 'ask' };
+      if (th.some((m) => m.type === 'pick' && m.sent && m.kind === 'prd')) return { t: 'Needs you · interview in progress', tone: 'ask' };
+      if (act) return { t: 'Building · step ' + (act.idx + 1) + ' of ' + K[act.kind].steps.length, tone: 'run' };
+      return { t: p.hasDocs ? 'Idle · live' : 'New · no documents yet', tone: 'idle' };
+    };
+    const building = s.runs.filter((r) => r.state === 'building' || r.state === 'pausing').length;
+
+    const projects = list.map((p) => {
+      const on = p.id === s.pid;
+      const run = this.activeIn(s.runs, p.id);
+      const st0 = statusOf(p);
+      const waiting = s.runs.filter((x) => x.pid === p.id && x.state === 'queued').length;
+      const st = waiting ? { ...st0, t: st0.t + ' · ' + waiting + ' queued' } : st0;
+      const n = this.docsFor(p.id).length;
+      return {
+        name: p.name, status: st.t, dot: tones[st.tone],
+        pressed: on ? 'true' : 'false',
+        bg: on ? 'var(--raise)' : 'transparent', border: on ? 'var(--line2)' : 'transparent',
+        border2: on ? 'var(--line3)' : 'var(--line)',
+        goLabel: on ? 'You are here' : 'Open',
+        go: () => this.setState({ pid: p.id, docName: '', viewer: '', selRun: 0, pmOpen: false, rowMenu: 0 }),
+        weight: on ? '700' : '500',
+        hasRun: !!run && run.state !== 'revising',
+        segs: run ? this.runSegs(run) : [],
+        docsLine: n ? n + ' documents the Guide reads before it answers' : 'No documents yet · the first brief writes them'
+      };
+    });
+
+    const stateWord = { queued: 'Queued', building: 'Building', pausing: 'Pausing', paused: 'Paused', stuck: 'Parked · needs you', revising: 'Revising the spec', shipped: 'Shipped', cancelled: 'Cancelled' };
+    const qList = s.runs.filter((x) => x.pid === s.pid && x.state === 'queued').map((x) => x.id);
+    const ordinal = (k) => k + (k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th');
+    const work = s.threads[s.pid].filter((m) => m.type === 'pick').map((m) => {
+      const run = s.runs.find((r) => r.id === m.runId);
+      return {
+        title: m.ask, kind: K[m.kind].label, chipBg: K[m.kind].chipBg, chipFg: K[m.kind].chipFg,
+        state: !m.sent ? 'Draft · waiting for you' : m.kind === 'prd' ? 'Interview' : run && run.state === 'queued' ? 'Queued · ' + ordinal(qList.indexOf(run.id) + 1) + ' in line' : run ? stateWord[run.state] : 'Sent'
+      };
+    }).reverse();
+
+    const messages = s.threads[s.pid].map((m) => {
+      const run = m.type === 'run' ? s.runs.find((r) => r.id === m.runId) : null;
+      const kind = run ? run.kind : m.kind;
+      const k = kind ? K[kind] : null;
+      const v = { isUser: m.type === 'user', isGuide: m.type === 'guide', isPick: m.type === 'pick', isRun: m.type === 'run', text: m.type === 'user' ? shownUserText(m.text) : m.text, images: m.images || [], html: m.type === 'guide' ? md(m.text) : '' };
+      if (k) { v.kindLabel = k.label; v.chipBg = k.chipBg; v.chipFg = k.chipFg; }
+      if (m.type === 'pick') {
+        v.read = current.hasDocs ? ['PRD.md', 'FEATURES.md', 'ACCEPTANCE.md'] : ['no documents found'];
+        v.why = this.why(m.kind, current);
+        v.steps = k.steps.map((label, i) => ({ n: i + 1, label: label }));
+        v.cta = k.cta;
+        v.open = !m.sent; v.sent = m.sent;
+        v.sentLine = m.kind === 'prd' ? 'Confirmed as a full brief. The interview continues below.' : 'Sent to the factory as a ' + k.label.toLowerCase() + '.';
+        v.send = () => this.sendPick(s.pid, m.id);
+        v.alts = Object.keys(K).filter((key) => key !== m.kind).map((key) => ({ label: 'Make it a ' + K[key].label.toLowerCase(), set: () => this.setKind(s.pid, m.id, key) }));
+      }
+      if (run) {
+        v.title = run.title; v.line = this.runLine(run, s.runs);
+        const al = this.alertOf(run);
+        v.cardBorder = run.state === 'stuck' ? 'var(--red-line)' : run.state === 'paused' ? 'var(--amber-line)' : 'var(--line)';
+        v.lineColor = al || 'var(--text2)'; v.lineWeight = al ? '600' : '400';
+        v.segs = this.runSegs(run);
+        v.ctrls = this.runCtrls(run);
+        v.openRun = () => this.setState({ panel: 'run' });
+        v.openSpec = () => this.setState({ viewer: this.specName(run), viewerEdit: false });
+      }
+      return v;
+    }).reverse();
+
+    const tab = (id, label) => {
+      const on = s.panel === id;
+      return { label: label, pressed: on ? 'true' : 'false', bg: on ? 'var(--raise2)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg)', border: on ? 'var(--line3)' : 'var(--line)', toggle: () => this.setState({ panel: on ? '' : id }) };
+    };
+
+    const docsRaw = this.docsFor(s.pid);
+    const docs = docsRaw.map((d) => {
+      const on = d.name === s.docName;
+      return { name: d.name, tag: d.tag, note: d.note, pressed: on ? 'true' : 'false', bg: on ? 'var(--raise)' : 'var(--card)', border: on ? 'var(--line3)' : 'var(--line)', open: () => this.setState({ viewer: d.name, viewerEdit: false }) };
+    });
+    const doc = null;
+    const key = s.pid + '|' + s.viewer;
+    const vRaw = s.viewer ? docsRaw.find((d) => d.name === s.viewer) || null : null;
+    const vRun = vRaw ? s.runs.filter((x) => x.pid === s.pid && this.specName(x) === vRaw.name).pop() || null : null;
+    const canEdit = !!vRaw && (!vRun || vRun.state === 'revising' || vRun.state === 'shipped');
+    const editing = canEdit && (s.viewerEdit || (!!vRun && vRun.state === 'revising'));
+    const edits = s.docEdits[key] || {};
+    const vAdds = s.docAdds[key] || {};
+    const reword = (t) => {
+      let r = t.trim().replace(/^(please|can you|could you|i want to|i would like to|i'd like to|let's|lets|we should|it should)\s+/i, '').replace(/[.!?]+$/, '');
+      r = r.charAt(0).toUpperCase() + r.slice(1);
+      return r + '.';
+    };
+    const pickSec = (t) => {
+      const hs = vRaw.sections.map((x) => x.h.toLowerCase());
+      const want = /(check|test|prove|proof|accept|gate)/i.test(t) ? ['proof', 'after the run', 'purpose'] : ['request', 'what changes', 'what it does today', 'purpose'];
+      for (let w = 0; w < want.length; w++) { const at = hs.indexOf(want[w]); if (at >= 0) return at; }
+      return 0;
+    };
+    const vsend = () => {
+      const t = (this.state.vdraft || '').trim();
+      if (!t || !vRaw) return;
+      const st = this.state;
+      const chat = (st.docChat[key] || []).concat([{ who: 'you', text: t }]);
+      const locked = vRun && ['building', 'pausing', 'queued'].indexOf(vRun.state) >= 0;
+      if (locked) {
+        this.setState({ vdraft: '', docChat: { ...st.docChat, [key]: chat.concat([{ who: 'guide', text: 'This spec is with the factory right now, so I will not change it under the run. Pause or cancel the run and I will reopen it, or send this as a new request and I will queue it as a follow-up.' }]) } });
+        return;
+      }
+      const at = pickSec(t);
+      const where = '"' + vRaw.sections[at].h + '"';
+      const mine = st.docAdds[key] || {};
+      const next = { vdraft: '', activeSec: -1, secDraft: '', docAdds: { ...st.docAdds, [key]: { ...mine, [at]: (mine[at] || []).concat([reword(t)]) } } };
+      let reply = 'Done. I rewrote ' + where + ' to cover that. My change is highlighted. Click the section to adjust my wording.';
+      if (vRun && vRun.state !== 'revising' && vRun.state !== 'shipped') {
+        next.runs = this.startNext(st.runs.map((x) => (x.id === vRun.id ? { ...x, state: 'revising', from: vRun.state, change: '' } : x)));
+        next.viewerEdit = true;
+        reply = 'I reopened the spec as a draft of the next revision and rewrote ' + where + ' to cover that. My change is highlighted. Nothing is building. Resubmit when it reads right.';
+      } else if (vRun && vRun.state === 'revising') {
+        reply = 'Done. I rewrote ' + where + ' to cover that. My change is highlighted. Click the section to adjust my wording, then resubmit.';
+      }
+      next.docChat = { ...st.docChat, [key]: chat.concat([{ who: 'guide', text: reply }]) };
+      this.setState(next);
+    };
+    const vw = vRaw ? {
+      open: true, name: vRaw.name, tag: vRaw.tag,
+      hasLine: !!vRun, line: vRun ? 'Run: ' + this.runLine(vRun, s.runs) : '',
+      revising: !!vRun && vRun.state === 'revising',
+      revTitle: vRun ? 'Draft of revision ' + ((vRun.rev || 1) + 1) + ' · nothing is building' : '',
+      ctrls: vRun ? this.runCtrls(vRun).filter((c) => /Revis|Resubmit|Discard/.test(c.label)) : [],
+      modes: canEdit && !(vRun && vRun.state === 'revising') ? [['Read', false], ['Edit', true]].map((m) => {
+        const on = editing === m[1];
+        return { label: m[0], pressed: on ? 'true' : 'false', bg: on ? 'var(--raise2)' : 'transparent', fg: on ? 'var(--fg)' : 'var(--fg)', border: on ? 'var(--line3)' : 'var(--line)', set: () => this.setState({ viewerEdit: m[1] }) };
+      }) : [],
+      hasNotes: false, notes: [],
+      sections: vRaw.sections.map((x, n) => {
+        const text = edits[n] !== undefined ? edits[n] : x.t;
+        const added = (vAdds[n] || []).join(' ');
+        const whole = added ? text + ' ' + added : text;
+        const active = editing && s.activeSec === n;
+        const keep = () => {
+          const st = this.state;
+          if (st.activeSec !== n) return;
+          const next = { activeSec: -1, secDraft: '' };
+          if (st.secDraft.trim() && st.secDraft !== whole) {
+            next.docEdits = { ...st.docEdits, [key]: { ...(st.docEdits[key] || {}), [n]: st.secDraft } };
+            next.docAdds = { ...st.docAdds, [key]: { ...(st.docAdds[key] || {}), [n]: [] } };
+          }
+          this.setState(next);
+        };
+        return {
+          h: x.h + (added ? ' · changed by the Guide' : edits[n] !== undefined ? ' · edited' : ''), label: 'Edit ' + x.h, t: text, added: added, hasAdd: !!added,
+          view: !editing && !x.list, viewList: !editing && !!x.list, isList: !!x.list, items: text.split('\n').map((l) => l.trim()).filter(Boolean), click: editing && !active, edit: active, draft: s.secDraft,
+          start: () => this.setState({ activeSec: n, secDraft: whole }),
+          onChange: (e) => this.setState({ secDraft: e.target.value }),
+          keep: keep,
+          onKey: (e) => {
+            if (e.key === 'Escape') { e.preventDefault(); this.setState({ activeSec: -1, secDraft: '' }); }
+            else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); keep(); }
+          }
+        };
+      }),
+      footer: editing ? 'Click any section to edit it. Click away or press Cmd/Ctrl+Enter to keep the edit. Escape cancels. Each edit saves at once, and the Guide checks it before anything is built.' : canEdit ? 'Read only. Press Edit to change it, or ask the Guide.' : 'Read only while the run is active. Use Revise the spec on a parked or cancelled run, or ask the Guide.',
+      chat: [{ mine: false, guide: true, text: 'I have ' + vRaw.name + ' open with you. Tell me what to change and I will edit it, or edit it yourself and I will check your changes against the rest of the project documents.' }].map((m) => ({ ...m, html: md(m.text) }))
+        .concat((s.docChat[key] || []).map((m) => ({ mine: m.who === 'you', guide: m.who === 'guide', text: m.text, html: md(m.text) }))).reverse(),
+      draft: s.vdraft,
+      onDraft: (e) => this.setState({ vdraft: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); vsend(); } },
+      send: vsend,
+      close: () => this.setState({ viewer: '', viewerEdit: false, activeSec: -1, secDraft: '' })
+    } : { open: false, name: '', tag: '', hasLine: false, line: '', revising: false, revTitle: '', ctrls: [], modes: [], hasNotes: false, notes: [], sections: [], footer: '', chat: [], draft: '' };
+
+    const r = s.runs.find((x) => x.id === s.selRun && x.pid === s.pid && x.state !== 'dismissed') || shownRun(s.pid);
+    const parked = r && (r.state === 'paused' || r.state === 'stuck');
+    const run = r ? {
+      title: r.title, line: this.runLine(r, s.runs), kindLabel: K[r.kind].label, chipBg: K[r.kind].chipBg, chipFg: K[r.kind].chipFg,
+      ctrls: this.runCtrls(r), stuck: r.state === 'stuck', lineColor: this.alertOf(r) || 'var(--muted)', lineWeight: this.alertOf(r) ? '600' : '400',
+      openSpec: () => this.setState({ viewer: this.specName(r), viewerEdit: false }),
+      more: this.moreCtrls(r), hasMore: this.moreCtrls(r).length > 0,
+      revising: r.state === 'revising', change: r.change || '', fieldId: 'revise-a', revTitle: 'Spec reopened · draft of revision ' + ((r.rev || 1) + 1),
+      onChange: (e) => this.patchRun(r.id, { change: e.target.value }),
+      note: parked ? 'A parked run keeps everything that already passed. Use Restart from here on any finished step to redo the work from that point.' : 'The last stop rewrites the project documents to match what was built, so the next request starts from the truth.',
+      stops: K[r.kind].steps.map((label, i) => {
+        const idle = ['queued', 'cancelled', 'revising'].indexOf(r.state) >= 0;
+        const done = r.state === 'shipped' || (!idle && i < r.idx);
+        const now = !done && !idle && i === r.idx;
+        const bad = now && r.state === 'stuck';
+        const held = now && r.state === 'paused';
+        return {
+          n: i + 1, label: label,
+          state: done ? 'Done' : bad ? 'Failed twice' : held ? 'Paused here' : now ? 'Now' : 'To do',
+          bg: done ? 'var(--raise2)' : bad ? 'var(--red)' : held ? 'var(--amber)' : now ? 'var(--inv)' : 'transparent',
+          fg: done ? 'var(--fg)' : now ? 'var(--inv-fg)' : 'var(--muted)',
+          ring: bad ? 'var(--red)' : held ? 'var(--amber)' : done ? 'var(--fg)' : now ? 'var(--inv)' : 'var(--line2)',
+          text: done || now ? 'var(--fg)' : 'var(--muted)',
+          canRestart: parked && i < r.idx,
+          restart: () => this.patchRun(r.id, { state: 'building', idx: i })
+        };
+      })
+    } : null;
+    const qRuns = s.runs.filter((q) => q.pid === s.pid && q.state === 'queued');
+    const queue = qRuns.map((q, k) => ({
+      id: q.id, pos: k + 1, title: q.title, kindLabel: K[q.kind].label, chipBg: K[q.kind].chipBg, chipFg: K[q.kind].chipFg,
+      canUp: k > 0, upLabel: 'Move ' + q.title + ' up',
+      up: () => {
+        const prev = qRuns[k - 1];
+        const arr = this.state.runs.slice();
+        const a = arr.findIndex((x) => x.id === prev.id);
+        const b = arr.findIndex((x) => x.id === q.id);
+        arr[a] = q; arr[b] = prev;
+        this.setState({ runs: arr });
+      },
+      remove: () => this.patchRun(q.id, { state: 'cancelled' })
+    }));
+    const blocked = r && (r.state === 'stuck' || r.state === 'paused' || r.state === 'revising');
+
+    const suggestions = (current.hasDocs
+      ? ['Fix the date format on the dashboard', 'Add CSV export to the results table', 'Rebuild it for multi-user sign in']
+      : ['Build a portal where members see their coaching notes', 'Adopt the app in my existing folder']
+    ).map((text) => ({ text: text, use: () => this.setState({ draft: text }) }));
+
+    // The Work list holds every project's runs; another project's rows show only its sent runs.
+    const pickRows = Object.keys(s.threads).flatMap((tp) => s.threads[tp].filter((m) => m.type === 'pick' && (tp === s.pid || m.sent))).map((m) => {
+      const rr = s.runs.find((x) => x.id === m.runId);
+      if (rr && rr.state === 'dismissed') return null;
+      const away = !!rr && rr.pid !== s.pid;
+      let g = 'done';
+      let st = 'Sent';
+      let order = 0;
+      if (away && rr.state === 'queued') { g = 'queued'; st = 'Queued'; order = 1e6; }
+      else if (!m.sent) { g = 'needs'; st = 'Plan waiting for you in the chat'; }
+      else if (m.kind === 'prd') { g = 'needs'; st = 'Interview in progress'; }
+      else if (rr && ['paused', 'stuck', 'revising'].indexOf(rr.state) >= 0) { g = 'needs'; st = stateWord[rr.state]; }
+      else if (rr && (rr.state === 'building' || rr.state === 'pausing')) { g = 'running'; st = this.runLine(rr, s.runs); order = -1; }
+      else if (rr && rr.state === 'queued') { g = 'queued'; order = qList.indexOf(rr.id); const act = this.activeIn(s.runs, s.pid); st = ordinal(order + 1) + ' in line' + (!act ? ' · waiting for a build slot' : act.state === 'building' || act.state === 'pausing' ? '' : ' · held until you resolve the run above'); }
+      else if (rr) { st = stateWord[rr.state]; }
+      const qi = rr ? queue.findIndex((q, k) => qRuns[k].id === rr.id) : -1;
+      const picked = !!rr && !!r && rr.id === r.id && s.panel === 'run';
+      const swapWith = (other) => {
+        const arr = this.state.runs.slice();
+        const a = arr.findIndex((x) => x.id === other.id);
+        const b = arr.findIndex((x) => x.id === rr.id);
+        arr[a] = rr; arr[b] = other;
+        this.setState({ runs: arr });
+      };
+      return {
+        g: g, order: order, rid: rr ? rr.id : 0, away: away, pid: rr ? rr.pid : s.pid, jobId: rr ? rr.jobId : null,
+        title: m.ask, kind: K[m.kind].label, chipBg: K[m.kind].chipBg, chipFg: K[m.kind].chipFg, state: st,
+        aria: rr ? 'Open the run: ' + m.ask : m.ask + ', in the chat',
+        bg: picked ? 'var(--raise)' : 'transparent', weight: g === 'needs' ? '600' : '500',
+        stColor: this.alertOf(rr) || 'var(--muted)', stWeight: this.alertOf(rr) ? '600' : '400',
+        menuOpen: qi >= 0 && s.rowMenu === rr.id, menuExpanded: qi >= 0 && s.rowMenu === rr.id ? 'true' : 'false',
+        menuLabel: 'Queue actions for ' + m.ask,
+        toggleMenu: () => this.setState({ rowMenu: this.state.rowMenu === (rr && rr.id) ? 0 : rr.id }),
+        noUp: qi <= 0, noDown: qi < 0 || qi >= qRuns.length - 1,
+        upOpacity: qi > 0 ? '1' : '0.35', downOpacity: qi >= 0 && qi < qRuns.length - 1 ? '1' : '0.35',
+        down: () => { if (qi >= 0 && qi < qRuns.length - 1) swapWith(qRuns[qi + 1]); },
+        open: () => (rr ? this.setState({ panel: 'run', selRun: rr.id }) : this.setState({ panel: '' })),
+        queued: qi >= 0, canUp: qi > 0, upLabel: qi >= 0 ? queue[qi].upLabel : '',
+        up: () => { if (qi > 0) swapWith(qRuns[qi - 1]); }, remove: qi >= 0 ? () => { this.setState({ rowMenu: 0 }); queue[qi].remove(); } : null
+      };
+    }).filter((x) => x);
+    const gdefs = [['needs', 'Needs you', 'Nothing needs you right now.'], ['running', 'Running', 'Nothing is building.'], ['queued', 'Queued', 'Nothing is waiting.'], ['done', 'Done', 'Nothing finished yet.']];
+    const groups = gdefs.map((d) => {
+      let items = pickRows.filter((x) => x.g === d[0]);
+      if (d[0] === 'queued') items = items.slice().sort((a, b) => a.order - b.order);
+      else items = items.slice().reverse();
+      const open = !!s.groupsOpen[d[0]];
+      const hot = d[0] === 'needs' && items.length > 0;
+      return {
+        label: d[1], count: items.length, items: items, open: open, empty: items.length === 0, emptyText: d[2],
+        expanded: open ? 'true' : 'false', chev: open ? '▾' : '▸',
+        countW: hot ? '700' : '400', countFg: hot ? 'var(--amber)' : 'var(--muted)',
+        toggle: () => this.setState({ groupsOpen: { ...this.state.groupsOpen, [d[0]]: !open } })
+      };
+    });
+
+    const closeNav = (fn) => () => { this.setState({ navOpen: false }); fn(); };
+    const railLinks = [
+      { label: '+ New project', hasBadge: false, badge: '', act: closeNav(() => this.setState({ np: { name: '', mode: 'empty', folder: '', where: 'default', repo: '' } })) },
+      { label: 'Settings', hasBadge: false, badge: '', act: closeNav(() => this.setState({ cfgOpen: true })) },
+      { label: 'Manual', hasBadge: false, badge: '', act: closeNav(() => this.showInfo('Manual', 'Opens the illustrated user manual, served at /manual.')) },
+      { label: 'Feedback', hasBadge: false, badge: '', act: closeNav(() => this.showInfo('Feedback', 'Opens the Feedback form: Problem or Improvement, a preview of the report, Copy and open email, and optional run diagnostics. Nothing is sent until you send it.')) },
+      { label: 'Updates', hasBadge: true, badge: 'Update available', act: closeNav(() => this.showInfo('Update available', 'Shows your version, the latest version, and the prompt to paste into Claude Code or Codex when you are ready. It never updates by itself.')) }
+    ];
+
+    const app = current.url ? {
+      none: false, live: true, up: true, down: false, statusText: 'Live', dot: 'var(--inv)', url: current.url, release: current.release,
+      stop: () => this.showInfo('Stop the app', 'Stops the live app. Relaunch starts it again on the same port.'),
+      relaunch: () => this.showInfo('Relaunch', 'Restarts the live app on the same port, then checks its health again.'),
+      hasStats: true, routes: [], hasRoutes: false,
+      stats: [{ label: 'Requests', value: '—' }, { label: 'Errors', value: '—' }, { label: 'Average response', value: '—' }, { label: 'Uptime', value: '—' }]
+    } : { none: true, live: false, url: '', release: '', stats: [] };
+
+    const provider = s.provider[s.pid] || s.cfgVals.provider || 'Claude Code';
+
+    const npSlug = (n) => (n || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || '<name>';
+    const npRoot = (s.cfgVals.root !== undefined ? s.cfgVals.root : '.solofactory/').replace(/\/?$/, '/');
+    const npDefault = (n) => npRoot + 'projects/' + npSlug(n) + '/';
+    const npv = s.np ? {
+      open: true, name: s.np.name, folder: s.np.folder, adopt: s.np.mode === 'adopt',
+      cta: s.np.mode === 'adopt' ? 'Adopt the app' : 'Create project',
+      custom: s.np.where === 'custom', repo: s.np.repo,
+      onRepo: (e) => this.setState({ np: { ...this.state.np, repo: e.target.value } }),
+      repoModes: [['default', "In SoloFactory's projects folder", npDefault(s.np.name), 'ui-monospace, Menlo, monospace'], ['custom', 'Somewhere else', 'Pick any folder on this computer.', 'inherit']].map((o) => {
+        const on = (s.np.where || 'default') === o[0];
+        return { label: o[1], help: o[2], font: o[3], checked: on ? 'true' : 'false', bg: on ? 'var(--raise2)' : 'transparent', border: on ? 'var(--line3)' : 'var(--line)', pick: () => this.setState({ np: { ...this.state.np, where: o[0] } }) };
+      }),
+      onName: (e) => this.setState({ np: { ...this.state.np, name: e.target.value } }),
+      onFolder: (e) => this.setState({ np: { ...this.state.np, folder: e.target.value } }),
+      modes: [['empty', 'Start empty', 'The Guide starts with a full interview.'], ['adopt', 'Adopt an existing app', 'Copies a folder in, never touching the original, and writes the baseline documents from its code.']].map((o) => {
+        const on = s.np.mode === o[0];
+        return { label: o[1], help: o[2], checked: on ? 'true' : 'false', bg: on ? 'var(--raise2)' : 'transparent', border: on ? 'var(--line3)' : 'var(--line)', pick: () => this.setState({ np: { ...this.state.np, mode: o[0] } }) };
+      }),
+      close: () => this.setState({ np: null }),
+      create: () => {
+        const st = this.state;
+        const name = (st.np.name || '').trim();
+        if (!name) return;
+        const id = 'x' + st.nextId;
+        const adopt = st.np.mode === 'adopt';
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const custom = st.np.where === 'custom' && (st.np.repo || '').trim();
+        const repo = custom ? st.np.repo.trim().replace(/\/?$/, '/') : npDefault(name);
+        const text = adopt
+          ? 'I will copy ' + (st.np.folder || 'that folder') + ' into ' + repo + ', never touching the original. Then I read the code and tests and write PRD.md, FEATURES.md and ACCEPTANCE.md from what is there. You review that baseline before anything new is built.'
+          : name + ' lives in ' + repo + ' and has no documents yet. Tell me what you want to build and I will start a full brief.';
+        this.setState({
+          nextId: st.nextId + 1, pid: id, np: null, viewer: '', selRun: 0,
+          extra: (st.extra || []).concat([{ id: id, name: name, repo: repo, live: adopt ? 'Adopting · not built here yet' : 'Not built yet', hasDocs: false }]),
+          threads: { ...st.threads, [id]: [{ id: st.nextId, type: 'guide', text: text }] }
+        });
+      }
+    } : { open: false, name: '', folder: '', adopt: false, cta: '', modes: [], custom: false, repo: '', repoModes: [] };
+
+    const defs = this.settingsDefs();
+    const valOf = (fd) => (s.cfgVals[fd.key] !== undefined ? s.cfgVals[fd.key] : fd.def);
+    const setVal = (key, v) => this.setState({ cfgVals: { ...this.state.cfgVals, [key]: v }, cfgTouched: true });
+    const cfg = {
+      open: s.cfgOpen,
+      status: s.cfgTouched ? 'All changes saved' : 'Showing the defaults',
+      close: () => this.setState({ cfgOpen: false }),
+      sections: defs.map((sec) => {
+        const changed = sec.restart && sec.fields.some((fd) => s.cfgVals[fd.key] !== undefined && String(s.cfgVals[fd.key]) !== String(fd.def));
+        return {
+          title: sec.title + (sec.restart ? ' (applies after a restart)' : ''),
+          hasNote: !!changed, note: 'Restart the factory to apply these changes. Pause active runs first; they resume where they stopped.',
+          fields: sec.fields.map((fd) => {
+            const v = valOf(fd);
+            return {
+              id: 'cfg-' + fd.key, label: fd.label, help: fd.help,
+              envLine: fd.locked ? 'Set by ' + fd.env + ' in your environment' : (fd.env || ''),
+              envColor: fd.locked ? 'var(--text2)' : 'var(--muted)',
+              locked: !!fd.locked, isText: false, text: '',
+              isSelect: fd.type === 'select', isInput: fd.type === 'number' || fd.type === 'text', isToggle: fd.type === 'toggle',
+              inputType: fd.type === 'number' ? 'number' : 'text', min: fd.min || '', max: fd.max || '',
+              hasUnit: !!fd.unit, unit: fd.unit || '',
+              value: String(v), on: !!v, toggleText: v ? 'On' : 'Off',
+              options: (fd.options || []).map((o) => ({ v: o[0], label: o[1] })),
+              onChange: (e) => setVal(fd.key, e.target.value),
+              onToggle: (e) => setVal(fd.key, !!e.target.checked)
+            };
+          })
+        };
+      })
+    };
+
+    const titles = { app: 'Live app · ' + current.name, docs: 'Documents · ' + current.name, run: 'Run · ' + current.name };
+
+    return {
+      projects: projects, current: current, work: work, noWork: work.length === 0,
+      slots: building + ' of 2 build slots in use',
+      messages: messages, suggestions: suggestions,
+      draft: s.draft,
+      placeholder: 'Tell the Guide what ' + current.name + ' needs',
+      onDraft: (e) => this.setState({ draft: e.target.value }),
+      onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.submit(this.state.draft); } },
+      onSend: () => this.submit(this.state.draft),
+      theme: {
+        mode: s.themeMode, isAuto: s.themeMode === 'auto', isLight: s.themeMode === 'light', isDark: s.themeMode === 'dark',
+        open: s.themeOpen, expanded: s.themeOpen ? 'true' : 'false',
+        aria: 'Theme: ' + ({ auto: 'Auto', light: 'Light', dark: 'Dark' })[s.themeMode] + '. Change theme',
+        toggle: () => this.setState({ themeOpen: !this.state.themeOpen, pmOpen: false, navOpen: false }),
+        opts: [['auto', 'Auto', 'Match the system'], ['light', 'Light', ''], ['dark', 'Dark', '']].map((o) => {
+          const on = s.themeMode === o[0];
+          return { label: o[1], help: o[2], checked: on ? 'true' : 'false', bg: on ? 'var(--raise)' : 'transparent', weight: on ? '700' : '500', pick: () => this.setState({ themeMode: o[0], themeOpen: false }) };
+        })
+      },
+      panelTabs: [tab('run', 'Run'), tab('docs', 'Documents'), tab('app', 'Live app')],
+      panelOpen: s.panel !== '', panelTitle: titles[s.panel] || '',
+      closePanel: () => this.setState({ panel: '' }),
+      showDocs: s.panel === 'docs', showRun: s.panel === 'run', showApp: s.panel === 'app', app: app, pane: this.paneVals(),
+      groups: groups, railLinks: railLinks,
+      nav: { open: s.navOpen, expanded: s.navOpen ? 'true' : 'false', hint: 'Update available', toggle: () => this.setState({ navOpen: !this.state.navOpen, pmOpen: false }) },
+      pm: (() => {
+        const others = projects.filter((p) => p.pressed === 'false' && /^Needs you|Paused|Revising/.test(p.status)).length;
+        return {
+          open: s.pmOpen, expanded: s.pmOpen ? 'true' : 'false', others: others > 0,
+          othersText: others === 1 ? '1 other project needs you' : others + ' other projects need you',
+          aria: 'Switch project. Now ' + current.name + (others ? '. ' + others + ' other projects need you.' : ''),
+          toggle: () => this.setState({ pmOpen: !this.state.pmOpen, navOpen: false }),
+          newProject: () => this.setState({ pmOpen: false, np: { name: '', mode: 'empty', folder: '', where: 'default', repo: '' } })
+        };
+      })(), np: npv, cfg: cfg,
+      info: s.info ? { open: true, title: s.info.title, text: s.info.text, hasPre: !!s.info.pre, pre: s.info.pre || '', copyLabel: s.info.copied ? 'Copied' : 'Copy', copy: () => navigator.clipboard.writeText(s.info.pre).then(() => this.setState((st) => ({ info: st.info && { ...st.info, copied: true } }))).catch(() => this.setState((st) => ({ info: st.info && { ...st.info, text: st.info.text + ' Select the text and press ⌘C / Ctrl+C.' } }))), close: () => this.setState({ info: null }) } : { open: false, title: '', text: '' },
+      provider: provider, providerAria: 'Builds with ' + provider + '. Switch the AI for this project.',
+      toggleProvider: () => this.setState({ provider: { ...this.state.provider, [this.state.pid]: provider === 'Codex' ? 'Claude Code' : 'Codex' } }),
+      onAttach: () => this.showInfo('Attach', 'Drops a spec or notes into the conversation (markdown, text, JSON, YAML, CSV) or lets the Guide look at a mockup or screenshot (png, jpg, gif, webp). Images are saved under the project\'s .factory/uploads/.'),
+      vw: vw,
+      docs: docs, noDocs: docsRaw.length === 0, hasDoc: !!doc, doc: doc || { name: '', sections: [], ctrls: [], hasLine: false, line: '', revising: false, change: '', revTitle: '' },
+      closeDoc: () => this.setState({ docName: '' }),
+      hasRun: !!run, noRun: !run, run: run || { more: [], hasMore: false, title: '', line: '', kindLabel: '', chipBg: 'var(--raise)', chipFg: 'var(--fg)', lineColor: 'var(--muted)', lineWeight: '400', stops: [], ctrls: [], stuck: false, note: '', revising: false, change: '', fieldId: 'revise-a', revTitle: '' },
+      queue: queue, hasQueue: queue.length > 0,
+      queueTitle: queue.length + ' queued behind it',
+      queueNote: blocked ? 'Waiting for your call on the run above. Nothing here starts until it is resolved.' : 'They start one at a time, top first, each building on the last.'
+    };
+  }
+}
+
+// ---- Live layer: design A's component, fed from the factory API instead of its demo data.
+// Anything design A shows that the factory cannot do from here yet answers with `later()`; the list is in
+// docs/project-hub-ui-spec.md under "Left out for later".
+function showError(error) { reportError(error, "action"); hub?.showInfo("Something went wrong", error?.message || String(error)); }
+const later = (what) => hub.showInfo(what, "Not wired to the factory yet. It is on the left-out-for-later list.");
+const JOB_STATE = { specifying: "building", planning: "building", building: "building", verifying: "building", repairing: "building", reviewing: "building", deploying: "building", failed: "stuck", interrupted: "stuck", paused: "paused", completed: "shipped", cancelled: "cancelled", dismissed: "dismissed", queued: "queued" };
+const JOB_IDX = { specifying: 0, planning: 1, building: 2, verifying: 3, repairing: 3, reviewing: 4, deploying: 5, completed: 7 };
+// The engine reports feature planning as "specifying" and the pre-build check as "verifying", so the stage label
+// decides those. A stopped run keeps the step it stopped at (its last working stage), not step 1.
+// Build, Gates and Review repeat for every planned feature: which feature is current, and each one's state.
+function featureProgress(job) {
+  const ids = job?.slicePlanIds || [];
+  if (!ids.length) return null;
+  const titles = Object.fromEntries((job.approvedPlan?.plan?.slices || []).map((f) => [f.id, f.title]));
+  const done = new Set(job.sliceDone || []);
+  const cursor = job.featureCursor?.id;
+  const current = job.state === "completed" ? null : cursor && !done.has(cursor) ? cursor : ids.find((id) => !done.has(id)) ?? null;
+  const list = ids.map((id, i) => ({ id, n: i + 1, title: titles[id] || id, state: done.has(id) ? "Done" : id === current ? "Now" : "To do" }));
+  const now = list.find((f) => f.id === current) || null;
+  return { total: ids.length, done: done.size, now, list };
+}
+function jobIdx(job) {
+  if (job.state === "completed") return JOB_IDX.completed;
+  const cur = job.state in JOB_IDX ? { state: job.state, label: job.stage } : (job.stageHistory || []).findLast((h) => h.state in JOB_IDX && h.state !== "completed");
+  if (!cur) return 0;
+  if (cur.state === "specifying" && /^(Planning features|Auditing the slice plan)/.test(cur.label || "")) return JOB_IDX.planning;
+  if (cur.state === "verifying" && /before building/.test(cur.label || "")) return JOB_IDX.building;
+  return JOB_IDX[cur.state];
+}
+const PLAN_STEPS = ["retry-plan", "amend-plan", "revise-inputs", "prepare-plan", "approve-plan"];
+const PARKED = ["failed", "cancelled", "interrupted", "paused"];
+const QUIET_WARN_MS = 10 * 60_000, QUIET_BAD_MS = 30 * 60_000;
+const TONE = { ok: "var(--text1)", warn: "var(--amber)", bad: "var(--red-text)", muted: "var(--muted)" };
+const BTN = { plain: { bg: "transparent", fg: "var(--fg)", border: "var(--line3)" }, main: { bg: "var(--inv)", fg: "var(--inv-fg)", border: "var(--inv)" } };
+function formatSpan(ms) { const s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24); const pad = (n) => String(n).padStart(2, "0"); return d ? `${d}d ${h % 24}h` : h ? `${h}h ${pad(m % 60)}m` : m ? `${m}m ${pad(s % 60)}s` : `${s}s`; }
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const count = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n);
+const repairUsage = (job) => { const phase = job.recoveryPhase, start = phase?.cursor?.attemptBefore; if (phase?.totalRepairLimit === undefined || start === undefined || job.repairBudgetLimit == null) return null; const perFeature = job.repairBudgetLimit - start, planCap = perFeature * (phase.plan.slices.length + 1); return { feature: [job.attempt - start, perFeature], plan: [Math.max(0, planCap - (phase.totalRepairLimit - job.attempt)), planCap] }; };
+const lastActivityAge = (job, events) => { const at = Math.max(Date.parse(job.supervision?.lastActivityAt) || 0, Date.parse(events.at(-1)?.at) || 0); return at ? Date.now() - at : null; };
+// Uploads each chosen file in turn and stops at the first refusal. Files are read before any await.
+// ---- Feedback, run reports and the update notice. The server renders the report (POST /api/feedback/preview);
+// these helpers only shape the form, the links and the banner text. Nothing is sent: the owner emails or files it.
+const FEEDBACK_AREAS = ["interview", "specification", "build", "verification", "recovery", "dashboard", "deployment", "generated app", "other"];
+const FEEDBACK_KEYS = { problem: ["title", "happened", "expected", "context"], improvement: ["title", "friction", "outcome", "workaround", "frequency", "area"] };
+const FEEDBACK_REQUIRED = { problem: [["title", "Title"], ["happened", "What happened"], ["expected", "Expected result"]], improvement: [["title", "Title"], ["friction", "Problem or friction"], ["outcome", "Desired outcome"]] };
+const FEEDBACK_MAILTO = "mailto:support@coachlou.com?subject=" + encodeURIComponent("SoloFactory Feedback");
+const REPORTABLE = ["failed", "interrupted", "cancelled"];
+function feedbackFields(mode, f) { return Object.fromEntries(FEEDBACK_KEYS[mode].map((k) => [k, String(f[k] ?? "").trim()])); }
+function feedbackMissing(mode, f) { return FEEDBACK_REQUIRED[mode].filter(([k]) => !String(f[k] ?? "").trim()).map(([, label]) => label); }
+// Titles only travel in URLs. The report body goes through the clipboard, never a link.
+function feedbackLinks(issues, mode, title, fingerprint) {
+  if (!issues?.base) return null;
+  const t = String(title ?? "").trim();
+  return {
+    search: `${issues.base}?q=${encodeURIComponent(`is:issue ${fingerprint ?? t.slice(0, 100)}`)}`,
+    github: `${issues.base}/new?template=${mode}.yml&title=${encodeURIComponent(`${mode === "problem" ? "[Problem]" : "[Improvement]"} ${t}`)}`
+  };
+}
+// A settings row that cannot be changed here shows its value as plain text instead of a control.
+function readOnlyField(f) {
+  const text = f.isToggle ? f.toggleText : f.isSelect ? (f.options.find((o) => o.v === f.value)?.label ?? f.value) : f.value + (f.hasUnit ? " " + f.unit : "");
+  // The page shows the built-in defaults, not what this factory was started with, so the row says so.
+  return { isText: true, text: text || "None", isSelect: false, isInput: false, isToggle: false, hasUnit: false, envColor: "var(--muted)",
+    envLine: f.envLine ? "Default. To change it, set " + f.envLine + " before starting the factory." : "Default." };
+}
+function backgroundText(title, jobState, queued) { return `“${title}” is ${jobState} in the background${queued ? ` · ${queued} queued` : ""}.`; }
+function updateLabel(result) { return result?.newer ? "Update available" : result?.disabled ? "Update checks off" : result?.error ? "Couldn't check" : `Up to date (${result?.current ?? "?"})`; }
+
+// ---- Profiles: a name, a provider and a model and effort for the Guide, planning and review, and coding.
+// The built-ins (Claude, Codex) come from the server and are never changed or deleted. Editing a row makes an
+// unsaved copy, which is saved as a new custom profile or into an existing custom one before it is used.
+const PROFILE_TIERS = [["guide", "Guide"], ["plan", "Planning and review"], ["code", "Coding"]];
+const PROFILE_EFFORTS = ["low", "medium", "high", "xhigh", "max"];
+// The rows a profile shows. The built-in Claude profile sends no models (the factory keeps its own defaults), so it shows those.
+const profileRows = (p) => JSON.parse(JSON.stringify(p.models ?? p.shown ?? {}));
+function profileNameError(name, all) {
+  const n = name.trim();
+  if (!n) return "Name the new profile first.";
+  if (n.length > 40) return "Keep the name to 40 characters or fewer.";
+  if (all.some((p) => p.name.toLowerCase() === n.toLowerCase())) return "A profile named " + n + " already exists. Pick another name, or save into a custom profile below.";
+  return "";
+}
+// The custom list after saving the edited copy under name: replaces a custom profile of that name, or adds a new one.
+function profileSaveList(custom, edit, name) {
+  const entry = { name, provider: edit.provider, models: edit.models };
+  return custom.some((c) => c.name === name) ? custom.map((c) => (c.name === name ? entry : c)) : [...custom, entry];
+}
+
+function pickFiles(accept, multiple, onFiles) {
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = accept; input.multiple = multiple;
+  input.addEventListener("change", () => { const files = [...input.files]; if (files.length) onFiles(files).catch(showError); });
+  input.click();
+}
+
+// Attachments ride inside the owner's turn, as in alpha.2: the Guide reads a document inline, and an image as a file
+// path under .factory/uploads that it opens before answering.
+const ATTACH_ACCEPT = ".md,.markdown,.txt,.json,.yaml,.yml,.csv,image/png,image/jpeg,image/gif,image/webp";
+const attachLabel = (f) => (f.path ? `${f.name} · image` : `${f.name} · ${Math.ceil(f.text.length / 1000)}k chars`);
+function composeMessage(typed, files) {
+  const parts = typed ? [typed] : [];
+  for (const f of files) {
+    if (f.path) parts.push(`Attached image: ${f.path} (open this file to view it before answering)`);
+    else parts.push(`--- Attached document: ${f.name} ---\n${f.text.trim()}\n--- End of ${f.name} ---`);
+  }
+  return parts.join("\n\n");
+}
+// The thread names an attached document instead of printing all of it; the Guide still gets the whole text.
+const shownUserText = (content) => String(content)
+  .replace(/--- Attached document: (.+?) ---\n[\s\S]*?\n--- End of \1 ---/g, "Attached: $1")
+  .replace(/Attached image: \S*?\/[0-9a-z]+-([^/\s]+) \(open this file to view it before answering\)/g, "Attached image: $1");
+
+class Live extends Component {
+  constructor() {
+    super();
+    this.state = { ...this.state, runs: [], threads: { "": [] }, pid: "", nextId: 1, busy: false };
+    try { this.state.themeMode = localStorage.getItem("solofactory.theme") || "auto"; } catch {}
+    try { const panes = {}; for (const k of ["nav", "panel"]) { const w = Number(localStorage.getItem(`solofactory.pane.${k}`)); if (w > 0) panes[k] = w; } this.state.panes = panes; } catch {}
+    this.state.profilePick = {}; this.state.profEdit = null;
+    try { this.state.profileDefault = localStorage.getItem("solofactory.profile") || ""; } catch {}
+  }
+
+  // ---- Profiles. The project's pick from the Guide box wins, then the default chosen in Settings, then the built-in Claude.
+  profiles() { const p = state.config?.profiles; return p ? [...p.builtins, ...p.custom] : []; }
+  profileNamed(name) { return this.profiles().find((p) => p.name === name) || null; }
+  profile(pid = this.state.pid) {
+    let pick = this.state.profilePick[pid];
+    if (pick === undefined) { try { pick = localStorage.getItem("solofactory.profile." + pid) || ""; } catch { pick = ""; } }
+    return this.profileNamed(pick) || this.profileNamed(this.state.profileDefault) || this.profiles()[0] || null;
+  }
+  pickProfile(pid, name) {
+    try { if (pid) localStorage.setItem("solofactory.profile." + pid, name); else localStorage.setItem("solofactory.profile", name); } catch {}
+    this.setState(pid ? { profilePick: { ...this.state.profilePick, [pid]: name } } : { profileDefault: name });
+  }
+  // Settings edits the profile the Guide box shows: it sets this project's pick and the default for other projects.
+  useProfile(name, extra = {}) {
+    const pid = this.state.pid;
+    try { if (pid) localStorage.setItem("solofactory.profile." + pid, name); localStorage.setItem("solofactory.profile", name); } catch {}
+    this.setState({ ...extra, profileDefault: name, ...(pid ? { profilePick: { ...this.state.profilePick, [pid]: name } } : {}) });
+  }
+  // What a Guide turn or a new run uses: the profile's provider and models. Demo mode always uses the fixture provider.
+  ai() {
+    if (state.config?.fixtureMode) return { provider: "fixture", models: null };
+    const p = this.profile();
+    const signed = p && state.config?.providers.find((x) => x.id === p.provider && x.authenticated);
+    if (!signed) throw new Error(p ? "The " + p.name + " profile runs on " + (p.provider === "codex" ? "Codex" : "Claude Code") + ", which is not signed in here. Sign in to it, or pick another profile from the Guide box." : "Sign in to Claude Code or Codex first.");
+    return { provider: p.provider, models: p.models ?? null };
+  }
+  async saveProfiles(custom, pick) {
+    const saved = await api("/api/profiles", { method: "PUT", body: { custom } });
+    state.config.profiles.custom = saved.custom;
+    this.useProfile(pick, { profEdit: null });
+  }
+  profileSection() {
+    const s = this.state, all = this.profiles(), shown = this.profile();
+    if (!shown) return { title: "AI and models", fields: [], hasBar: false, hasPrompt: false };
+    const edit = s.profEdit && s.profEdit.base === shown.name ? s.profEdit : null;
+    const rows = edit ? edit.models : profileRows(shown);
+    const change = (tier, key, value) => {
+      const models = JSON.parse(JSON.stringify(rows));
+      if (tier === "advisor") models.advisor = value; else models[tier] = { ...models[tier], [key]: value };
+      this.setState({ profEdit: { base: shown.name, provider: shown.provider, models, name: edit?.name ?? "", error: "" } });
+    };
+    const runsOn = shown.provider === "codex" ? "Codex" : "Claude Code";
+    const field = (o) => ({ envLine: "", envColor: "var(--muted)", locked: false, isText: false, text: "", isSelect: false, isInput: false, isToggle: false, inputType: "text", min: "", max: "", hasUnit: false, unit: "", options: [], on: false, toggleText: "", ...o });
+    const efforts = PROFILE_EFFORTS.map((e) => ({ v: e, label: e[0].toUpperCase() + e.slice(1) }));
+    const fields = [field({
+      id: "cfg-profile", label: "Profile", isSelect: true, value: shown.name,
+      help: "Runs on " + runsOn + ". This project uses it, and so do new projects. The Profile button in the Guide box switches it for one project." + (shown.builtin ? " Built in: change a row to save your own copy." : ""),
+      options: all.map((p) => ({ v: p.name, label: p.name + (p.builtin ? " (built in)" : " · " + (p.provider === "codex" ? "Codex" : "Claude Code")) })),
+      // Read the pick before any setState: a repaint resets the select to the shown profile.
+      onChange: (e) => { const name = e.target.value; if (s.profEdit && !confirm("Discard the unsaved changes to " + s.profEdit.base + "?")) return this.setState({}); this.useProfile(name, { profEdit: null }); }
+    })];
+    for (const [tier, label] of PROFILE_TIERS) {
+      const v = rows[tier] || { model: "", effort: "medium" };
+      fields.push(shown.provider === "claude"
+        ? field({ id: "cfg-" + tier + "-model", label: label + " model", help: "", isSelect: true, value: v.model, options: ["opus", "sonnet", "haiku"].map((m) => ({ v: m, label: m })), onChange: (e) => change(tier, "model", e.target.value) })
+        : field({ id: "cfg-" + tier + "-model", label: label + " model", help: "", isInput: true, value: v.model, onChange: (e) => change(tier, "model", e.target.value.trim()) }));
+      fields.push(field({ id: "cfg-" + tier + "-effort", label: label + " effort", help: tier === "code" ? "More effort is slower and uses more of your subscription." : "", isSelect: true, value: v.effort, options: efforts, onChange: (e) => change(tier, "effort", e.target.value) }));
+    }
+    if (shown.provider === "claude") fields.push(field({ id: "cfg-advisor", label: "Guide advisor", help: "A second opus opinion on the Guide's answers. Off uses less of your subscription.", isToggle: true, on: rows.advisor !== false, toggleText: rows.advisor !== false ? "On" : "Off", onToggle: (e) => change("advisor", null, !!e.target.checked) }));
+    const fail = (error) => this.setState({ profEdit: { ...this.state.profEdit, error } });
+    const saveAs = (name) => this.saveProfiles(profileSaveList(state.config.profiles.custom, this.state.profEdit, name), name).catch((error) => fail(error.message));
+    const btn = (label, act, off = false) => ({ label, act, off });
+    const bar = [
+      btn("New", () => this.setState({ profEdit: { base: shown.name, provider: shown.provider, models: JSON.parse(JSON.stringify(rows)), name: "", error: "", fresh: true } })),
+      btn("Save", () => (shown.builtin ? fail("Built-in profiles cannot be changed. Name a new profile, or save into a custom one.") : saveAs(shown.name)), !edit),
+      btn("Delete", () => {
+        if (!confirm("Delete the " + shown.name + " profile? Projects using it go back to Claude.")) return;
+        this.saveProfiles(state.config.profiles.custom.filter((c) => c.name !== shown.name), "Claude").catch(showError);
+      }, !!shown.builtin)
+    ];
+    const prompt = edit ? {
+      text: edit.fresh ? "Name the new profile. It starts as a copy of " + shown.name + "; change any row before or after saving." : "You changed " + shown.name + ". Save the change to use it" + (shown.builtin ? ": built-in profiles stay as they are, so save it as a new profile or into a custom one." : "."),
+      name: edit.name, onName: (e) => this.setState({ profEdit: { ...this.state.profEdit, name: e.target.value, error: "" } }),
+      hasError: !!edit.error, error: edit.error,
+      acts: [
+        btn("Save as new profile", () => { const error = profileNameError(edit.name, all); if (error) return fail(error); saveAs(edit.name.trim()); }),
+        ...state.config.profiles.custom.filter((c) => c.provider === shown.provider).map((c) => btn("Save to " + c.name, () => saveAs(c.name))),
+        btn("Discard changes", () => this.setState({ profEdit: null }))
+      ]
+    } : null;
+    return { title: "AI and models", hasNote: false, note: "", fields, hasBar: true, bar, hasPrompt: !!prompt, prompt };
+  }
+
+  async componentDidMount() {
+    try {
+      state.config = await api("/api/config");
+      await this.loadDraft();
+      await this.refresh();
+      this.checkUpdate();
+    } catch (error) { showError(error); }
+    this.timer = setInterval(() => { if (!this.polling) this.refresh().catch(() => {}); }, 2000);
+  }
+
+  componentDidUpdate(props, prev) {
+    super.componentDidUpdate(props, prev);
+    if (prev.themeMode !== this.state.themeMode) { try { localStorage.setItem("solofactory.theme", this.state.themeMode); } catch {} }
+    if (prev.docEdits !== this.state.docEdits) this.saveEdits();
+  }
+
+  // An edited section of the brief under revision, or of the draft spec, goes straight into the interview draft.
+  saveEdits() {
+    const { viewer } = this.state;
+    const run = this.state.runs.find((r) => r.state === "revising" && r.title === viewer);
+    if (!run && viewer !== DRAFT_SPEC) return;
+    const pid = run ? run.pid : this.state.pid;
+    const key = pid + "|" + viewer;
+    const out = briefEdits(this.docsFor(pid).find((d) => d.name === viewer), this.state.docEdits[key]);
+    if (!Object.keys(out).length) return;
+    api("/api/interview/draft", { method: "PATCH", body: { edits: out, provider: state.config?.fixtureMode ? "fixture" : this.profile(pid)?.provider } }).then((saved) => {
+      const guide = saved?.draft?.guide ?? saved?.guide;
+      if (guide) state.guide = guide;
+      // The saved brief now holds the edit; drop the overlay, since section positions shift as the brief fills in.
+      const rest = { ...this.state.docEdits }; delete rest[key];
+      this.setState({ docEdits: rest });
+    }).catch(showError);
+  }
+
+  async loadDraft() {
+    const draft = (await api("/api/interview/draft", { allow: [404] }).catch(() => null))?.draft;
+    state.messages = draft?.messages ?? [];
+    state.guide = draft?.guide ?? state.config.opening;
+    state.revises = draft?.revises ?? null;
+    state.replaces = draft?.replaces ?? null;
+    this.sync();
+  }
+
+  async refresh() {
+    this.polling = true;
+    try {
+      const projects = await api("/api/projects");
+      state.projects = projects.projects;
+      state.project = projects.active;
+      state.board = projects;
+      [state.jobs, state.work] = await Promise.all([api("/api/jobs").then((r) => r.jobs), api("/api/board").catch(() => null)]);
+      this.sync();
+      // The shown run's events and spend feed the Q&A, the activity list and the recovery box.
+      const r = this.shownRun();
+      if (r?.jobId) {
+        const [detail, telemetry] = await Promise.all([api(`/api/jobs/${r.jobId}`).catch(() => null), api(`/api/jobs/${r.jobId}/telemetry`).catch(() => null)]);
+        if (detail?.job) { this.det = { jobId: r.jobId, job: detail.job, events: detail.events ?? [], telemetry }; this.setState({}); }
+      }
+      const shipped = this.state.panel === "app" ? state.jobs.find((job) => job.state === "completed" && job.deployment?.status === "live") : null;
+      if (shipped) { const tel = await api(`/api/jobs/${shipped.id}/telemetry`).catch(() => null); this.appTel = { jobId: shipped.id, app: tel?.app ?? null }; this.setState({}); }
+    } finally { this.polling = false; }
+  }
+
+  // The same run the panel shows (class renderVals): the selected one, else the active one, else the newest.
+  shownRun() {
+    const s = this.state;
+    const mine = s.runs.filter((r) => r.pid === s.pid && r.state !== "dismissed");
+    return s.runs.find((x) => x.id === s.selRun && x.pid === s.pid && x.state !== "dismissed") || this.activeIn(s.runs, s.pid) || mine[mine.length - 1] || null;
+  }
+
+  // Q&A, activity and recovery for the shown run. Fields the template does not find stay hidden.
+  detailVals(r) {
+    const det = this.det?.jobId === r.jobId ? this.det : null;
+    if (!det) return {};
+    const s = this.state, job = det.job, events = det.events, spend = det.telemetry?.spend;
+    const parked = PARKED.includes(job.state), next = job.nextAction, phase = job.recoveryPhase, usage = repairUsage(job);
+    const actionable = next && !["none", "factory-fix"].includes(next.action);
+    const quiet = lastActivityAge(job, events);
+    const recent = events.findLast((entry) => eventKind(entry) !== "stage");
+    const moving = job.state === "completed" ? ["ok", "No; the run is finished."]
+      : job.state === "queued" ? ["muted", "Not yet; it is waiting in the queue."]
+        : parked ? ["bad", `No. ${job.state === "paused" ? "Paused on request." : job.error?.message ?? "The run stopped."}`]
+          : quiet != null && quiet >= QUIET_WARN_MS ? [quiet >= QUIET_BAD_MS ? "bad" : "warn", `Quiet for ${formatSpan(quiet)}. ${job.supervision?.status ?? ""}; the safety cap still bounds this turn.`]
+            : ["ok", recent ? `Yes. Last activity: ${recent.message || recent.type}, ${formatSpan(Date.now() - Date.parse(recent.at))} ago.` : `Yes. ${job.stage ?? job.state}.`];
+    const healthy = [job.supervision?.status === "Progress needs checking" || (usage && usage.feature[0] >= usage.feature[1]) ? "warn" : "ok",
+      usage ? `This feature: ${usage.feature[0]} of ${usage.feature[1]} repairs used. This plan: ${usage.plan[0]} of ${usage.plan[1]} repairs used.` : `Whole run: ${plural(job.attempt ?? 0, "repair")}.`];
+    const steps = this.kinds()[r.kind].steps.length, done = r.state === "shipped" ? steps : Math.min(r.idx, steps);
+    const elapsed = runningMs(Date.parse(job.startedAt || job.createdAt), job.completedAt ? Date.parse(job.completedAt) : Date.now(), job.idleGaps);
+    const far = ["ok", `${done} of ${steps} steps done${phase?.plan ? `; repair plan: ${phase.done.length} of ${phase.plan.slices.length} features verified` : ""}. ${formatSpan(elapsed)} running.`];
+    const needs = parked && actionable ? ["bad", `Yes: ${next.label}${next.reason ? `. ${next.reason}` : ""}`]
+      : phase?.status === "ready" ? ["warn", "Yes: review and approve the repair plan."]
+        : parked ? ["bad", "Yes: the run stopped."] : ["ok", "No."];
+    const advice = parked && (next?.action === "resume" || job.state === "paused") ? spend?.resume : null;
+    const qa = [["Moving?", moving], ["Healthy?", healthy], ["How far?", far], ["Needs you?", needs], ...(advice ? [["Safe to resume?", [advice.tone, advice.text]]] : [])]
+      .map(([q, [tone, a]]) => ({ q, a, color: TONE[tone] || TONE.ok }));
+
+    const filter = s.streamFilter || "all";
+    const stream = streamRows(events, filter, 100).slice(0, 100).map((entry) => ({
+      time: new Date(entry.at).toLocaleTimeString([], { hour12: false }), kind: eventKind(entry),
+      text: String(entry.message || entry.type).slice(0, 300), color: /fail|error/i.test(entry.type) ? "var(--red-text)" : "var(--text2)",
+    }));
+    const chips = [["all", "All"], ["agent", "Agent"], ["file", "Files"], ["gate", "Gates"], ["stage", "Stages"]].map(([k, label]) => ({
+      label, pressed: String(filter === k), pick: () => this.setState({ streamFilter: k }),
+      bg: filter === k ? "var(--inv)" : "transparent", fg: filter === k ? "var(--inv-fg)" : "var(--fg)", border: filter === k ? "var(--inv)" : "var(--line2)",
+    }));
+
+    const fp = featureProgress(job);
+    // A parked run restarts from any finished feature after the first (the first one is a fresh run: Start over).
+    const restartable = PARKED.includes(job.state), order = job.sliceDone || [];
+    const features = (fp?.list || []).map((f) => ({ ...f, color: f.state === "To do" ? "var(--muted)" : "var(--fg)", weight: f.state === "Now" ? "600" : "400",
+      canRestart: restartable && f.state === "Done" && order.indexOf(f.id) >= 1, restart: () => this.post(r, "restart", { fromSlice: f.id }) }));
+    return { hasFeatures: features.length > 0, features, featureHead: fp ? `Features · ${fp.done} of ${fp.total} done` : "", hasQa: job.state !== "queued", qa, hasStream: job.state !== "queued", stream, streamEmpty: !stream.length, chips,
+      hasRecov: parked || Boolean(phase && job.state !== "completed"), recov: parked || phase ? this.recovVals(r, job, spend, next, phase, usage, parked) : null };
+  }
+
+  // Recovery tools, as the old hub's recovery card offered them: spend, planner, plan amendment, waivers, inputs.
+  recovVals(r, job, spend, next, phase, usage, parked) {
+    const s = this.state, notes = s.recovNotes || {}, note = notes[r.jobId] || "";
+    const send = (endpoint, body) => this.post(r, endpoint, body);
+    const acts = [];
+    const planner = (label) => acts.push({ ...BTN.plain, label, act: () => send("recovery-plan", { guidance: note }) });
+    if (phase?.status === "ready") acts.push({ ...BTN.main, label: "Approve and continue repairs", act: () => send("recovery-start", { planDigest: phase.planDigest }) });
+    let amend = null;
+    if (next?.action === "amend-plan" && phase) amend = this.amendVals(r, next, phase, true);
+    else if (next?.action === "retry-plan" || next?.action === "revise-inputs") planner(next.label);
+    else if (next?.action === "prepare-plan" || next?.action === "approve-plan") planner("Prepare repair plan");
+    if (next?.action === "approve-plan" && phase && next.alternatives?.some((item) => item.action === "amend-plan")) amend = this.amendVals(r, next, phase, false);
+    if (amend?.alt) planner(amend.alt.label);
+    const open = s.recovOpen || {};
+    const waives = (next?.alternatives ?? []).filter((item) => item.action === "waive-proof").map((item, i) => ({
+      reason: item.reason, hasNote: Boolean(item.repairerNote), note: item.repairerNote || "", open: Boolean(open[r.jobId + "|" + i]), expanded: String(Boolean(open[r.jobId + "|" + i])),
+      toggleLabel: open[r.jobId + "|" + i] ? "Hide what the last repair turn said" : "Show what the last repair turn said",
+      toggle: () => this.setState({ recovOpen: { ...open, [r.jobId + "|" + i]: !open[r.jobId + "|" + i] } }),
+      label: item.label, act: () => note.trim() ? send("waive-proof", { proof: item.proof, reason: note }) : this.showInfo(item.label, "Write why in the note box first. It is recorded as the reason."),
+    }));
+    const prior = parked ? previousReleaseNote(job) : null;
+    if (prior?.relaunch) acts.push({ ...BTN.plain, label: prior.label, act: () => api(`/api/jobs/${r.jobId}/dismiss`, { method: "POST", body: {} }).then(() => api(`/api/jobs/${prior.relaunch}/relaunch`, { method: "POST", body: {} })).then(() => this.refresh()).catch(showError) });
+    const lists = [];
+    if (phase?.status === "plan_failed" && phase.planBlockers?.length) lists.push({ title: "Plan review blockers", rows: phase.planBlockers });
+    if (phase?.plan) lists.push({ title: "Repair features", rows: phase.plan.slices.map((slice) => `${phase.done.includes(slice.id) ? "Verified" : phase.current === slice.id ? "Current" : "Pending"}: ${slice.title}`) });
+    const actionable = next && !["none", "factory-fix"].includes(next.action);
+    return {
+      title: job.recovery?.title || (phase?.status === "planning" ? "Preparing repair plan" : "Recovery"),
+      summary: job.recovery?.summary || (phase?.plan ? `${phase.done.length} of ${phase.plan.slices.length} repair features verified.` : ""),
+      spend: spend && parked ? `Spent so far: ${plural(spend.workers, "worker")}, ${count(spend.tokens)} tokens, cost ${spend.costUsd == null ? "unknown" : `$${spend.costUsd.toFixed(2)}`}, ${formatSpan(spend.elapsedMs)} elapsed.${spend.grantTurns == null ? "" : ` Approving grants up to ${plural(spend.grantTurns, "repair turn")}.`}${spend.idleApprovals ? ` Last ${spend.idleApprovals === 1 ? "approval" : `${spend.idleApprovals} approvals`} verified no features.` : ""}` : "",
+      prior: prior?.text || "",
+      allowance: phase?.status === "ready" && phase.plan ? `Repair allowance: up to ${2 * (phase.plan.slices.length + 1)} attempts (2 per feature plus 2 for the full final review).` : "",
+      lists, amend, waives, acts, hasActs: acts.length > 0 || actionable,
+      hasNote: acts.length > 0 || waives.length > 0,
+      note, onNote: (e) => this.setState({ recovNotes: { ...notes, [r.jobId]: e.target.value } }),
+      canInput: Boolean(actionable),
+      // Owner-added specs join the run's inputs; the next plan, review or Resume sees them.
+      addInput: () => pickFiles("", true, async (files) => {
+        for (const chosen of files) {
+          const response = await fetch(`/api/jobs/${r.jobId}/inputs?name=${encodeURIComponent(chosen.name)}`, { method: "POST", body: chosen });
+          const body = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(body.error || `Upload failed with HTTP ${response.status}.`);
+        }
+        this.showInfo("Added to this run", `${plural(files.length, "file")} added. The next plan, review or Resume reads ${files.length === 1 ? "it" : "them"}.`);
+        await this.refresh();
+      }),
+      usage: usage ? `Repair attempts used: This feature: ${usage.feature[0]} of ${usage.feature[1]} · Plan: ${usage.plan[0]} of ${usage.plan[1]}` : "",
+    };
+  }
+
+  // A corrected repair plan the owner uploads: read and checked here, reviewed once by the server (recovery-review).
+  amendVals(r, next, phase, blocked) {
+    if (!(state.amendment?.jobId === r.jobId && state.amendment.phaseId === phase.id)) state.amendment = null;
+    const pending = state.amendment;
+    return {
+      note: blocked ? `${next.reason} ${phase.corrections ?? 0} automatic correction${phase.corrections === 1 ? "" : "s"} used; no repairs have started.` : next.alternatives.find((item) => item.action === "amend-plan").reason,
+      packet: `/api/jobs/${r.jobId}/recovery-plan-packet`, packetLabel: blocked ? "Download plan help packet" : "Download plan packet for a replacement",
+      status: pending ? pending.error || `${pending.name} (${pending.size.toLocaleString()} bytes) will be reviewed once, for recovery phase ${phase.id}.` : "No file selected.",
+      statusColor: pending?.error ? "var(--red-text)" : "var(--muted)",
+      off: !pending?.plan, opacity: pending?.plan ? "1" : "0.45",
+      alt: blocked && next.alternatives?.[0] ? next.alternatives[0] : null,
+      altReason: blocked ? next.alternatives?.[0]?.reason || "" : "",
+      choose: () => pickFiles(".json,application/json", false, async ([chosen]) => {
+        const entry = state.amendment = { jobId: r.jobId, phaseId: phase.id, name: chosen.name, size: chosen.size, plan: null, error: null };
+        if (chosen.size > MAX_AMENDED_PLAN_BYTES) entry.error = `${chosen.name} is larger than ${MAX_AMENDED_PLAN_BYTES.toLocaleString()} bytes.`;
+        else {
+          try { const plan = JSON.parse(await chosen.text()); if (!plan || typeof plan !== "object" || Array.isArray(plan)) throw new Error("not an object"); entry.plan = plan; }
+          catch { entry.error = `${chosen.name} is not a JSON repair plan.`; }
+        }
+        this.setState({});
+      }),
+      submit: async () => {
+        if (!pending?.plan) return;
+        try { await api(`/api/jobs/${r.jobId}/recovery-review`, { method: "POST", body: { phaseId: pending.phaseId, plan: pending.plan } }); state.amendment = null; await this.refresh(); }
+        catch (error) { pending.error = error.message; this.setState({}); showError(error); }
+      },
+    };
+  }
+
+  // Rebuilds design A's runs and threads from the factory's jobs and the interview draft.
+  sync() {
+    const runs = [], threads = {};
+    let id = 1;
+    const runOf = (pid, job) => {
+      // A run set aside by a resubmitted revision or Start over (the server marks it dismissed and rolls its files
+      // back) is replaced by the new run, so one spec shows one run.
+      if (job.dismissed) return;
+      const st = job.id === state.revises ? "revising" : job.pendingPause ? "pausing" : JOB_STATE[job.state] || "building";
+      const run = { id: id++, jobId: job.id, pid, kind: "feature", title: job.brief?.workingName || job.brief?.promise || job.workingName || "Run", state: st, idx: jobIdx(job), repairs: 0, job };
+      runs.push(run);
+      threads[pid].push({ id: id++, type: "pick", kind: "feature", sent: true, ask: run.title, runId: run.id }, { id: id++, type: "run", runId: run.id });
+    };
+    for (const p of state.projects) {
+      threads[p.id] = [];
+      if (p.id === state.project) [...state.jobs].reverse().forEach((job) => runOf(p.id, job));
+      // Another project's runs come from the board (every project, by state); its newest run if the board is missing.
+      else if (state.work) Object.values(state.work.columns).flat().filter((c) => c.projectId === p.id && !c.dismissed)
+        .forEach((c) => runOf(p.id, { ...c, id: c.jobId, brief: { workingName: c.workingName, promise: c.promise } }));
+      else if (p.lastRun) runOf(p.id, p.lastRun);
+    }
+    const here = threads[state.project] ?? (threads[state.project || ""] = []);
+    const talk = state.messages.length ? state.messages : [{ role: "assistant", content: state.guide?.message ?? "" }];
+    for (const m of talk) here.push({ id: id++, type: m.role === "user" ? "user" : "guide", text: m.content, images: m.images });
+    if (this.state.busy) here.push({ id: id++, type: "guide", text: "Thinking…" });
+    // A revision draft resubmits from its run, so it is not also a new plan waiting in the chat.
+    else if (state.guide?.status === "ready" && !state.revises) here.push({ id: id++, type: "pick", kind: "brief", sent: false, ask: state.guide.brief?.workingName || "The brief" });
+    const pid = this.state.pid && threads[this.state.pid] ? this.state.pid : state.project || "";
+    this.setState({ runs, threads, nextId: id, pid });
+  }
+
+  kinds() {
+    const k = super.kinds();
+    return { ...k, brief: { ...k.prd, label: "Full brief", cta: "Send to the factory" } };
+  }
+
+  why(kind, proj) {
+    if (kind === "brief") return "The Guide has what it needs. Sending runs one last review of the brief, then queues it.";
+    return super.why(kind, proj);
+  }
+
+  projectList() {
+    const list = (state.projects || []).map((p) => {
+      const shipped = p.id === state.project ? state.jobs.find((job) => job.state === "completed" && job.deployment?.url) : null;
+      const url = shipped?.deployment?.url || "";
+      return { id: p.id, name: p.name, hasDocs: p.runCount > 0, url, release: url ? "release " + p.runCount : "", live: url ? "Live at " + url : p.runCount ? "Built here" : "Not built yet" };
+    });
+    return list.length ? list : [{ id: "", name: "No project yet", hasDocs: false, live: "Not built yet" }];
+  }
+
+  startNext(runs) { return runs; }
+  tick() {}
+  specName(r) { return r.title; }
+
+  runLine(r, runs) {
+    if (r.state === "stuck") return "Parked · " + (r.job?.error?.message || "needs you").slice(0, 90);
+    const f = featureProgress(r.job)?.now, fp = featureProgress(r.job);
+    // Steps 3-5 (Build, Gates, Review) run once per feature: name the feature they are on.
+    const each = f && r.idx >= JOB_IDX.building && r.idx <= JOB_IDX.reviewing && ["building", "pausing", "paused"].includes(r.state);
+    return super.runLine(r, runs) + (each ? ` · Feature ${f.n} of ${fp.total}: ${f.title}` : "");
+  }
+
+  docsFor(pid) {
+    const runs = this.state.runs.filter((r) => r.pid === pid && r.job?.brief);
+    const docs = runs.slice().reverse().map((r) => ({
+      name: r.title, tag: "Brief", note: r.state === "revising" ? "Draft of the next revision" : "The brief this run was queued with",
+      sections: briefSections(r.state === "revising" && state.guide?.brief ? state.guide.brief : r.job.brief)
+    }));
+    // The brief the Guide is writing shows as soon as it holds anything, and follows every turn and edit.
+    const draft = pid === (state.project || "") && !state.revises ? briefSections(state.guide?.brief) : [];
+    if (draft.length) docs.unshift({ name: DRAFT_SPEC, tag: "Draft", note: state.guide.status === "ready" ? "Ready to send. Read or edit it first." : "Fills in as you talk with the Guide. Not sent yet.", sections: draft });
+    return docs;
+  }
+
+  // The Live app panel: the project's shipped run, its deployment state and its telemetry.
+  appVals() {
+    const job = state.jobs.find((j) => j.state === "completed" && j.deployment?.url);
+    if (!job) return {};
+    const up = job.deployment.status === "live", r = { jobId: job.id };
+    const t = up && this.appTel?.jobId === job.id ? this.appTel.app : null;
+    // Routes come as { path: { count, errors, averageLatencyMs } }; the factory's own metrics polling is left out.
+    const routes = !t ? [] : (Array.isArray(t.routes) ? t.routes : Object.entries(t.routes || {}).map(([path, x]) => ({ method: "", path, count: typeof x === "number" ? x : x?.count ?? 0 })))
+      .filter((x) => !x.path.startsWith("/_factory/")).sort((a, b) => b.count - a.count).slice(0, 8);
+    return {
+      up, down: !up, statusText: up ? "Live" : "Stopped", dot: up ? "var(--inv)" : "var(--muted)",
+      stop: () => this.post(r, "stop-app"), relaunch: () => this.post(r, "relaunch"),
+      hasStats: !!t, stats: t ? [{ label: "Requests", value: String(t.requests?.total ?? 0) }, { label: "Errors", value: String(t.requests?.errors ?? 0) },
+        { label: "Average response", value: t.latencyMs?.average != null ? `${t.latencyMs.average < 10 ? t.latencyMs.average.toFixed(1) : Math.round(t.latencyMs.average)} ms` : "—" }, { label: "Uptime", value: t.uptimeSeconds != null ? formatSpan(t.uptimeSeconds * 1000) : "—" }] : [],
+      hasRoutes: routes.length > 0, routes,
+    };
+  }
+
+  post(r, action, body = {}) {
+    return api(`/api/jobs/${r.jobId}/${action}`, { method: "POST", body }).then(() => this.refresh()).catch(showError);
+  }
+
+  // The server's continuation policy decides: nextAction?.action !== "resume" means Resume would not move it.
+  resumeOf(r) { return r.job?.nextAction?.action !== "resume" && r.state !== "paused" ? "retry" : "resume"; }
+
+  // Planning steps go to the Guide's repair planner with the owner's note; a blocked plan waits for an upload.
+  repairOf(r) {
+    const next = r.job?.nextAction;
+    if (next?.action === "amend-plan") return this.showInfo("Upload a corrected plan", "The planner could not make a plan it trusts. Use the recovery box under the run: download the plan help packet, then upload the corrected plan.");
+    if (next?.action === "retry-plan" || PLAN_STEPS.includes(next?.action)) return this.post(r, "recovery-plan", { guidance: this.state.recovNotes?.[r.jobId] || "" });
+    return this.post(r, "retry");
+  }
+
+  async reviseRun(r) {
+    const draft = (await api("/api/interview/draft", { allow: [404] }).catch(() => null))?.draft;
+    if (draft?.revises !== r.jobId) await api(`/api/jobs/${r.jobId}/revise`, { method: "POST", body: {} });
+    await this.loadDraft();
+    this.setState({ viewer: r.title, viewerEdit: true });
+  }
+
+  async discardDraft() {
+    await api("/api/interview/draft", { method: "DELETE", allow: [404] });
+    this.setState({ viewer: "", viewerEdit: false, docEdits: {}, docAdds: {} });
+    await this.loadDraft();
+  }
+
+  // The recovery packet goes to the clipboard; the recovery-plan-packet downloads from the recovery box.
+  async copyPacket(r) {
+    const response = await fetch(`/api/jobs/${r.jobId}/recovery-packet`);
+    if (!response.ok) throw new Error(`Recovery packet failed with HTTP ${response.status}.`);
+    await navigator.clipboard.writeText(await response.text());
+    this.showInfo("Copy recovery packet", "Copied. Paste it into Claude Code or Codex for help.");
+  }
+
+  wire(c, r) {
+    const acts = {
+      "Remove from queue": () => this.post(r, "cancel"),
+      "Cancel run": () => this.post(r, "cancel"),
+      "Pause after this step": () => this.post(r, "pause"),
+      "Resume": () => this.post(r, this.resumeOf(r)),
+      "Let the Guide plan a repair": () => this.repairOf(r),
+      "Revise the spec": () => this.reviseRun(r).catch(showError),
+      "Revise and resubmit": () => this.reviseRun(r).catch(showError),
+      "Resubmit to the factory": () => this.queue().catch(showError),
+      "Discard changes": () => this.discardDraft().catch(showError),
+      "Copy recovery packet": () => this.copyPacket(r).catch(showError),
+      "Report this run": () => this.openFeedback("problem", r),
+      "Start over from scratch": () => this.post(r, "retry"),
+      "Dismiss": () => this.post(r, "dismiss"),
+    };
+    return { ...c, act: acts[c.label] || (() => later(c.label)) };
+  }
+  // The server cancels only active runs; a parked one (stuck or paused) is dismissed instead, as in the old hub.
+  runCtrls(r) { return super.runCtrls(r).filter((c) => !(c.label === "Cancel run" && (r.state === "stuck" || r.state === "paused"))).map((c) => this.wire(c, r)); }
+  moreCtrls(r) { return super.moreCtrls(r).map((c) => this.wire(c, r)); }
+
+  async turn(content, review = false, images = []) {
+    const ai = this.ai();
+    if (!review) state.messages.push({ role: "user", content, ...(images.length && { images }) });
+    this.setState({ busy: true }); this.sync();
+    try {
+      const guide = await api("/api/interview/turn", { method: "POST", body: { ...ai, messages: state.messages, ...(review && { review: true }) } });
+      state.guide = guide;
+      state.messages.push({ role: "assistant", content: guide.message });
+    } catch (error) {
+      if (!review) state.messages.pop();
+      throw error;
+    } finally { this.setState({ busy: false }); this.sync(); }
+  }
+
+  submit(text) {
+    const t = (text || "").trim(), files = this.state.attached || [];
+    if ((!t && !files.length) || this.state.busy) return;
+    this.setState({ draft: "", attached: [] });
+    const go = this.state.pid && this.state.pid !== state.project ? this.select(this.state.pid) : Promise.resolve();
+    go.then(() => this.turn(composeMessage(t, files), false, files.filter((f) => f.url).map((f) => f.url))).catch(showError);
+  }
+
+  // Images upload into the selected project's .factory/uploads, so that project is made active first.
+  attach() {
+    pickFiles(ATTACH_ACCEPT, true, async (files) => {
+      if (this.state.pid && this.state.pid !== state.project) await this.select(this.state.pid);
+      for (const file of files) {
+        try {
+          let entry;
+          if (file.type.startsWith("image/")) {
+            const response = await fetch(`/api/interview/upload?name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+            const body = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(body.error || `Upload failed with HTTP ${response.status}.`);
+            entry = { name: file.name, path: body.path, url: URL.createObjectURL(file) };
+          } else entry = { name: file.name, text: await file.text() };
+          this.setState((st) => ({ attached: [...(st.attached || []), entry] }));
+        } catch (error) { showError(new Error(`Could not read ${file.name}: ${error.message}`)); }
+      }
+    });
+  }
+
+  sendPick() { this.queue().catch(showError); }
+
+  // Same order as before: a final review turn, stop if it changed the brief, then queue. One send at a time: a
+  // press while the review runs used to start another identical review (three ran at once on 2026-11-14).
+  async queue() {
+    if (this.sending) return;
+    this.sending = true;
+    try { await this.sendBrief(); } finally { this.sending = false; }
+  }
+
+  async sendBrief() {
+    const before = state.guide?.brief;
+    // A second press on a brief the review left unchanged but unmarked queues it as shown (the old hub's Queue anyway).
+    const anyway = state.queueAnyway === JSON.stringify(before);
+    if (!state.guide?.reviewed && !anyway) {
+      await this.turn("", true);
+      if (state.guide?.status !== "ready" || briefChanged(before, state.guide.brief)) {
+        // A ready review that rewrote the brief already read it: the next press queues that brief as shown, without
+        // reviewing it a second time, unless the owner or the Guide changes it first.
+        state.queueAnyway = state.guide?.status === "ready" ? JSON.stringify(state.guide.brief) : null;
+        this.showInfo("Check the brief", "The final review changed the brief or asked a question. Read the Guide's reply, then send again; an unchanged ready brief is not reviewed twice.");
+        return;
+      }
+      if (!state.guide.reviewed) {
+        state.queueAnyway = JSON.stringify(state.guide.brief);
+        this.showInfo("Not fully reviewed", "The Guide's review did not confirm this brief as it stands. Press the button again to queue it as shown, or change it.");
+        return;
+      }
+    }
+    state.queueAnyway = null;
+    const body = { ...this.ai(), transcript: state.messages, coverage: state.guide.coverage, brief: state.guide.brief, ...(state.revises && { revises: state.revises, replaces: state.replaces }) };
+    try { await api("/api/jobs", { method: "POST", body }); }
+    catch (error) {
+      if (error.body?.code !== "revise_blocker_changed") throw error;
+      state.replaces = error.body.replaces;
+      await api("/api/jobs", { method: "POST", body: { ...body, replaces: state.replaces } });
+    }
+    state.amendment = null;
+    this.setState({ viewer: "", viewerEdit: false, docEdits: {}, docAdds: {}, panel: "run" });
+    await this.loadDraft();
+    await this.refresh();
+  }
+
+  // ---- Feedback form. Feedback opens as an improvement, Report this run as a problem with that run's diagnostics.
+  openFeedback(mode, r = null) {
+    const jobState = r?.job?.state;
+    const diag = REPORTABLE.includes(jobState);
+    this.setState({ navOpen: false, fb: { mode, jobId: r?.jobId ?? null, diag, diagOn: diag && jobState !== "cancelled", f: { frequency: "sometimes", area: "other" }, preview: null, error: "", busy: false, copy: "Copy report", email: "Copy & open email" } });
+  }
+  patchFb(patch) { this.setState((st) => ({ fb: st.fb && { ...st.fb, ...patch } })); }
+  async previewFeedback() {
+    const fb = this.state.fb;
+    const missing = feedbackMissing(fb.mode, fb.f);
+    if (missing.length) return this.patchFb({ error: "Fill in " + missing.join(", ") + "." });
+    this.patchFb({ busy: true, error: "" });
+    try {
+      const body = { mode: fb.mode, fields: feedbackFields(fb.mode, fb.f), jobId: fb.jobId, includeDiagnostics: Boolean(fb.jobId && fb.diag && fb.diagOn) };
+      this.patchFb({ preview: await api("/api/feedback/preview", { method: "POST", body }), busy: false });
+    } catch (error) { this.patchFb({ error: error.message, busy: false }); }
+  }
+  async copyFeedback(key) {
+    const md = this.state.fb?.preview?.markdown;
+    if (!md) return false;
+    try { await navigator.clipboard.writeText(md); this.patchFb({ [key]: key === "email" ? "Copied: paste into the email" : "Copied" }); return true; }
+    catch {
+      // The clipboard needs a secure context; a LAN http:// page selects the preview instead.
+      const pre = document.getElementById("fb-preview");
+      if (pre) window.getSelection().selectAllChildren(pre);
+      this.patchFb({ [key]: "Press ⌘C / Ctrl+C to copy" });
+      return false;
+    }
+  }
+  feedbackVals() {
+    const fb = this.state.fb;
+    if (!fb) return { open: false, f: {}, on: {} };
+    const issues = state.config?.issues;
+    const md = fb.preview?.markdown || "";
+    const links = feedbackLinks(issues, fb.mode, fb.f.title, fb.preview?.fingerprint ?? null);
+    const clear = { preview: null, copy: "Copy report", email: "Copy & open email" };
+    const on = {};
+    for (const k of [...FEEDBACK_KEYS.problem, ...FEEDBACK_KEYS.improvement]) on[k] = (e) => this.patchFb({ f: { ...this.state.fb.f, [k]: e.target.value }, ...clear });
+    const mode = (m, label, help) => ({ label, help, checked: fb.mode === m ? "true" : "false", bg: fb.mode === m ? "var(--raise)" : "transparent", border: fb.mode === m ? "var(--fg)" : "var(--line2)", pick: () => this.patchFb({ mode: m, error: "", ...clear }) });
+    return {
+      open: true, f: fb.f, on, title: fb.jobId ? "Report this run" : "Feedback",
+      modes: [mode("problem", "Problem", "Something broke or went wrong"), mode("improvement", "Improvement", "Something could work better")],
+      problem: fb.mode === "problem", improvement: fb.mode === "improvement",
+      hasDiag: fb.diag, diagChecked: fb.diagOn ? "true" : "false", onDiag: (e) => this.patchFb({ diagOn: e.target.checked, ...clear }),
+      privacy: `Email your report to support@coachlou.com with the subject SoloFactory Feedback. Nothing is sent anywhere until you send the email${issues ? " or open GitHub" : ""} yourself.`,
+      hasError: !!fb.error, error: fb.error,
+      preview: md || "Choose Preview report to see exactly what will be copied.", ready: !!md, notReady: !md, redacted: !!fb.preview?.redacted,
+      previewLabel: fb.busy ? "Previewing…" : "Preview report", busy: fb.busy,
+      onPreview: () => { if (!this.state.fb.busy) this.previewFeedback(); },
+      copyLabel: fb.copy, emailLabel: fb.email,
+      onCopy: () => this.copyFeedback("copy"),
+      onEmail: async () => { if (await this.copyFeedback("email")) window.location.href = FEEDBACK_MAILTO; },
+      hasIssues: !!links,
+      onSearch: () => links && window.open(links.search, "_blank", "noopener"),
+      onGithub: () => links && window.open(links.github, "_blank", "noopener"),
+      close: () => this.setState({ fb: null }),
+      onKey: (e) => { if (e.key === "Escape") { e.preventDefault(); this.setState({ fb: null }); } }
+    };
+  }
+
+  // ---- Update notice. A page load reuses the server's recent answer; a manual check asks again.
+  async checkUpdate(manual = false) {
+    const result = await api(`/api/update${manual ? "?force=1" : ""}`).catch(() => ({ error: true }));
+    if (result.newer) { this.upd = result; if (manual) this.showUpdate(); this.setState({}); return; }
+    if (!manual) return;
+    this.updFlash = updateLabel(result); this.setState({});
+    setTimeout(() => { this.updFlash = ""; this.setState({}); }, 4000);
+  }
+  showUpdate() {
+    const u = this.upd;
+    this.setState({ navOpen: false, info: { title: "Update available", text: `SoloFactory ${u.latest} is available. You have ${u.current}. Paste this into Claude Code or Codex when you are ready. Nothing updates by itself.`, pre: u.prompt || "" } });
+  }
+
+  async select(id) {
+    await api("/api/projects/select", { method: "POST", body: { id } });
+    await this.refresh();
+    await this.loadDraft();
+  }
+
+  renderVals() {
+    const v = super.renderVals();
+    const s = this.state;
+    const list = this.projectList();
+    v.projects.forEach((p, i) => {
+      const id = list[i]?.id;
+      const go = p.go;
+      p.go = () => { go(); if (id && id !== state.project) this.select(id).catch(showError); };
+    });
+    if (v.np.open) {
+      v.np.create = () => {
+        const name = (s.np.name || "").trim();
+        if (!name) return;
+        if (s.np.mode === "adopt") return later("Adopt an existing app");
+        if (s.np.where === "custom") return later("A project somewhere else");
+        this.setState({ np: null });
+        api("/api/projects", { method: "POST", body: { name } }).then(() => this.refresh()).then(() => this.loadDraft()).catch(showError);
+      };
+    }
+    // Only AI and models is live: it is the profile picker. The other sections are information only for now, so they
+    // show their values as text, not as controls that look editable.
+    for (const sec of v.cfg.sections) for (const f of sec.fields) Object.assign(f, readOnlyField(f));
+    v.cfg.sections[0] = this.profileSection();
+    v.cfg.status = this.state.profEdit ? "Unsaved profile changes" : "Profiles and models";
+    // The pick card names the draft spec the Guide wrote and opens it in Documents, so it can be read and revised before sending.
+    const hasDraft = this.docsFor(this.state.pid).some((d) => d.name === DRAFT_SPEC);
+    for (const m of v.messages) {
+      m.alts = [];
+      if (!m.isPick) continue;
+      m.read = hasDraft ? [DRAFT_SPEC] : ["your answers so far"];
+      m.hasDraft = hasDraft && m.open;
+      m.review = () => this.setState({ panel: "docs", viewer: DRAFT_SPEC, viewerEdit: false });
+    }
+    // Queue order lives on the server: each move swaps the run with its neighbour in the project's queue.
+    const move = (rid, direction) => { const r = this.state.runs.find((x) => x.id === rid); if (r?.jobId) this.post(r, "queue-move", { direction }); };
+    for (const q of v.queue) q.up = () => move(q.id, "up");
+    // A row from another project switches to it, then opens the run there.
+    const names = Object.fromEntries(state.projects.map((p) => [p.id, p.name]));
+    for (const g of v.groups) for (const it of g.items) if (it.away) {
+      it.state = (names[it.pid] || it.pid) + " · " + it.state;
+      it.aria = "Switch to " + (names[it.pid] || it.pid) + " and open the run: " + it.title;
+      it.open = () => { this.setState({ pid: it.pid, selRun: 0, panel: "run" }); this.select(it.pid).then(() => { const r = this.state.runs.find((x) => x.jobId === it.jobId); if (r) this.setState({ selRun: r.id, panel: "run" }); }).catch(showError); };
+    }
+    for (const g of v.groups) for (const it of g.items) if (it.queued) { it.up = () => { if (!it.noUp) move(it.rid, "up"); }; it.down = () => { if (!it.noDown) move(it.rid, "down"); }; }
+    if (v.run.stops) for (const stop of v.run.stops) stop.canRestart = false;
+    const board = state.board;
+    if (board) v.slots = (board.activeRuns?.length ?? 0) + " of " + board.maxActiveRuns + " build slots in use";
+    for (const link of v.railLinks) {
+      if (link.label === "Manual") link.act = () => { this.setState({ navOpen: false }); window.open("/manual", "_blank"); };
+      else if (link.label === "Feedback") link.act = () => this.openFeedback("improvement");
+      else if (link.label === "Updates") {
+        link.label = this.upd ? "Update available" : "Check for updates";
+        link.hasBadge = !!(this.upd || this.updFlash); link.badge = this.upd ? this.upd.latest : this.updFlash || "";
+        link.act = () => (this.upd ? this.showUpdate() : this.checkUpdate(true));
+      }
+    }
+    v.nav.hint = this.upd ? "Update available" : "";
+    v.fb = this.feedbackVals();
+    // A run of this project building while another run is shown: say so, with a way to look at it.
+    const busyId = state.board?.busyJobId;
+    const busyRun = busyId && this.state.runs.find((r) => r.jobId === busyId && r.pid === this.state.pid);
+    const shownId = this.shownRun()?.jobId;
+    v.bg = busyRun && busyRun.jobId !== shownId
+      ? { show: true, text: backgroundText(busyRun.title, busyRun.job?.state || "running", state.jobs.filter((j) => j.state === "queued").length), view: () => this.setState({ selRun: busyRun.id, panel: "run" }) }
+      : { show: false };
+    const waiting = runsNeedingYou(state.projects, null).length;
+    const title = waiting ? `(${waiting}) needs you · SoloFactory` : "SoloFactory";
+    if (document.title !== title) document.title = title;
+    // The Guide box picks this project's profile, cycling through the profiles whose AI is signed in.
+    const signedIn = new Set((state.config?.providers || []).filter((x) => x.authenticated).map((x) => x.id));
+    const usable = this.profiles().filter((p) => state.config?.fixtureMode || signedIn.has(p.provider));
+    const now = this.profile();
+    v.provider = now?.name || "none";
+    v.providerAria = "Profile " + v.provider + " for this project. Switch the profile.";
+    v.toggleProvider = () => {
+      if (!usable.length) return this.showInfo("Profile", "Sign in to Claude Code or Codex first.");
+      if (usable.length < 2 && usable[0] === now) return this.showInfo("Profile", "Only the " + v.provider + " profile can run here. Add profiles in Settings, or sign in to the other AI.");
+      this.pickProfile(this.state.pid, usable[(usable.indexOf(now) + 1) % usable.length].name);
+    };
+    v.onAttach = () => this.attach();
+    v.attachments = (this.state.attached || []).map((f, i) => ({ label: attachLabel(f), aria: `Remove ${f.name}`, remove: () => this.setState((st) => ({ attached: st.attached.filter((_, j) => j !== i) })) }));
+    v.hasAttachments = v.attachments.length > 0;
+    if (v.app.live) Object.assign(v.app, this.appVals());
+    const draftOpen = v.vw.open && v.vw.name === DRAFT_SPEC;
+    const vRun = v.vw.open ? this.state.runs.filter((x) => x.pid === this.state.pid && this.specName(x) === v.vw.name).pop() : null;
+    const shipped = vRun?.state === "shipped";
+    const parked = !!vRun && ["paused", "stuck", "cancelled", "shipped"].includes(vRun.state);
+    if (v.vw.open && !v.vw.revising && !draftOpen) {
+      v.vw.modes = [];
+      // A shipped brief edits as the next revision: resubmitting builds it on the live app as it is now.
+      if (shipped) v.vw.ctrls = [this.wire({ label: "Revise the spec", bg: "transparent", fg: "var(--fg)", border: "var(--line3)" }, vRun)];
+      v.vw.footer = shipped ? "Read only. Press Revise the spec, or tell the Guide what to change: it reopens the spec as the next revision, and resubmitting builds it on the live app." : parked ? "Read only. Press Revise the spec, or tell the Guide what to change and it reopens the spec as a draft." : "Read only while the run is with the factory. Pause it to revise the spec.";
+      for (const sec of v.vw.sections) { sec.view = !sec.isList; sec.viewList = sec.isList; sec.click = false; sec.edit = false; }
+    }
+    // Design A: asking the Guide about a stopped run's spec reopens it as a revision draft first.
+    v.vw.send = () => {
+      const t = (this.state.vdraft || "").trim();
+      if (!t || this.state.busy) return;
+      if (!v.vw.revising && !draftOpen && !parked) return this.showInfo("The spec is with the factory", "I will not change the spec under a running build. Pause the run, then ask again or press Revise the spec.");
+      this.setState({ vdraft: "" });
+      (v.vw.revising || draftOpen ? this.turn(t) : this.reviseRun(vRun).then(() => this.turn(t))).catch(showError);
+    };
+    if (v.vw.revising || draftOpen) {
+      const talk = state.messages.filter((m) => m.content).map((m) => ({ mine: m.role === "user", guide: m.role !== "user", text: m.content, html: md(m.content) }));
+      if (this.state.busy) talk.push({ mine: false, guide: true, text: "Thinking…", html: md("Thinking…") });
+      // The chat is newest first; design A's opening note stays at the bottom.
+      v.vw.chat = talk.reverse().concat(v.vw.chat.slice(-1));
+    }
+    v.vw.onKey = (e) => { if (e.key === "Enter") { e.preventDefault(); v.vw.send(); } };
+    v.suggestions = [];
+    if (v.run.stops) for (const stop of v.run.stops) if (stop.state === "Failed twice") stop.state = "Failed";
+    const shownRun = this.shownRun();
+    if (shownRun) Object.assign(v.run, this.detailVals(shownRun));
+    const job = shownRun && this.det?.jobId === shownRun.jobId ? this.det.job : shownRun?.job;
+    v.run.stuckText = [job?.error?.message, job?.nextAction?.reason].filter(Boolean).join(" ") || "The factory stopped this run. Nothing was deployed and the last release is still live.";
+    if (typeof v.run.note === "string" && v.run.note.startsWith("A parked run")) v.run.note = "A parked run keeps everything that already passed. Restart from here on a finished feature rebuilds from that feature on.";
+    return v;
+  }
+}
+
+const hub = new Live();
+hub.mount(document.getElementById("app"));

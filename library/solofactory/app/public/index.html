@@ -1,266 +1,683 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SoloFactory turns a rigorous requirements conversation into a tested, working app." />
-    <title>SoloFactory</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <div class="shell">
-      <div id="update-pop" class="update-pop" popover>
-        <strong id="update-text"></strong>
-        <p>Update when it suits you; nothing changes until you do. Open Claude Code (or Codex) on this computer (on Windows, in the Ubuntu window) and paste:</p>
-        <pre id="update-prompt"></pre>
-        <button id="update-copy" class="button small" type="button">Copy prompt</button>
-      </div>
-      <header class="topbar">
-        <a class="brand" href="/" aria-label="SoloFactory home">
-          <span class="brand-mark" aria-hidden="true">SF</span>
-          <span><strong>SoloFactory</strong><small>idea to working app</small></span>
-        </a>
-        <div class="top-right">
-          <label class="sr-only" for="project-select">Project</label>
-          <select id="project-select" class="sdlc-select project-select" aria-label="Project"></select>
-          <label class="sr-only" for="run-select">Run</label>
-          <select id="run-select" class="sdlc-select project-select" aria-label="Run"></select>
-          <button id="board-button" class="button ghost small" type="button" aria-pressed="false">Factory</button>
-          <button id="feedback-button" class="button ghost small" type="button">Feedback</button>
-          <a class="button ghost small" href="/manual">Manual</a>
-          <button id="update-button" class="button ghost small" type="button">Check for updates</button>
-          <div class="top-status"><span class="pulse"></span><span id="system-status">Checking factory</span></div>
-        </div>
-      </header>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SoloFactory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="app"></div>
+<script type="text/x-template" id="tpl">
+<div data-theme="{{theme.mode}}" style="position: relative; display: flex; flex-wrap: wrap; height: 100vh; min-height: 600px; overflow: auto; background: var(--bg); color: var(--fg); font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 14px; line-height: 1.45">
 
-      <main class="workspace">
-        <aside class="rail" aria-label="Factory progress">
-          <p class="eyebrow">Factory run</p>
-          <ol class="stages" id="stages">
-            <li class="active" data-stage="interview"><span>01</span><div><strong>Interview</strong><small>Shape the brief</small></div></li>
-            <li data-stage="specifying"><span>02</span><div><strong>Specify</strong><small>PRD + plan + proof</small></div></li>
-            <li data-stage="building"><span>03</span><div><strong>Build</strong><small>Working product</small></div></li>
-            <li data-stage="verifying"><span>04</span><div><strong>Verify</strong><small>Tests + production build</small></div></li>
-            <li data-stage="reviewing"><span>05</span><div><strong>Review</strong><small>Contract audit</small></div></li>
-            <li data-stage="deploying"><span>06</span><div><strong>Deploy</strong><small>Health + telemetry</small></div></li>
-          </ol>
-          <div class="rail-note">
-            <span>Local-first</span>
-            <p>Your subscription does the AI work. No API key is requested or stored.</p>
-          </div>
-        </aside>
+<nav aria-label="Projects" style="flex: {{pane.navFlex}}; max-width: {{pane.navMax}}; min-width: 0; display: flex; flex-direction: column; gap: 22px; padding: 18px 14px; border-right: 1px solid var(--line); background: var(--panel); overflow-y: auto">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 4px">
+<span style="display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-size: 11px; font-weight: 700">SF</span>
+<span style="display: flex; flex-direction: column"><strong style="font-weight: 600">SoloFactory</strong><span style="font-size: 12px; color: var(--muted)">{{slots}}</span></span>
+</div>
 
-        <section class="main-panel">
-          <div id="notice" class="notice hidden" role="alert"></div>
-          <div id="attention-banner" class="background-banner attention hidden" role="alert">
-            <span id="attention-text"></span>
-            <button id="attention-view-button" class="button small" type="button">Open</button>
-          </div>
-          <div id="background-banner" class="background-banner hidden" role="status">
-            <span id="background-text"></span>
-            <button id="background-view-button" class="button ghost small" type="button">View</button>
-          </div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-left: 6px">Work</h2>
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 1px">
+<button onClick="{{g.toggle}}" aria-expanded="{{g.expanded}}" style="display: flex; gap: 6px; align-items: center; width: 100%; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text2); text-align: left">
+<span aria-hidden="true" style="width: 12px; font-size: 11px; color: var(--muted)">{{g.chev}}</span>
+<span style="flex: 1 1 auto; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase">{{g.label}}</span>
+<span style="font-size: 12px; font-weight: {{g.countW}}; color: {{g.countFg}}">{{g.count}}</span>
+</button>
+<sc-if value="{{g.open}}" hint-placeholder-val="{{true}}">
+<sc-for list="{{g.items}}" as="w" hint-placeholder-count="2">
+<div style="display: flex; flex-direction: column; padding: 5px 4px 5px 24px; border-radius: 8px; background: {{w.bg}}">
+<div style="display: flex; gap: 2px; align-items: flex-start">
+<button onClick="{{w.open}}" aria-label="{{w.aria}}" style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 2px 0; border: 0; background: transparent; color: var(--fg); text-align: left">
+<span style="max-width: 100%; font-size: 13px; font-weight: {{w.weight}}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{w.title}}</span>
+<span style="font-size: 11px; color: var(--muted)"><span style="font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase">{{w.kind}}</span> · <span style="color: {{w.stColor}}; font-weight: {{w.stWeight}}">{{w.state}}</span></span>
+</button>
+<sc-if value="{{w.queued}}" hint-placeholder-val="{{false}}">
+<button onClick="{{w.toggleMenu}}" aria-label="{{w.menuLabel}}" aria-expanded="{{w.menuExpanded}}" style="flex: none; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text2); font-size: 16px; letter-spacing: 1px">···</button>
+</sc-if>
+</div>
+<sc-if value="{{w.menuOpen}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="{{w.menuLabel}}" style="display: flex; gap: 2px; justify-content: flex-end">
+<button onClick="{{w.up}}" disabled="{{w.noUp}}" aria-label="Move up" title="Move up" style="display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text2); opacity: {{w.upOpacity}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3M4 7l4-4 4 4"></path></svg></button>
+<button onClick="{{w.down}}" disabled="{{w.noDown}}" aria-label="Move down" title="Move down" style="display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text2); opacity: {{w.downOpacity}}"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v10M4 9l4 4 4-4"></path></svg></button>
+<button onClick="{{w.remove}}" aria-label="Remove from queue" title="Remove from queue" style="display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--text2)"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.5h5.8l.6-8.5"></path></svg></button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+<sc-if value="{{g.empty}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0 6px 4px 24px; font-size: 12px; color: var(--muted)">{{g.emptyText}}</p>
+</sc-if>
+</sc-if>
+</div>
+</sc-for>
+</div>
 
-          <section id="board-view" class="view hidden">
-            <div class="view-heading">
-              <div><p class="eyebrow">Factory</p><h1>Every run, at a glance.</h1></div>
-              <p id="board-capacity" class="board-capacity"></p>
-            </div>
-            <div id="board-columns" class="board"></div>
-          </section>
+<div style="position: relative; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line)">
+<sc-if value="{{nav.open}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="SoloFactory menu" style="position: absolute; bottom: calc(100% + 6px); left: 0; right: 0; z-index: 4; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel); box-shadow: 0 12px 32px var(--shadow)">
+<sc-for list="{{railLinks}}" as="k" hint-placeholder-count="5">
+<button role="menuitem" onClick="{{k.act}}" style="display: flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); font-size: 13px; text-align: left"><span>{{k.label}}</span><sc-if value="{{k.hasBadge}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; color: var(--muted)">{{k.badge}}</span></sc-if></button>
+</sc-for>
+</div>
+</sc-if>
+<button onClick="{{nav.toggle}}" aria-haspopup="menu" aria-expanded="{{nav.expanded}}" style="display: flex; gap: 8px; align-items: center; justify-content: space-between; width: 100%; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); font-size: 13px; text-align: left"><span>Menu</span><span style="font-size: 12px; color: var(--muted)">{{nav.hint}}</span></button>
+</div>
+</nav>
+<div role="separator" aria-orientation="vertical" aria-label="Resize the projects list" title="Drag to resize, double-click to reset" tabindex="0" class="split" onPointerDown="{{pane.nav.down}}" onPointerMove="{{pane.nav.move}}" onDblClick="{{pane.nav.reset}}" onKeyDown="{{pane.nav.key}}" style="flex: none; width: 6px; margin: 0 -3px; cursor: col-resize; position: relative; z-index: 1; touch-action: none"></div>
 
-          <section id="interview-view" class="view">
-            <div class="view-heading">
-              <div>
-                <p class="eyebrow">Factory Guide</p>
-                <h1>Let’s make the idea buildable.</h1>
-              </div>
-              <div id="provider-picker" class="provider-picker"></div>
-            </div>
+<main style="flex: 999 1 480px; min-width: 0; min-height: 0; display: flex; flex-direction: column">
+<header style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 24px; border-bottom: 1px solid var(--line)">
+<div style="display: flex; flex-direction: column; min-width: 0">
+<div style="position: relative">
+<button onClick="{{pm.toggle}}" aria-haspopup="menu" aria-expanded="{{pm.expanded}}" aria-label="{{pm.aria}}" style="display: flex; gap: 8px; align-items: center; margin-left: -8px; padding: 2px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--fg)">
+<span style="font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 24px; font-weight: 500; letter-spacing: -0.01em">{{current.name}}</span>
+<span aria-hidden="true" style="font-size: 14px; color: var(--muted)">▾</span>
+<sc-if value="{{pm.others}}" hint-placeholder-val="{{false}}"><span style="font-size: 12px; font-weight: 600; color: var(--amber)">{{pm.othersText}}</span></sc-if>
+</button>
+<sc-if value="{{pm.open}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="Projects" style="position: absolute; top: calc(100% + 6px); left: -8px; z-index: 4; display: flex; flex-direction: column; min-width: 300px; padding: 6px; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel); box-shadow: 0 12px 32px var(--shadow)">
+<sc-for list="{{projects}}" as="p" hint-placeholder-count="3">
+<button role="menuitemradio" aria-checked="{{p.pressed}}" onClick="{{p.go}}" style="display: flex; flex-direction: column; gap: 1px; width: 100%; min-height: 48px; padding: 7px 10px; border: 0; border-radius: 8px; background: {{p.bg}}; color: var(--fg); text-align: left">
+<span style="font-weight: {{p.weight}}">{{p.name}}</span>
+<span style="font-size: 12px; color: var(--muted)">{{p.status}}</span>
+</button>
+</sc-for>
+<div style="height: 1px; margin: 6px 4px; background: var(--line)"></div>
+<button role="menuitem" onClick="{{pm.newProject}}" style="width: 100%; min-height: 40px; padding: 7px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--fg); text-align: left">+ New project</button>
+</div>
+</sc-if>
+</div>
+<span style="font-size: 12px; color: var(--muted)">{{current.live}}</span>
+</div>
+<div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap">
+<div style="position: relative">
+<button onClick="{{theme.toggle}}" aria-haspopup="menu" aria-expanded="{{theme.expanded}}" aria-label="{{theme.aria}}" title="{{theme.aria}}" style="display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--text2)">
+<sc-if value="{{theme.isAuto}}" hint-placeholder-val="{{true}}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6.5"></circle><path d="M9 2.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"></path></svg></sc-if>
+<sc-if value="{{theme.isLight}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="3.2"></circle><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M3.7 14.3l1.4-1.4M12.9 5.1l1.4-1.4"></path></svg></sc-if>
+<sc-if value="{{theme.isDark}}" hint-placeholder-val="{{false}}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M14.8 11.3A6.5 6.5 0 0 1 6.7 3.2a6.5 6.5 0 1 0 8.1 8.1z"></path></svg></sc-if>
+</button>
+<sc-if value="{{theme.open}}" hint-placeholder-val="{{false}}">
+<div role="menu" aria-label="Theme" style="position: absolute; top: calc(100% + 6px); right: 0; z-index: 4; display: flex; flex-direction: column; min-width: 200px; padding: 6px; border: 1px solid var(--line2); border-radius: 12px; background: var(--panel); box-shadow: 0 12px 32px var(--shadow)">
+<sc-for list="{{theme.opts}}" as="o" hint-placeholder-count="3">
+<button role="menuitemradio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="display: flex; justify-content: space-between; gap: 12px; width: 100%; min-height: 40px; padding: 7px 10px; border: 0; border-radius: 8px; background: {{o.bg}}; color: var(--fg); text-align: left"><span style="font-weight: {{o.weight}}">{{o.label}}</span><span style="font-size: 12px; color: var(--muted)">{{o.help}}</span></button>
+</sc-for>
+</div>
+</sc-if>
+</div>
+<div role="group" aria-label="Side panel" style="display: flex; gap: 6px; flex-wrap: wrap">
+<sc-for list="{{panelTabs}}" as="t" hint-placeholder-count="3">
+<button onClick="{{t.toggle}}" aria-pressed="{{t.pressed}}" style="min-height: 40px; padding: 8px 13px; border: 1px solid {{t.border}}; border-radius: 9px; background: {{t.bg}}; color: {{t.fg}}; font-size: 13px; font-weight: 600">{{t.label}}</button>
+</sc-for>
+</div>
+</div>
+</header>
+<sc-if value="{{bg.show}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 8px 24px; border-bottom: 1px solid var(--line); background: var(--raise); font-size: 13px; color: var(--text1)"><span>{{bg.text}}</span><button onClick="{{bg.view}}" style="min-height: 36px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px; font-weight: 600">View</button></div>
+</sc-if>
 
-            <div class="interview-grid">
-              <div class="chat-card">
-                <div id="messages" class="messages" aria-live="polite"></div>
-                <form id="message-form" class="composer">
-                  <label class="sr-only" for="message-input">Your answer</label>
-                  <textarea id="message-input" rows="3" placeholder="Answer in your own words…" required></textarea>
-                  <div id="attachments" class="attachments"></div>
-                  <div class="composer-row">
-                    <small>Do not paste passwords, tokens, or private customer data.</small>
-                    <div class="composer-actions">
-                      <button id="discard-draft" class="button ghost hidden" type="button">Start over</button>
-                      <label class="button ghost attach-button" for="attach-input">Attach files<input id="attach-input" type="file" multiple accept=".md,.markdown,.txt,.json,.yaml,.yml,.csv,.html,.xml,text/*,image/png,image/jpeg,image/gif,image/webp" class="sr-only"></label>
-                      <button id="send-button" class="button primary" type="submit">Send answer <span>↗</span></button>
-                    </div>
-                  </div>
-                </form>
-              </div>
+<div style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 16px; padding: 22px 24px">
+<sc-for list="{{messages}}" as="m" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; max-width: 720px; width: 100%; margin: 0 auto">
 
-              <aside class="coverage-card">
-                <div class="coverage-head">
-                  <div><p class="eyebrow">Brief coverage</p><strong id="coverage-score">0%</strong></div>
-                  <div class="ring" id="coverage-ring" style="--value:0"><span></span></div>
-                </div>
-                <div id="coverage-list" class="coverage-list"></div>
-                <p class="coverage-foot">The Guide can ask. The controller decides when the brief is actually complete.</p>
-              </aside>
-            </div>
-          </section>
+<sc-if value="{{m.isUser}}" hint-placeholder-val="{{false}}">
+<p style="align-self: flex-end; max-width: 82%; margin: 0; padding: 11px 14px; border-radius: 14px 14px 4px 14px; background: var(--raise2); color: var(--fg); white-space: pre-wrap">{{m.text}}</p>
+<sc-for list="{{m.images}}" as="src">
+<img src="{{src}}" alt="Attached image" style="align-self: flex-end; max-width: 60%; max-height: 260px; margin-top: 6px; border: 1px solid var(--line); border-radius: 10px">
+</sc-for>
+</sc-if>
 
-          <section id="review-view" class="view hidden">
-            <div class="view-heading">
-              <div><p class="eyebrow">Frozen brief</p><h1>Small enough to ship. Precise enough to test.</h1></div>
-              <button id="back-button" class="button ghost">Continue interview</button>
-            </div>
-            <div class="review-layout">
-              <article id="brief" class="brief"></article>
-              <aside class="launch-card">
-                <p class="eyebrow">Ready to run</p>
-                <h2>The factory takes it from here.</h2>
-                <p>It will write the PRD and plan, build, test, review, launch, and verify the app. You can close this tab and return later.</p>
-                <ul>
-                  <li>Subscription-backed agent</li>
-                  <li>Two bounded repair attempts</li>
-                  <li>Local health-checked deployment</li>
-                  <li>Private aggregate telemetry</li>
-                </ul>
-                <p class="field-hint">Every run plans its features and gets the plan reviewed before any code is written.</p>
-                <button id="start-button" class="button primary wide">Queue for the factory <span>→</span></button>
-                <small id="queue-hint" class="field-hint hidden"></small>
-              </aside>
-            </div>
-          </section>
+<sc-if value="{{m.isGuide}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 4px; max-width: 88%">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim)">Guide</span>
+<div class="md" sc-html="{{m.html}}" style="color: var(--text1)"></div>
+</div>
+</sc-if>
 
-          <section id="run-view" class="view hidden">
-            <div class="run-heading">
-              <div><p class="eyebrow" id="run-id">Factory run</p><h1 id="run-title">Building your app</h1><p id="run-subtitle">The controller is preparing the workspace.</p><ul id="run-notices" class="hidden muted"></ul></div>
-              <div class="run-actions">
-                <button id="pause-button" class="button ghost hidden" title="Finish the current stage, commit the green tree, then stop">Pause</button>
-                <button id="cancel-button" class="button danger">Cancel run</button>
-                <button id="resume-button" class="button primary hidden">Resume current run <span>→</span></button>
-                <button id="copy-recovery-button" class="button ghost hidden">Copy recovery packet</button>
-                <button id="start-over-button" class="button ghost hidden">Start over</button>
-                <button id="dismiss-button" class="button ghost hidden" title="Set this run aside so queued briefs can proceed; an app that shipped before goes back to that release">Dismiss</button>
-                <button id="report-run-button" class="button ghost hidden">Report this run</button>
-              </div>
-            </div>
+<sc-if value="{{m.isPick}}" hint-placeholder-val="{{false}}">
+<section aria-label="Guide plan" style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--card)">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim)">Guide</span>
+<span style="color: var(--muted); font-size: 13px">read</span>
+<sc-for list="{{m.read}}" as="d" hint-placeholder-count="3">
+<span style="padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--text2)">{{d}}</span>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: baseline">
+<span style="font-size: 13px; color: var(--muted)">I would treat this as a</span>
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg)">{{m.kindLabel}}</span>
+</div>
+<sc-if value="{{m.open}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; color: var(--text1)">{{m.why}}</p>
+<ol aria-label="Steps this run will take" style="display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none">
+<sc-for list="{{m.steps}}" as="s" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 7px; background: var(--raise); font-size: 12px; color: var(--text2)"><span style="color: var(--muted)">{{s.n}}</span>{{s.label}}</li>
+</sc-for>
+</ol>
+</sc-if>
+<sc-if value="{{m.open}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px">
+<sc-if value="{{m.hasDraft}}" hint-placeholder-val="{{false}}"><button onClick="{{m.review}}" style="min-height: 44px; padding: 10px 14px; border: 1px solid var(--line3); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">Read the draft spec</button></sc-if>
+<button onClick="{{m.send}}" style="min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-weight: 700">{{m.cta}}</button>
+<span style="margin-left: 6px; font-size: 12px; color: var(--muted)">Wrong size?</span>
+<sc-for list="{{m.alts}}" as="a" hint-placeholder-count="2">
+<button onClick="{{a.set}}" style="min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-size: 13px">{{a.label}}</button>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{m.sent}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; font-size: 13px; color: var(--muted)">{{m.sentLine}}</p>
+</sc-if>
+</section>
+</sc-if>
 
-            <section id="recovery-card" class="recovery-card hidden" aria-live="polite">
-              <div>
-                <p class="eyebrow">Recovery checkpoint</p>
-                <h2 id="recovery-title">Run paused</h2>
-                <p id="recovery-summary"></p>
-              </div>
-              <ul id="recovery-actions"></ul>
-              <div class="recovery-meta">
-                <p><strong>Files preserved</strong><span id="recovery-workspace"></span></p>
-                <p><strong>Token safeguard</strong><span id="recovery-retry"></span></p>
-              </div>
-              <div id="recovery-restart" class="recovery-restart hidden">
-                <p><strong>Restart from slice</strong><span>Rewinds to the commit before that slice and rebuilds it and everything after.</span></p>
-                <div id="recovery-restart-buttons" class="recovery-restart-buttons"></div>
-              </div>
-            </section>
+<sc-if value="{{m.isRun}}" hint-placeholder-val="{{false}}">
+<section aria-label="Run" style="display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid {{m.cardBorder}}; border-radius: 14px; background: var(--card)">
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
+<span style="display: flex; gap: 8px; align-items: center; min-width: 0"><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted)">{{m.kindLabel}}</span><strong style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{m.title}}</strong></span>
+<button onClick="{{m.openRun}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line3); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Open the run</button>
+</div>
+<div aria-hidden="true" style="display: flex; gap: 4px">
+<sc-for list="{{m.segs}}" as="g" hint-placeholder-count="5">
+<span style="flex: 1 1 0; height: 6px; border-radius: 3px; background: {{g.bg}}"></span>
+</sc-for>
+</div>
+<span style="font-size: 13px; font-weight: {{m.lineWeight}}; color: {{m.lineColor}}">{{m.line}}</span>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{m.ctrls}}" as="c" hint-placeholder-count="2">
+<button onClick="{{c.act}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid {{c.border}}; border-radius: 9px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600">{{c.label}}</button>
+</sc-for>
+<button onClick="{{m.openSpec}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Open the spec</button>
+</div>
+</section>
+</sc-if>
 
-            <div class="dashboard-grid">
-              <section class="run-map panel">
-                <div class="panel-head"><p class="eyebrow" id="map-title">Run map</p><button id="health" class="health-pill" type="button" aria-describedby="stop"><i></i><span id="health-text">Checking</span></button></div>
-                <svg id="metro" class="metro" viewBox="0 0 680 80" role="group" aria-label="Run stops in build order"></svg>
-                <div id="stop" class="map-sec stop" aria-live="polite"></div>
-                <dl id="qa" class="map-sec qa"></dl>
-                <div class="map-sec">
-                  <div class="map-stream-head"><div id="chips" class="chips" role="group" aria-label="Filter activity"></div><span class="live-label"><i></i> live</span></div>
-                  <div id="events" class="events"></div>
-                </div>
-              </section>
+</div>
+</sc-for>
+</div>
 
-              <section class="app-card panel">
-                <div class="panel-head"><p class="eyebrow">Live app activity</p><span id="app-live" class="state-pill muted">Waiting</span></div>
-                <p id="app-url" class="app-url hidden"></p>
-                <div class="metric-hero"><strong id="request-total">—</strong><span>requests</span></div>
-                <div class="metric-grid">
-                  <div><small>Errors</small><strong id="error-total">—</strong></div>
-                  <div><small>Average</small><strong id="latency-average">—</strong></div>
-                  <div><small>Uptime</small><strong id="app-uptime">—</strong></div>
-                </div>
-                <div id="route-list" class="route-list"><p>No app traffic yet.</p></div>
-              </section>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 8px 24px 18px">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; max-width: 720px; width: 100%; margin: 0 auto">
+<sc-for list="{{suggestions}}" as="s" hint-placeholder-count="3">
+<button onClick="{{s.use}}" style="min-height: 36px; padding: 6px 11px; border: 1px solid var(--line); border-radius: 99px; background: transparent; color: var(--text2); font-size: 12px">{{s.text}}</button>
+</sc-for>
+</div>
+<sc-if value="{{hasAttachments}}">
+<ul aria-label="Files to send" style="display: flex; flex-wrap: wrap; gap: 6px; max-width: 720px; width: 100%; margin: 0 auto; padding: 0; list-style: none">
+<sc-for list="{{attachments}}" as="f">
+<li style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 11px; border: 1px solid var(--line2); border-radius: 99px; background: var(--card); color: var(--text2); font-size: 12px">{{f.label}}<button onClick="{{f.remove}}" aria-label="{{f.aria}}" title="Remove" style="min-width: 28px; min-height: 28px; border: 0; border-radius: 99px; background: transparent; color: var(--muted); font-size: 15px">×</button></li>
+</sc-for>
+</ul>
+</sc-if>
+<div style="display: flex; gap: 8px; align-items: center; max-width: 720px; width: 100%; margin: 0 auto; padding: 6px 6px 6px 14px; border: 1px solid var(--line2); border-radius: 14px; background: var(--card); box-shadow: 0 4px 18px var(--shadow)">
+<button onClick="{{onAttach}}" aria-label="Attach a file" style="flex: none; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 9px; background: transparent; color: var(--text2); font-size: 13px">Attach</button>
+<label for="guide-a" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0)">Message the Guide</label>
+<input id="guide-a" type="text" value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}" placeholder="{{placeholder}}" autocomplete="off" style="flex: 1 1 auto; min-width: 0; min-height: 44px; border: 0; outline-offset: 4px; background: transparent; color: var(--fg)">
+<button onClick="{{onSend}}" style="flex: none; min-height: 44px; padding: 10px 18px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-weight: 700">Send</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; max-width: 720px; width: 100%; margin: 0 auto; font-size: 12px; color: var(--muted)">
+<span>The Guide reads this project's documents first. Do not paste passwords, tokens or private customer data.</span>
+<button onClick="{{toggleProvider}}" aria-label="{{providerAria}}" style="min-height: 32px; padding: 4px 10px; border: 1px solid var(--line); border-radius: 99px; background: transparent; color: var(--text2); font-size: 12px">Profile: {{provider}}</button>
+</div>
+</div>
+</main>
 
-              <section class="artifacts-card panel">
-                <div class="panel-head"><p class="eyebrow">Artifacts</p></div>
-                <div id="artifacts" class="artifact-list"><p>Artifacts appear after specification.</p></div>
-                <button id="relaunch-button" class="button primary wide hidden">Relaunch app</button>
-                <a id="open-app" class="button primary wide hidden" href="#" target="_blank" rel="noreferrer">Open working app <span>↗</span></a>
-              </section>
-            </div>
-          </section>
-        </section>
-      </main>
-    </div>
-    <dialog id="project-dialog" class="feedback-dialog" aria-labelledby="project-heading">
-      <form id="project-form" class="feedback-form" method="dialog">
-        <div class="feedback-head">
-          <div><p class="eyebrow">New project</p><h2 id="project-heading">Name the project</h2></div>
-          <button id="project-close-button" class="button ghost small" type="button" aria-label="Close">✕</button>
-        </div>
-        <label class="field" for="project-name"><span class="field-title">Project name</span><input id="project-name" name="name" type="text" maxlength="80" required /></label>
-        <div class="feedback-actions"><button class="button primary" type="submit">Create project</button></div>
-      </form>
-    </dialog>
+<sc-if value="{{panelOpen}}" hint-placeholder-val="{{true}}">
+<div role="separator" aria-orientation="vertical" aria-label="Resize the panel" title="Drag to resize, double-click to reset" tabindex="0" class="split" onPointerDown="{{pane.panel.down}}" onPointerMove="{{pane.panel.move}}" onDblClick="{{pane.panel.reset}}" onKeyDown="{{pane.panel.key}}" style="flex: none; width: 6px; margin: 0 -3px; cursor: col-resize; position: relative; z-index: 1; touch-action: none"></div>
+<aside aria-label="{{panelTitle}}" style="flex: {{pane.panelFlex}}; max-width: {{pane.panelMax}}; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel)">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line)">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">{{panelTitle}}</h2>
+<button onClick="{{closePanel}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Close</button>
+</div>
+<div style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px 18px">
 
-    <dialog id="feedback-dialog" class="feedback-dialog" aria-labelledby="feedback-heading">
-      <form id="feedback-form" class="feedback-form" novalidate>
-        <div class="feedback-head">
-          <div><p class="eyebrow">Feedback</p><h2 id="feedback-heading">Report a problem or an idea</h2></div>
-          <button id="feedback-close-button" class="button ghost small" type="button" aria-label="Close">✕</button>
-        </div>
 
-        <div class="segmented" role="radiogroup" aria-label="Report type">
-          <label><input class="sr-only" type="radio" name="mode" value="problem" checked /><span>Problem</span></label>
-          <label><input class="sr-only" type="radio" name="mode" value="improvement" /><span>Improvement</span></label>
-        </div>
+<sc-if value="{{showDocs}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{noDocs}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; color: var(--muted)">This project has no documents yet. The first brief writes PRD.md, FEATURES.md and ACCEPTANCE.md. If the app already exists in a folder, the Guide can adopt it and write the baseline from the code.</p>
+</sc-if>
+<sc-for list="{{docs}}" as="d" hint-placeholder-count="4">
+<button onClick="{{d.open}}" aria-pressed="{{d.pressed}}" style="display: flex; flex-direction: column; gap: 3px; width: 100%; min-height: 48px; padding: 9px 12px; border: 1px solid {{d.border}}; border-radius: 10px; background: {{d.bg}}; color: var(--fg); text-align: left">
+<span style="display: flex; gap: 8px; align-items: center; justify-content: space-between"><span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px">{{d.name}}</span><span style="font-size: 12px; color: var(--muted)">{{d.tag}}</span></span>
+<span style="font-size: 12px; color: var(--muted)">{{d.note}}</span>
+</button>
+</sc-for>
+<sc-if value="{{hasDoc}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<button onClick="{{closeDoc}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">All documents</button>
+<sc-for list="{{doc.ctrls}}" as="c" hint-placeholder-count="0">
+<button onClick="{{c.act}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid {{c.border}}; border-radius: 9px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600">{{c.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{doc.hasLine}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 13px; color: var(--text2)">{{doc.line}}</span>
+</sc-if>
+<article style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px; padding: 22px 24px; border-radius: 6px; background: #f4efe2; color: #23261f">
+<h3 style="margin: 0; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 20px; font-weight: 500">{{doc.name}}</h3>
+<sc-if value="{{doc.revising}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid #c9bf9f; border-radius: 6px; background: #fbf8ee">
+<strong style="font-weight: 600; color: #6b4a12">{{doc.revTitle}}</strong>
+<span>Nothing is building. Type what should change, or tell the Guide in plain words and it edits this spec for you.</span>
+<label for="revise-a" style="font-size: 12px; font-weight: 600">What should change in this revision</label>
+<textarea id="revise-a" value="{{doc.change}}" onChange="{{doc.onChange}}" rows="3" placeholder="For example: compare by transcript id, not by file name" style="width: 100%; padding: 10px 12px; border: 1px solid #a89f80; border-radius: 10px; background: var(--fg-strong); color: #23261f; font: inherit; resize: vertical"></textarea>
+<span style="font-size: 13px">Resubmit runs a short Guide review of the changed spec, then replaces the run. Work the change does not touch is reused. Discard changes throws this draft away and puts the run back as it was.</span>
+</div>
+</sc-if>
+<sc-for list="{{doc.sections}}" as="s" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 3px">
+<h4 style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4c5a2c">{{s.h}}</h4>
+<p style="margin: 0; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 15px; line-height: 1.5">{{s.t}}</p>
+</div>
+</sc-for>
+</article>
+</sc-if>
+</sc-if>
 
-        <label class="field" for="feedback-title"><span class="field-title">Title</span><input id="feedback-title" name="title" type="text" maxlength="120" required autofocus /></label>
+<sc-if value="{{showApp}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{app.none}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; color: var(--muted)">Nothing is live yet. The first run deploys the app here, on a free local port.</p>
+</sc-if>
+<sc-if value="{{app.live}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="display: flex; gap: 8px; align-items: center"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 99px; background: {{app.dot}}"></span><strong style="font-weight: 600">{{app.statusText}} · {{app.release}}</strong></span>
+<span style="font-family: ui-monospace, Menlo, monospace; font-size: 13px; color: var(--text2)">{{app.url}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-if value="{{app.up}}" hint-placeholder-val="{{true}}">
+<a href="{{app.url}}" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; min-height: 44px; padding: 10px 14px; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-size: 13px; font-weight: 700; text-decoration: none">Open the app</a>
+<button onClick="{{app.stop}}" style="min-height: 44px; padding: 10px 14px; border: 1px solid var(--line3); border-radius: 10px; background: transparent; color: var(--fg); font-size: 13px; font-weight: 600">Stop the app</button>
+</sc-if>
+<sc-if value="{{app.down}}" hint-placeholder-val="{{false}}">
+<button onClick="{{app.relaunch}}" style="min-height: 44px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--inv); background: var(--inv); color: var(--inv-fg); font-size: 13px; font-weight: 700">Relaunch</button>
+</sc-if>
+</div>
+<sc-if value="{{app.hasStats}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{app.stats}}" as="t" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card)"><span style="font-size: 12px; color: var(--muted)">{{t.label}}</span><strong style="font-size: 18px; font-weight: 600">{{t.value}}</strong></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{app.hasRoutes}}" hint-placeholder-val="{{false}}">
+<section aria-label="Busiest routes">
+<strong style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px">Busiest routes</strong>
+<ol style="list-style: none; margin: 0; padding: 0; font-size: 13px">
+<sc-for list="{{app.routes}}" as="rt">
+<li style="display: flex; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--raise2)"><sc-if value="{{rt.method}}"><span style="flex: none; width: 52px; font-family: ui-monospace, Menlo, monospace; color: var(--muted)">{{rt.method}}</span></sc-if><span style="flex: 1 1 auto; min-width: 0; font-family: ui-monospace, Menlo, monospace; overflow-wrap: anywhere">{{rt.path}}</span><span style="flex: none; color: var(--muted)">{{rt.count}}</span></li>
+</sc-for>
+</ol>
+</section>
+</sc-if>
+<p style="margin: 0; font-size: 13px; color: var(--muted)">Request counts, errors, response time and uptime come from the app's telemetry while it runs. Stop the app shuts it down; Relaunch starts the shipped release again and checks its health before it shows as live.</p>
+</sc-if>
+</sc-if>
 
-        <fieldset id="feedback-problem-fields" class="feedback-fields">
-          <label class="field" for="feedback-happened"><span class="field-title">What happened</span><textarea id="feedback-happened" name="happened" rows="3" maxlength="4000" required></textarea></label>
-          <label class="field" for="feedback-expected"><span class="field-title">Expected result</span><textarea id="feedback-expected" name="expected" rows="2" maxlength="4000" required></textarea></label>
-          <label class="field" for="feedback-context"><span class="field-title">Additional context <em>optional</em></span><textarea id="feedback-context" name="context" rows="2" maxlength="4000"></textarea></label>
-        </fieldset>
+<sc-if value="{{showRun}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{noRun}}" hint-placeholder-val="{{false}}">
+<p style="margin: 0; color: var(--muted)">No run is active in this project. Send the Guide a request and confirm its plan to start one.</p>
+</sc-if>
+<sc-if value="{{hasRun}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="align-self: flex-start; padding: 2px 9px; border-radius: 99px; background: {{run.chipBg}}; color: {{run.chipFg}}; font-size: 12px; font-weight: 700">{{run.kindLabel}}</span>
+<strong style="font-size: 16px; font-weight: 600">{{run.title}}</strong>
+<span style="font-size: 13px; font-weight: {{run.lineWeight}}; color: {{run.lineColor}}">{{run.line}}</span>
+</div>
+<sc-if value="{{run.stuck}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--red-line); border-radius: 12px; background: var(--red-bg)">
+<strong style="font-weight: 600; color: var(--red-text)">This run needs you</strong>
+<span style="color: var(--text1)">{{run.stuckText}}</span>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{run.ctrls}}" as="c" hint-placeholder-count="2">
+<button onClick="{{c.act}}" style="min-height: 44px; padding: 10px 14px; border: 1px solid {{c.border}}; border-radius: 10px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600">{{c.label}}</button>
+</sc-for>
+<button onClick="{{run.openSpec}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Open the spec</button>
+</div>
+<sc-if value="{{run.hasRecov}}" hint-placeholder-val="{{false}}">
+<section aria-label="Recovery" style="display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--raise)">
+<strong style="font-weight: 600; color: var(--fg-strong)">{{run.recov.title}}</strong>
+<sc-if value="{{run.recov.summary}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: var(--text1)">{{run.recov.summary}}</p></sc-if>
+<sc-if value="{{run.recov.spend}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: var(--text2)">{{run.recov.spend}}</p></sc-if>
+<sc-if value="{{run.recov.prior}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: var(--text2)">{{run.recov.prior}}</p></sc-if>
+<sc-for list="{{run.recov.lists}}" as="l">
+<div><span style="font-size: 12px; color: var(--muted)">{{l.title}}</span>
+<ol style="margin: 4px 0 0; padding-left: 20px; max-height: 160px; overflow: auto; font-size: 13px; color: var(--text1)"><sc-for list="{{l.rows}}" as="row"><li>{{row}}</li></sc-for></ol></div>
+</sc-for>
+<sc-if value="{{run.recov.amend}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line)">
+<p style="margin: 0; font-size: 13px; color: var(--text1)">{{run.recov.amend.note}}</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<a href="{{run.recov.amend.packet}}" download style="display: inline-flex; align-items: center; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line3); border-radius: 9px; color: var(--fg); font-size: 13px; text-decoration: none">{{run.recov.amend.packetLabel}}</a>
+<button onClick="{{run.recov.amend.choose}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line3); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Choose corrected plan</button>
+<button onClick="{{run.recov.amend.submit}}" disabled="{{run.recov.amend.off}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--inv); border-radius: 9px; background: var(--inv); color: var(--inv-fg); font-size: 13px; font-weight: 600; opacity: {{run.recov.amend.opacity}}">Review this plan</button>
+</div>
+<span role="status" style="font-size: 12px; color: {{run.recov.amend.statusColor}}">{{run.recov.amend.status}}</span>
+<sc-if value="{{run.recov.amend.altReason}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 12px; color: var(--muted)">{{run.recov.amend.altReason}}</p></sc-if>
+</div>
+</sc-if>
+<sc-if value="{{run.recov.hasNote}}" hint-placeholder-val="{{false}}">
+<label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted)">Note for the repair planner, or the reason for a waiver
+<textarea value="{{run.recov.note}}" onChange="{{run.recov.onNote}}" maxlength="6000" rows="3" style="padding: 8px 10px; border: 1px solid var(--line2); border-radius: 9px; background: var(--panel); color: var(--fg); font: inherit; font-size: 13px; resize: vertical"></textarea></label>
+</sc-if>
+<sc-for list="{{run.recov.waives}}" as="w">
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 8px; border-top: 1px solid var(--line)">
+<p style="margin: 0; font-size: 13px; color: var(--text1)">{{w.reason}}</p>
+<sc-if value="{{w.hasNote}}" hint-placeholder-val="{{false}}">
+<button onClick="{{w.toggle}}" aria-expanded="{{w.expanded}}" style="align-self: flex-start; min-height: 32px; padding: 4px 0; border: 0; background: transparent; color: var(--text2); font-size: 12px; text-decoration: underline">{{w.toggleLabel}}</button>
+<sc-if value="{{w.open}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 8px 10px; border-left: 2px solid var(--line3); font-size: 12px; color: var(--text2); white-space: pre-wrap">Last repair turn said: {{w.note}}</p></sc-if>
+</sc-if>
+<button onClick="{{w.act}}" style="align-self: flex-start; min-height: 40px; padding: 8px 12px; border: 1px solid var(--line3); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">{{w.label}}</button>
+</div>
+</sc-for>
+<sc-if value="{{run.recov.hasActs}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{run.recov.acts}}" as="a">
+<button onClick="{{a.act}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid {{a.border}}; border-radius: 9px; background: {{a.bg}}; color: {{a.fg}}; font-size: 13px; font-weight: 600">{{a.label}}</button>
+</sc-for>
+<sc-if value="{{run.recov.canInput}}" hint-placeholder-val="{{false}}">
+<button onClick="{{run.recov.addInput}}" style="min-height: 40px; padding: 8px 12px; border: 1px solid var(--line3); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Add a spec or prototype file</button>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{run.recov.allowance}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 12px; color: var(--muted)">{{run.recov.allowance}}</p></sc-if>
+<sc-if value="{{run.recov.usage}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 12px; color: var(--muted)">{{run.recov.usage}}</p></sc-if>
+</section>
+</sc-if>
+<ol style="display: flex; flex-direction: column; gap: 0; margin: 6px 0 0; padding: 0; list-style: none">
+<sc-for list="{{run.stops}}" as="s" hint-placeholder-count="5">
+<li style="display: flex; gap: 12px; align-items: center; min-height: 46px; border-bottom: 1px solid var(--raise2)">
+<span style="flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 99px; border: 1px solid {{s.ring}}; background: {{s.bg}}; color: {{s.fg}}; font-size: 12px; font-weight: 700">{{s.n}}</span>
+<span style="flex: 1 1 auto; color: {{s.text}}">{{s.label}}</span>
+<span style="font-size: 12px; color: var(--muted)">{{s.state}}</span>
+<sc-if value="{{s.canRestart}}" hint-placeholder-val="{{false}}">
+<button onClick="{{s.restart}}" style="flex: none; min-height: 36px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 8px; background: transparent; color: var(--fg); font-size: 12px">Restart from here</button>
+</sc-if>
+</li>
+</sc-for>
+</ol>
+<sc-if value="{{run.hasFeatures}}" hint-placeholder-val="{{false}}">
+<section aria-label="Features" style="margin-top: 10px">
+<strong style="display: block; font-size: 13px; font-weight: 600; color: var(--fg-strong); margin-bottom: 4px">{{run.featureHead}}</strong>
+<ol style="list-style: none; margin: 0; padding: 0; font-size: 13px">
+<sc-for list="{{run.features}}" as="f">
+<li style="display: flex; gap: 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--raise2); color: {{f.color}}; font-weight: {{f.weight}}">
+<span style="flex: none; width: 22px; color: var(--muted); font-weight: 400">{{f.n}}</span>
+<span style="flex: 1 1 auto; min-width: 0">{{f.title}}</span>
+<span style="flex: none; font-size: 12px; color: var(--muted); font-weight: 400">{{f.state}}</span>
+<sc-if value="{{f.canRestart}}" hint-placeholder-val="{{false}}">
+<button onClick="{{f.restart}}" aria-label="Restart from feature {{f.n}}: {{f.title}}" style="flex: none; min-height: 32px; padding: 4px 10px; border: 1px solid var(--line2); border-radius: 8px; background: transparent; color: var(--fg); font-size: 12px; font-weight: 400">Restart from here</button>
+</sc-if>
+</li>
+</sc-for>
+</ol>
+</section>
+</sc-if>
+<p style="margin: 6px 0 0; font-size: 13px; color: var(--muted)">{{run.note}}</p>
+<sc-if value="{{run.hasQa}}" hint-placeholder-val="{{false}}">
+<dl style="display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 10px 0 0; font-size: 13px">
+<sc-for list="{{run.qa}}" as="q"><dt style="color: var(--muted)">{{q.q}}</dt><dd style="margin: 0; color: {{q.color}}">{{q.a}}</dd></sc-for>
+</dl>
+</sc-if>
+<sc-if value="{{run.hasStream}}" hint-placeholder-val="{{false}}">
+<section aria-label="Activity" style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center">
+<strong style="font-weight: 600; color: var(--fg-strong); margin-right: 4px">Activity</strong>
+<sc-for list="{{run.chips}}" as="ch">
+<button onClick="{{ch.pick}}" aria-pressed="{{ch.pressed}}" style="height: 30px; padding: 0 12px; border: 1px solid {{ch.border}}; border-radius: 99px; background: {{ch.bg}}; color: {{ch.fg}}; font-size: 12px">{{ch.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{run.streamEmpty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 12px; color: var(--muted)">Nothing yet.</p></sc-if>
+<ol style="margin: 0; padding: 6px 10px; list-style: none; max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); font-size: 12px">
+<sc-for list="{{run.stream}}" as="e">
+<li style="display: flex; gap: 10px; padding: 3px 0"><span style="flex: none; color: var(--muted); font-variant-numeric: tabular-nums">{{e.time}}</span><span style="flex: none; width: 42px; color: var(--muted)">{{e.kind}}</span><span style="color: {{e.color}}; overflow-wrap: anywhere">{{e.text}}</span></li>
+</sc-for>
+</ol>
+</section>
+</sc-if>
+<sc-if value="{{hasQueue}}" hint-placeholder-val="{{false}}">
+<p style="margin: 4px 0 0; font-size: 13px; color: var(--text2)">{{queueTitle}}. {{queueNote}} Reorder them under Queued in the left rail.</p>
+</sc-if>
+<sc-if value="{{run.hasMore}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid var(--raise2)">
+<sc-for list="{{run.more}}" as="c" hint-placeholder-count="3">
+<button onClick="{{c.act}}" style="min-height: 36px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 8px; background: transparent; color: var(--fg); font-size: 12px">{{c.label}}</button>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+</sc-if>
 
-        <fieldset id="feedback-improvement-fields" class="feedback-fields" disabled>
-          <label class="field" for="feedback-friction"><span class="field-title">Problem or friction</span><textarea id="feedback-friction" name="friction" rows="3" maxlength="4000" required></textarea></label>
-          <label class="field" for="feedback-outcome"><span class="field-title">Desired outcome</span><textarea id="feedback-outcome" name="outcome" rows="2" maxlength="4000" required></textarea></label>
-          <label class="field" for="feedback-workaround"><span class="field-title">Current workaround <em>optional</em></span><textarea id="feedback-workaround" name="workaround" rows="2" maxlength="4000"></textarea></label>
-          <div class="feedback-two">
-            <label class="field" for="feedback-frequency"><span class="field-title">Frequency</span>
-              <select id="feedback-frequency" name="frequency" class="sdlc-select"><option value="once">Once</option><option value="sometimes">Sometimes</option><option value="often">Often</option></select></label>
-            <label class="field" for="feedback-area"><span class="field-title">Area</span>
-              <select id="feedback-area" name="area" class="sdlc-select"><option>interview</option><option>specification</option><option>build</option><option>verification</option><option>recovery</option><option>dashboard</option><option>deployment</option><option>generated app</option><option>other</option></select></label>
-          </div>
-        </fieldset>
+</div>
+</aside>
+</sc-if>
 
-        <label id="feedback-diagnostics-row" class="feedback-check hidden" for="feedback-diagnostics">
-          <input id="feedback-diagnostics" type="checkbox" />
-          <span>Include run diagnostics: version, platform, error code, failed stage, gate, counts, and recent lifecycle event types. Never your brief, transcript, agent output, or paths.</span>
-        </label>
+<sc-if value="{{vw.open}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-modal="true" aria-label="Document" style="position: absolute; inset: 0; z-index: 5; display: flex; padding: 24px; background: var(--scrim)">
+<div style="flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel); overflow: hidden">
+<div style="flex: none; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid var(--line)">
+<div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column">
+<span style="display: flex; gap: 10px; align-items: baseline; min-width: 0"><strong style="font-family: ui-monospace, Menlo, monospace; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{vw.name}}</strong><span style="font-size: 12px; color: var(--muted)">{{vw.tag}}</span></span>
+<sc-if value="{{vw.hasLine}}" hint-placeholder-val="{{false}}">
+<span style="font-size: 12px; color: var(--muted)">{{vw.line}}</span>
+</sc-if>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<sc-for list="{{vw.modes}}" as="m" hint-placeholder-count="2">
+<button onClick="{{m.set}}" aria-pressed="{{m.pressed}}" style="min-height: 40px; padding: 8px 14px; border: 1px solid {{m.border}}; border-radius: 9px; background: {{m.bg}}; color: {{m.fg}}; font-size: 13px; font-weight: 600">{{m.label}}</button>
+</sc-for>
+<sc-for list="{{vw.ctrls}}" as="c" hint-placeholder-count="1">
+<button onClick="{{c.act}}" style="min-height: 40px; padding: 8px 14px; border: 1px solid {{c.border}}; border-radius: 9px; background: {{c.bg}}; color: {{c.fg}}; font-size: 13px; font-weight: 600">{{c.label}}</button>
+</sc-for>
+<button onClick="{{vw.close}}" style="min-height: 40px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Close</button>
+</div>
+</div>
+<div style="flex: 1 1 0; min-height: 0; display: flex; flex-wrap: wrap; overflow: auto">
+<div style="flex: 999 1 520px; min-width: 0; min-height: 0; overflow-y: auto; padding: 24px 28px">
+<article style="display: flex; flex-direction: column; gap: 20px; max-width: 800px; margin: 0 auto; padding: 40px 48px; border-radius: 6px; background: #f4efe2; color: #23261f">
+<h2 style="margin: 0; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 28px; font-weight: 500; letter-spacing: -0.01em">{{vw.name}}</h2>
+<sc-if value="{{vw.revising}}" hint-placeholder-val="{{false}}">
+<p role="status" style="margin: 0; padding: 10px 14px; border: 1px solid #c9bf9f; border-radius: 6px; background: #fbf8ee; font-weight: 600; color: #6b4a12">{{vw.revTitle}}</p>
+</sc-if>
+<sc-if value="{{vw.hasNotes}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 6px; background: #e3ecc9">
+<h3 style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #3d4a1f">Changed in this draft</h3>
+<sc-for list="{{vw.notes}}" as="n" hint-placeholder-count="1">
+<p style="margin: 0; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 16px; line-height: 1.5">{{n}}</p>
+</sc-for>
+</div>
+</sc-if>
+<sc-for list="{{vw.sections}}" as="x" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 5px">
+<h3 style="margin: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4c5a2c">{{x.h}}</h3>
+<sc-if value="{{x.view}}" hint-placeholder-val="{{true}}">
+<p style="margin: 0; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 17px; line-height: 1.6">{{x.t}} <sc-if value="{{x.hasAdd}}" hint-placeholder-val="{{false}}"><mark style="padding: 1px 3px; border-radius: 3px; background: #d5e5a6; color: #23261f">{{x.added}}</mark></sc-if></p>
+</sc-if>
+<sc-if value="{{x.viewList}}" hint-placeholder-val="{{false}}">
+<ul style="margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 17px; line-height: 1.6"><sc-for list="{{x.items}}" as="it" hint-placeholder-count="2"><li>{{it}}</li></sc-for><sc-if value="{{x.hasAdd}}" hint-placeholder-val="{{false}}"><li><mark style="padding: 1px 3px; border-radius: 3px; background: #d5e5a6; color: #23261f">{{x.added}}</mark></li></sc-if></ul>
+</sc-if>
+<sc-if value="{{x.click}}" hint-placeholder-val="{{false}}">
+<button onClick="{{x.start}}" aria-label="{{x.label}}" style="display: block; width: 100%; margin: 0; padding: 8px 12px; border: 1px dashed #b9b08f; border-radius: 8px; background: transparent; color: #23261f; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 17px; line-height: 1.6; text-align: left; white-space: pre-line; cursor: text">{{x.t}} <sc-if value="{{x.hasAdd}}" hint-placeholder-val="{{false}}"><mark style="padding: 1px 3px; border-radius: 3px; background: #d5e5a6; color: #23261f">{{x.added}}</mark></sc-if></button>
+</sc-if>
+<sc-if value="{{x.edit}}" hint-placeholder-val="{{false}}">
+<textarea id="sec-edit" aria-label="{{x.label}}" value="{{x.draft}}" onChange="{{x.onChange}}" onBlur="{{x.keep}}" onKeyDown="{{x.onKey}}" rows="4" style="width: 100%; padding: 8px 12px; border: 2px solid #4c5a2c; border-radius: 8px; background: #fffdf6; color: #23261f; font-family: 'Iowan Old Style', Charter, Georgia, serif; font-size: 17px; line-height: 1.6; resize: vertical"></textarea>
+<span style="font-size: 12px; color: #5c5f55">Click away or press Cmd/Ctrl+Enter to keep. Escape cancels.</span>
+</sc-if>
+</div>
+</sc-for>
+<p style="margin: 0; padding-top: 14px; border-top: 1px solid #d8d0b8; font-size: 13px; color: #5c5f55">{{vw.footer}}</p>
+</article>
+</div>
+<aside aria-label="Guide for this document" style="position: sticky; top: 0; align-self: flex-start; height: 100%; flex: 1 1 340px; max-width: 420px; min-width: 0; min-height: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line)">
+<div style="flex: none; display: flex; flex-direction: column; padding: 12px 16px; border-bottom: 1px solid var(--line)">
+<strong style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim)">Guide</strong>
+<span style="font-size: 12px; color: var(--muted)">Working on this document with you</span>
+</div>
+<div style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 12px; padding: 16px">
+<sc-for list="{{vw.chat}}" as="m" hint-placeholder-count="1">
+<div style="display: flex; flex-direction: column">
+<sc-if value="{{m.mine}}" hint-placeholder-val="{{false}}">
+<p style="align-self: flex-end; max-width: 88%; margin: 0; padding: 9px 12px; border-radius: 12px 12px 4px 12px; background: var(--inv); color: var(--inv-fg)">{{m.text}}</p>
+</sc-if>
+<sc-if value="{{m.guide}}" hint-placeholder-val="{{true}}">
+<div class="md" sc-html="{{m.html}}" style="max-width: 94%; margin: 0; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px 12px 12px 4px; background: var(--raise); color: var(--text1)"></div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="flex: none; display: flex; gap: 8px; align-items: center; margin: 12px 16px 16px; padding: 5px 5px 5px 12px; border: 1px solid var(--line2); border-radius: 12px; background: var(--raise)">
+<label for="guide-doc" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0)">Ask the Guide about this document</label>
+<input id="guide-doc" type="text" value="{{vw.draft}}" onChange="{{vw.onDraft}}" onKeyDown="{{vw.onKey}}" placeholder="Tell the Guide what to change" autocomplete="off" style="flex: 1 1 auto; min-width: 0; min-height: 44px; border: 0; outline-offset: 4px; background: transparent; color: var(--fg)">
+<button onClick="{{vw.send}}" style="flex: none; min-height: 44px; padding: 10px 14px; border: 0; border-radius: 9px; background: var(--inv); color: var(--inv-fg); font-weight: 700">Send</button>
+</div>
+</aside>
+</div>
+</div>
+</div>
+</sc-if>
 
-        <p class="feedback-privacy">Email your report to <strong>support@coachlou.com</strong> with the subject <strong>SoloFactory Feedback</strong>. Preview it, then choose <strong>Copy &amp; open email</strong> and paste into the message.</p>
-        <p id="feedback-privacy" class="feedback-privacy"></p>
-        <p id="feedback-error" class="notice hidden" role="alert"></p>
+<sc-if value="{{info.open}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-modal="true" aria-label="{{info.title}}" style="position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--scrim)">
+<div style="display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 520px; padding: 22px 24px; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel)">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">{{info.title}}</h2>
+<p style="margin: 0; color: var(--text1)">{{info.text}}</p>
+<sc-if value="{{info.hasPre}}" hint-placeholder-val="{{false}}"><pre style="margin: 0; max-height: 240px; overflow: auto; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); font-size: 12px; white-space: pre-wrap">{{info.pre}}</pre>
+<button onClick="{{info.copy}}" style="align-self: flex-start; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">{{info.copyLabel}}</button></sc-if>
+<button onClick="{{info.close}}" style="align-self: flex-end; min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-weight: 700">OK</button>
+</div>
+</div>
+</sc-if>
 
-        <pre id="feedback-preview" class="feedback-preview" tabindex="0" aria-label="Report preview">Choose Preview report to see exactly what will be copied.</pre>
-        <p id="feedback-redacted" class="feedback-redacted hidden">Some text in the diagnostics matched a path or credential pattern and was replaced with [redacted].</p>
+<sc-if value="{{fb.open}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-modal="true" aria-label="{{fb.title}}" onKeyDown="{{fb.onKey}}" style="position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--scrim)">
+<div style="display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 620px; max-height: 100%; overflow-y: auto; padding: 22px 24px; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel)">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">{{fb.title}}</h2>
+<div role="radiogroup" aria-label="Kind of feedback" style="display: flex; gap: 8px">
+<sc-for list="{{fb.modes}}" as="m" hint-placeholder-count="2"><button role="radio" aria-checked="{{m.checked}}" onClick="{{m.pick}}" style="flex: 1; display: flex; flex-direction: column; gap: 2px; min-height: 44px; padding: 8px 12px; border: 1px solid {{m.border}}; border-radius: 10px; background: {{m.bg}}; color: var(--fg); text-align: left"><span style="font-weight: 700">{{m.label}}</span><span style="font-size: 12px; color: var(--muted)">{{m.help}}</span></button></sc-for>
+</div>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Title<input value="{{fb.f.title}}" onChange="{{fb.on.title}}" maxlength="120" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit"></label>
+<sc-if value="{{fb.problem}}" hint-placeholder-val="{{true}}">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">What happened<textarea value="{{fb.f.happened}}" onChange="{{fb.on.happened}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Expected result<textarea value="{{fb.f.expected}}" onChange="{{fb.on.expected}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Additional context (optional)<textarea value="{{fb.f.context}}" onChange="{{fb.on.context}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+</sc-if>
+<sc-if value="{{fb.improvement}}" hint-placeholder-val="{{false}}">
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Problem or friction<textarea value="{{fb.f.friction}}" onChange="{{fb.on.friction}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Desired outcome<textarea value="{{fb.f.outcome}}" onChange="{{fb.on.outcome}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Current workaround (optional)<textarea value="{{fb.f.workaround}}" onChange="{{fb.on.workaround}}" maxlength="4000" rows="3" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit; resize: vertical"></textarea></label>
+<div style="display: flex; gap: 10px"><label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Frequency<select value="{{fb.f.frequency}}" onChange="{{fb.on.frequency}}" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit"><option value="once">Once</option><option value="sometimes">Sometimes</option><option value="often">Often</option></select></label>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600">Area<select value="{{fb.f.area}}" onChange="{{fb.on.area}}" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font: inherit"><option value="interview">Interview</option><option value="specification">Specification</option><option value="build">Build</option><option value="verification">Verification</option><option value="recovery">Recovery</option><option value="dashboard">Dashboard</option><option value="deployment">Deployment</option><option value="generated app">Generated app</option><option value="other">Other</option></select></label>
+</div>
+</sc-if>
+<sc-if value="{{fb.hasDiag}}" hint-placeholder-val="{{false}}"><label style="display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text1)"><input type="checkbox" checked="{{fb.diagChecked}}" onChange="{{fb.onDiag}}" style="margin-top: 3px">Include run diagnostics: version, platform, error code, failed stage, gate, counts, and recent lifecycle event types. Never your brief, transcript, agent output, or paths.</label></sc-if>
+<p style="margin: 0; font-size: 12px; color: var(--muted)">{{fb.privacy}}</p>
+<sc-if value="{{fb.hasError}}" hint-placeholder-val="{{false}}"><p role="alert" style="margin: 0; font-size: 13px; color: var(--red-text)">{{fb.error}}</p></sc-if>
+<button onClick="{{fb.onPreview}}" disabled="{{fb.busy}}" style="align-self: flex-start; min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">{{fb.previewLabel}}</button>
+<pre id="fb-preview" aria-live="polite" style="margin: 0; max-height: 220px; overflow: auto; padding: 10px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); font-size: 12px; white-space: pre-wrap; color: var(--text1)">{{fb.preview}}</pre>
+<sc-if value="{{fb.redacted}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 12px; color: var(--muted)">Some text looked like a path, address or secret and was replaced before the preview.</p></sc-if>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end">
+<button onClick="{{fb.close}}" style="min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">Close</button>
+<sc-if value="{{fb.hasIssues}}" hint-placeholder-val="{{false}}"><button onClick="{{fb.onSearch}}" disabled="{{fb.notReady}}" style="min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">Search existing issues</button><button onClick="{{fb.onGithub}}" disabled="{{fb.notReady}}" style="min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">Open GitHub issue</button></sc-if>
+<button onClick="{{fb.onCopy}}" disabled="{{fb.notReady}}" style="min-height: 44px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg); font-weight: 600">{{fb.copyLabel}}</button>
+<button onClick="{{fb.onEmail}}" disabled="{{fb.notReady}}" style="min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-weight: 700">{{fb.emailLabel}}</button>
+</div>
+</div>
+</div>
+</sc-if>
 
-        <div class="feedback-actions">
-          <button id="feedback-preview-button" class="button primary" type="submit">Preview report</button>
-          <button id="feedback-email-button" class="button" type="button" disabled>Copy &amp; open email <span>↗</span></button>
-          <button id="feedback-copy-button" class="button" type="button" disabled>Copy report</button>
-          <button id="feedback-search-button" class="button ghost" type="button" disabled>Search existing issues <span>↗</span></button>
-          <button id="feedback-github-button" class="button ghost" type="button" disabled>Open GitHub <span>↗</span></button>
-        </div>
-      </form>
-    </dialog>
-    <script type="module" src="/app.js"></script>
-  </body>
+<sc-if value="{{np.open}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-modal="true" aria-label="New project" style="position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--scrim)">
+<div style="display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 520px; padding: 22px 24px; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel)">
+<h2 style="margin: 0; font-size: 18px; font-weight: 600">New project</h2>
+<label for="np-name" style="font-size: 13px; font-weight: 600">Project name</label>
+<input id="np-name" type="text" value="{{np.name}}" onChange="{{np.onName}}" placeholder="For example: Client Portal" autocomplete="off" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg)">
+<div role="radiogroup" aria-label="Start from" style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{np.modes}}" as="o" hint-placeholder-count="2">
+<button role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 56px; padding: 10px 12px; border: 1px solid {{o.border}}; border-radius: 10px; background: {{o.bg}}; color: var(--fg); text-align: left"><strong style="font-weight: 600">{{o.label}}</strong><span style="font-size: 12px; color: var(--muted)">{{o.help}}</span></button>
+</sc-for>
+</div>
+<sc-if value="{{np.adopt}}" hint-placeholder-val="{{false}}">
+<label for="np-folder" style="font-size: 13px; font-weight: 600">Folder on this computer</label>
+<input id="np-folder" type="text" value="{{np.folder}}" onChange="{{np.onFolder}}" placeholder="/Users/you/code/my-app" autocomplete="off" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font-family: ui-monospace, Menlo, monospace">
+</sc-if>
+<div role="radiogroup" aria-label="Where the repo lives" style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 13px; font-weight: 600">Where the repo lives</span>
+<sc-for list="{{np.repoModes}}" as="o" hint-placeholder-count="2">
+<button role="radio" aria-checked="{{o.checked}}" onClick="{{o.pick}}" style="display: flex; flex-direction: column; gap: 2px; width: 100%; min-height: 48px; padding: 8px 12px; border: 1px solid {{o.border}}; border-radius: 10px; background: {{o.bg}}; color: var(--fg); text-align: left"><strong style="font-weight: 600">{{o.label}}</strong><span style="font-size: 12px; color: var(--muted); font-family: {{o.font}}">{{o.help}}</span></button>
+</sc-for>
+<sc-if value="{{np.custom}}" hint-placeholder-val="{{false}}">
+<label for="np-repo" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Repo folder</label>
+<input id="np-repo" type="text" value="{{np.repo}}" onChange="{{np.onRepo}}" placeholder="/Users/you/code/client-portal" autocomplete="off" style="min-height: 44px; padding: 8px 12px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise); color: var(--fg); font-family: ui-monospace, Menlo, monospace">
+<span style="font-size: 12px; color: var(--muted)">SoloFactory makes this folder a git repo if it is not one yet, and lists the project here as usual. An empty folder is best.</span>
+</sc-if>
+</div>
+<div style="display: flex; gap: 8px; justify-content: flex-end">
+<button onClick="{{np.close}}" style="min-height: 44px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--fg)">Cancel</button>
+<button onClick="{{np.create}}" style="min-height: 44px; padding: 10px 16px; border: 0; border-radius: 10px; background: var(--inv); color: var(--inv-fg); font-weight: 700">{{np.cta}}</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{cfg.open}}" hint-placeholder-val="{{false}}">
+<div role="dialog" aria-modal="true" aria-label="Settings" style="position: absolute; inset: 0; z-index: 6; display: flex; padding: 24px; background: var(--scrim)">
+<div style="flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; max-width: 1040px; margin: 0 auto; border: 1px solid var(--line2); border-radius: 14px; background: var(--panel); overflow: hidden">
+<div style="flex: none; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--line)">
+<div style="display: flex; flex-direction: column"><h2 style="margin: 0; font-size: 18px; font-weight: 600">Settings</h2><span style="font-size: 12px; color: var(--muted)">{{cfg.status}}</span></div>
+<button onClick="{{cfg.close}}" style="min-height: 40px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">Done</button>
+</div>
+<div style="flex: 1 1 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; padding: 20px 24px 28px">
+<p style="margin: 0; font-size: 13px; color: var(--muted)">Profiles save to profiles.json in the factory home; the other settings are shown for information: each names the variable that changes it. Changes apply from the next run: a run in progress keeps the settings it started with.</p>
+<sc-for list="{{cfg.sections}}" as="sec" hint-placeholder-count="3">
+<section style="display: flex; flex-direction: column; gap: 4px">
+<h3 style="margin: 0 0 6px; font-size: 15px; font-weight: 600">{{sec.title}}</h3>
+<sc-if value="{{sec.hasNote}}" hint-placeholder-val="{{false}}"><p style="margin: 0 0 6px; font-size: 13px; color: var(--amber)">{{sec.note}}</p></sc-if>
+<sc-if value="{{sec.hasBar}}" hint-placeholder-val="{{false}}"><div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 6px"><sc-for list="{{sec.bar}}" as="b" hint-placeholder-count="3"><button onClick="{{b.act}}" disabled="{{b.off}}" style="min-height: 36px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">{{b.label}}</button></sc-for></div></sc-if>
+<sc-if value="{{sec.hasPrompt}}" hint-placeholder-val="{{false}}">
+<div role="group" aria-label="Save profile changes" style="display: flex; flex-direction: column; gap: 8px; margin: 4px 0 8px; padding: 12px 14px; border: 1px solid var(--line2); border-radius: 10px; background: var(--raise)">
+<p style="margin: 0; font-size: 13px">{{sec.prompt.text}}</p>
+<input type="text" value="{{sec.prompt.name}}" onChange="{{sec.prompt.onName}}" aria-label="New profile name" placeholder="New profile name" maxlength="40" autocomplete="off" style="min-height: 40px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 9px; background: var(--panel); color: var(--fg)">
+<sc-if value="{{sec.prompt.hasError}}" hint-placeholder-val="{{false}}"><p role="alert" style="margin: 0; font-size: 13px; color: var(--red-text)">{{sec.prompt.error}}</p></sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 8px"><sc-for list="{{sec.prompt.acts}}" as="b" hint-placeholder-count="2"><button onClick="{{b.act}}" style="min-height: 36px; padding: 6px 12px; border: 1px solid var(--line2); border-radius: 9px; background: transparent; color: var(--fg); font-size: 13px">{{b.label}}</button></sc-for></div>
+</div>
+</sc-if>
+<sc-for list="{{sec.fields}}" as="fd" hint-placeholder-count="3">
+<div style="display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--raise2)">
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<label for="{{fd.id}}" style="font-weight: 600">{{fd.label}}</label>
+<span style="font-size: 12px; color: var(--muted)">{{fd.help}}</span>
+<span style="font-size: 12px; color: {{fd.envColor}}; font-family: ui-monospace, Menlo, monospace">{{fd.envLine}}</span>
+</div>
+<div style="flex: 0 1 260px; min-width: 0; display: flex; gap: 8px; align-items: center">
+<sc-if value="{{fd.isText}}" hint-placeholder-val="{{false}}"><span id="{{fd.id}}" style="font-size: 14px; color: var(--text1)">{{fd.text}}</span></sc-if>
+<sc-if value="{{fd.isSelect}}" hint-placeholder-val="{{false}}">
+<select id="{{fd.id}}" value="{{fd.value}}" onChange="{{fd.onChange}}" disabled="{{fd.locked}}" style="width: 100%; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 9px; background: var(--raise); color: var(--fg)">
+<sc-for list="{{fd.options}}" as="op" hint-placeholder-count="2"><option value="{{op.v}}">{{op.label}}</option></sc-for>
+</select>
+</sc-if>
+<sc-if value="{{fd.isInput}}" hint-placeholder-val="{{true}}">
+<input id="{{fd.id}}" type="{{fd.inputType}}" value="{{fd.value}}" onChange="{{fd.onChange}}" disabled="{{fd.locked}}" min="{{fd.min}}" max="{{fd.max}}" autocomplete="off" style="width: 100%; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line2); border-radius: 9px; background: var(--raise); color: var(--fg)">
+<sc-if value="{{fd.hasUnit}}" hint-placeholder-val="{{false}}"><span style="flex: none; font-size: 13px; color: var(--muted)">{{fd.unit}}</span></sc-if>
+</sc-if>
+<sc-if value="{{fd.isToggle}}" hint-placeholder-val="{{false}}">
+<input id="{{fd.id}}" type="checkbox" checked="{{fd.on}}" onChange="{{fd.onToggle}}" disabled="{{fd.locked}}" style="width: 22px; height: 22px; accent-color: var(--fg)">
+<span style="font-size: 13px; color: var(--text2)">{{fd.toggleText}}</span>
+</sc-if>
+</div>
+</div>
+</sc-for>
+</section>
+</sc-for>
+</div>
+</div>
+</div>
+</sc-if>
+
+</script>
+<script src="/app.js"></script>
+</body>
 </html>

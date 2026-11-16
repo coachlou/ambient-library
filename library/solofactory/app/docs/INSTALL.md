@@ -751,9 +751,24 @@ You arrive here from **Step 0** with a confirmed install at `<SF>`. Nothing from
 git, Node, and the coding agent are already in place. Updating is the same command as
 installing: it refreshes the machinery and leaves all their work untouched.
 
-## U1. Stop the server
+## U1. Check for a running build, then stop the server
 
-Updating underneath a running server leaves it serving stale code until restarted.
+Updating underneath a running server leaves it serving stale code until restarted. First
+check whether anything is building, because stopping the server stops the build too:
+
+```sh
+curl -s http://127.0.0.1:4173/api/health
+```
+
+If it prints `"activeRuns":[]` (or nothing, because the server isn't running), go on. If
+`activeRuns` lists a run, ask the owner:
+
+> Something is building right now. You can let it finish and update afterwards, or press
+> **Pause** on it in the page and update now. Either way nothing is lost: a paused run picks
+> up where it stopped when you press **Resume**.
+
+If they stop it anyway, the run comes back after the update marked interrupted, with a
+**Resume** button. Then:
 
 > If SoloFactory is running right now, go to the text window it's running in and press
 > `Control` and `C` together once. If it isn't running, nothing to do. Tell me either way.
@@ -806,7 +821,7 @@ cd "<SF>" && bash start.sh
 Check two things on the page yourself, through what they report:
 
 1. The page loads and shows a provider as signed in (if not, **C2**).
-2. The header shows a **project selector** with their existing projects in it. Every
+2. The project name at the top of the page opens a **project switcher** with their existing projects in it. Every
    project they built before is still there — the update changes nothing inside
    `projects/`.
 
@@ -872,7 +887,7 @@ could change or remove them:
 
 **If they were below 0.10.15 before the update**, say in one breath that the factory now tells them itself when a newer version is out, so they don't need to wait for an email. What you need to know yourself:
 
-- The top bar has a *Check for updates* button next to *Manual*. When a newer version exists it turns into a green *Update available* pill; clicking it shows both versions and the paste-in update prompt with a **Copy prompt** button. Nothing covers their work and nothing updates on its own.
+- The foot of the left rail has a *Check for updates* button next to *Menu* (which holds *Manual* and *Feedback*). When a newer version exists it turns into a green *Update available* pill; clicking it shows both versions and the paste-in update prompt with a **Copy prompt** button. Nothing covers their work and nothing updates on its own.
 - It checks only at startup, on page load and on a click (3-second timeout, no background polling) by reading `version` from the public soloFactory `package.json`. Offline, a manual check says *Couldn't check*. `SOLOFACTORY_UPDATE_CHECK=0` turns it off.
 - Screenshots for the owner: https://github.com/coachlou/soloFactory/blob/main/docs/update-notice.md
 - Nothing to migrate by hand.
@@ -882,6 +897,15 @@ could change or remove them:
 - When Resume is the offered step, the card adds *Safe to resume?*. *Yes. No processing errors* means the run stopped on a limit (usage window, spending limit, provider outage, or a pause), with the features verified and new checks passed since the last Resume. *Not yet* means a full allotment since the last Resume verified nothing: choose **Report this run** instead of resuming. *Check first* means it stopped on an error; compare progress with the last stop.
 - New builds use `npm test` with a plain `node --test` script and run the whole suite on the first feature, so a broken test command fails early instead of costing a repair at the end. Existing apps are unchanged.
 - Nothing to migrate by hand.
+
+**If they were below 0.11.0 before the update** (alpha testers included), say in one breath that the page has a new layout and nothing they built is gone. What you need to know yourself:
+
+- The left rail holds the **Work** list (every run of every project: Needs you, Running, Queued, Done) and **Menu** (New project, Feedback, Manual, Settings, Check for updates). The Factory board page is gone; the Work list replaces it.
+- The Guide's conversation fills the middle. The brief shows in **Documents** as *Draft spec*, with Read and Edit. **Send to the factory** runs the final review once and queues the run; **Revise the spec** on a stopped or shipped run reopens it as a draft with **Resubmit to the factory**.
+- Every control from before is still there, on the run card, the Run panel or a run's `···` menu: Pause after this step, Cancel, Resume, Restart from here, queue order and Remove from queue, Copy recovery packet, Start over from scratch, Dismiss, Report this run, and the Recovery box.
+- **Settings → Profiles and models** has built-in Claude and Codex profiles and their own custom ones; the profile picked there is the open project's and the default for new projects, and the **Profile** button in the Guide box switches one project. The other Settings rows are read only and show their default as text. `SOLOFACTORY_*` model settings still win.
+- Feedback: **Menu → Feedback** or **Report this run** opens the form; **Copy & open email** goes to support@coachlou.com.
+- Alpha testers: this replaces the alpha zip; the update notice works as usual from here on. Nothing to migrate by hand.
 
 **If they were below 0.10.2 before the update**, a run on Linux or WSL that parked as *Repair budget exhausted* even though its tests passed (the log ends in `EINVAL: invalid argument, fsync`) will pass its checks now. If the card offers **Resume** (it says *SoloFactory changed since this gate failed*), choose it: the check reruns for free and the run carries on. Otherwise choose **Prepare repair plan**. The repair feature normally runs its checks before building anything, so a feature that passes them goes on to review without a rebuild. If the test runner ever crashes after every test passed, the run now stops with an infrastructure error instead of spending its repairs.
 
@@ -907,6 +931,9 @@ update is finished once U4 holds.
    their own) → A4 / B3 to put Node 24 back.
 4. The page loads at `http://127.0.0.1:4173` with a provider signed in.
 5. The project selector lists the projects they had before.
+6. Each project's runs show in the Work list in the state they were in: shipped and cancelled
+   under Done, paused and failed under Needs you, queued under Queued. A run that was building
+   when the server stopped comes back under Needs you as interrupted, with **Resume**.
 
 If any one of these fails, you are not done. Fix it.
 
@@ -932,9 +959,13 @@ Work these yourself. Do not read this table out loud.
 | Run parks as *Repair budget exhausted* | A gate kept failing after its repairs were spent | If the card says *SoloFactory changed since this gate failed* and offers **Resume**, choose it: the check reruns on this version for free. Otherwise choose **Prepare repair plan**; once the independent review passes, repairs start on their own. Resume does not renew a spent budget |
 | Run parks as *Run worker ceiling reached* (`run_budget_reached`) | The run started as many workers as `SOLOFACTORY_MAX_RUN_WORKERS` allows (default 150) | Read the *Spent so far* line with the owner. If they want to go on, choose **Resume**, which grants another allotment. Nothing is lost |
 | Run parks as *Run cost ceiling reached* (`run_budget_reached`) | Claude reported as much cost for the run as `SOLOFACTORY_MAX_RUN_COST_USD` allows (default $30; list price, not a subscription bill) | Same as the worker ceiling: read *Spent so far* with the owner; **Resume** grants another $30. A brief with fewer checks costs less |
+| Run parks as *Run token ceiling reached* (`run_budget_reached`) | The run's agents reported as many tokens as `SOLOFACTORY_MAX_RUN_TOKENS` allows (default 40M; cached input counts) | Same as the worker ceiling: read *Spent so far* with the owner; **Resume** grants another allotment |
+| Run parks as *Repeated failure despite code changes* | Repairs kept changing the code but the same check failed the same way `SOLOFACTORY_SYMPTOM_THRESHOLD` times (default 4) | Read the failure with the owner. If the card offers **Prepare repair plan**, choose it. Otherwise fix the cause or the inputs, then **Resume** reruns the checks. Raise the threshold only if the owner wants more of the same repairs |
+| Run parks with `agent_turn_cap` (*used its step limit for one turn*) | One Claude turn took `SOLOFACTORY_AGENT_MAX_TURNS` tool steps (default 150) without finishing, which usually means it was going round in circles | Read the turn's log with the owner. **Resume** starts a fresh turn from the preserved files. If the work is genuinely large, raise the limit first |
 | Run parks as *Repair budget exhausted* and also shows **Waive BUG-n (faulty test)** | The review's own test, not the app, looks wrong | Read the note under the button. If the test really is wrong, type why in the box above and choose **Waive**, then Resume. Otherwise choose **Prepare repair plan** |
-| Run fails with `prompt_too_large` ("over SoloFactory's 200000-character prompt limit") | A factory defect: the input cannot fit, so retrying cannot help and no agent was started | Do not retry. Have the owner use **Report this run** (or Feedback) in the top bar |
+| Run fails with `prompt_too_large` ("over SoloFactory's 200000-character prompt limit") | A factory defect: the input cannot fit, so retrying cannot help and no agent was started | Do not retry. Have the owner use **Report this run** (or Menu → Feedback) |
 | `Port 4173 is in use by another app` | Another app already uses port 4173 | Start with a different port: `cd "<SF>" && PORT=5000 bash start.sh`, then use `http://127.0.0.1:5000` everywhere this guide says 4173 |
+| `start.sh` prints its banner, then returns to the prompt with no *SoloFactory is ready* line | Before 0.11.0-alpha.1, the server quietly skipped starting when the install folder was reached through a symlink (for example `/tmp` on a Mac) | Update SoloFactory; until then, `cd` to the real folder (`cd "$(cd "<SF>" && pwd -P)"`) and run `bash start.sh` there |
 | `SoloFactory is already running at …` | A factory from an earlier window is still running | Open that address; don't start a second one |
 | `ask for an invite to the AIMM repo`, or a bash `syntax error near unexpected token` / `Not Found`, right after the `gh api` line | No GitHub access to the AIMM members' repo | `gh auth login` with an account that has access, or use a zip — see **The install command** |
 | `rsync: command not found` | Ubuntu missing rsync | B2 |
@@ -967,7 +998,7 @@ yourself; do not ask the owner to confirm them.
 4. `<SF>/start.sh` exists.
 5. `bash start.sh` prints the `SoloFactory → http://127.0.0.1:4173` line and keeps running.
 6. The owner has loaded that address in their browser and seen the page, with the project
-   selector in the header.
+   name at the top and the Work list on the left.
 7. The page shows a provider as signed in — not "Select an authenticated subscription
    provider."
 8. The owner has been given the restart command, in a copy/paste box.

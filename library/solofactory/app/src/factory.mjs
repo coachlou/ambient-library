@@ -10,10 +10,11 @@ import { assertAllowedCommand, runProcess, subscriptionEnvironment } from "./pro
 import { buildPrompt, continuationPrompt, featureBuildPrompt, featurePlanPrompt, featureReviewPrompt, planAuditPrompt, planCorrectionPrompt, planReviewPrompt, repairPrompt, reviewPrompt, sliceBuildPrompt, sliceContinuationPrompt, specificationPrompt } from "./prompts.mjs";
 import { PLAN_SCHEMA_FIXES, assertConsolidation, caseResults, featureProofs, impactedFeatures, proofsOf, orderSlices, integrationProofs, outsideWrites, writesCover, pendingChecks, pendingProofFailure, recordPendingProofs, validateFeaturePlan, validateSlicePlan } from "./wbs.mjs";
 export { pendingProofFailure };
-import { contractDigest, originalChecks, preparePlanReview, prepareReview, runInputs, sourceSet, validatePlanReview, validateReview } from "./review.mjs";
+import { contractDigest, originalChecks, preparePlanReview, prepareReview, runInputs, featureNeedsReview, sourceSet, unreviewedFeatures, validatePlanReview, validateReview } from "./review.mjs";
 import { addUsage } from "./providers.mjs";
+import { CREDENTIAL_PATTERNS } from "./credentials.mjs";
 import { measureRun } from "./measure.mjs";
-import { RunMonitor, failureSignature, incidentRecord, repeatedFailure, watchConfig, workerAlive } from "./watchdog.mjs";
+import { RunMonitor, failureSignature, incidentRecord, repeatedFailure, repeatedSymptom, watchConfig, workerAlive } from "./watchdog.mjs";
 import { amendRepairPlan, archiveReview, assertBatch, consolidationBase, keepCorrecting, assertPlanningCurrent, digest, exhaustedPreparations, planFeatureRecovery, planKey, resumeAmendedReview, reviewedPlanKeys, runFeatureRecovery, sourceBaseline, validateRecoveryApproval, validateRecoveryPlan } from "./feature-recovery.mjs";
 
 // Which harness produced a run, so runs.jsonl can compare harness changes. Read once at load.
@@ -82,7 +83,36 @@ export class FactoryError extends Error {
 // one SoloFactory per run, and a project's next release must stop the previous release's app.
 const liveByProject = new Map();
 
-// Test files and fixtures: never widened into, since editing another feature's tests can weaken them.
+// A newer run blocks a relaunch only if its work may still be in the folder: dismissed with a rollback
+// point means the server rewound it. runs: JobStore.list(), newest first.
+export function newerRunBlocks(runs, jobId) {
+  return runs.slice(0, runs.findIndex((run) => run.id === jobId)).some((run) => !(run.dismissed && run.baseCommit));
+}
+
+// The release a parked follow-on falls back to, for its card. runs: JobStore.list(), newest first.
+export function previousRelease(job, runs) {
+  if (!job.followOn || !PARKED_STATES.has(job.state) || job.dismissed) return null;
+  const at = runs.findIndex((run) => run.id === job.id);
+  const prior = at < 0 ? null : runs.slice(at + 1).find((run) => run.state === "completed" && run.deployment?.url);
+  if (!prior) return null;
+  const live = prior.deployment.status === "live";
+  // Dismiss rewinds to job.baseCommit and marks the job dismissed; relaunch is then allowed unless another newer run blocks it.
+  const afterDismiss = runs.map((run) => (run.id === job.id ? { ...run, dismissed: true } : run));
+  return {
+    jobId: prior.id,
+    name: prior.brief?.workingName || prior.id,
+    url: prior.deployment.url,
+    live,
+    relaunchable: !live && Boolean(job.baseCommit) && !newerRunBlocks(afterDismiss, prior.id),
+  };
+}
+
+// Edits earlier features made to files this feature owns (writesFailure's cursor.shared), for its build and review.
+const sharedEdits = (job, owner) => [job.sliceStats, job.recoveryPhase?.stats].flatMap((stats) => Object.entries(stats ?? {}))
+  .flatMap(([by, stats]) => (stats.shared ?? []).filter((entry) => entry.owner === owner).map((entry) => ({ by, file: entry.file })));
+
+// Test files and fixtures: never widened into, since editing another feature's tests can weaken them, unless this
+// feature broke that test's proof (cursor.brokenProofs).
 const TEST_PATH = /(^|\/)(tests?|__tests__|spec)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
 
 // ponytail: size + mtime per file, not content hashes; data/ can hold large uploads.
@@ -215,6 +245,8 @@ export class SoloFactory {
       if (grant) {
         if (maxRunWorkers()) job.workerAllowance = job.error.details.workers + maxRunWorkers();
         if (maxRunCostUsd()) job.costAllowance = (job.error.details.costUsd ?? 0) + maxRunCostUsd();
+        // A run parked before tokens were recorded still has them in its spend line.
+        if (maxRunTokens()) job.tokenAllowance = (job.error.details.tokens ?? job.error.details.spend?.tokens ?? 0) + maxRunTokens();
       }
       if (grant || job?.watch?.incident || job?.watch?.observed) {
         delete job.watch?.incident; delete job.watch?.observed;
@@ -482,7 +514,9 @@ export class SoloFactory {
       let request;
       const pending = integrationProofs(job).map((entry) => ({ id: entry.key, text: obligationCheck(entry.obligation).text }));
       const caseIds = integrationProofs(job).flatMap((entry) => (entry.obligation.cases ?? []).map((item) => item.id));
-      try { request = await prepareReview(appDir, job, { checks: [...originalChecks(job.brief), ...pending], caseResults: caseIds.length ? Object.fromEntries(caseIds.map((id) => [id, job.caseResults?.[id] ?? { status: "missing" }])) : undefined }); }
+      const editedProofs = Object.fromEntries(Object.entries(job.sliceStats ?? {}).filter(([, stats]) => stats.editedProofs?.length).map(([id, stats]) => [id, stats.editedProofs]));
+      const unreviewed = job.planVersion === 2 ? unreviewedFeatures(job) : [];
+      try { request = await prepareReview(appDir, job, { checks: [...originalChecks(job.brief), ...pending], caseResults: caseIds.length ? Object.fromEntries(caseIds.map((id) => [id, job.caseResults?.[id] ?? { status: "missing" }])) : undefined, editedProofs, unreviewed, flakyGates: job.flakyGates }); }
       catch (error) { throw new FactoryError("review_rejected", `Cannot review the frozen contract: ${error.message}`); }
       if (job.reviewContractDigest && request.contractDigest !== job.reviewContractDigest) {
         throw new FactoryError("review_rejected", "Frozen contract changed after the first review; scope cannot be narrowed during repair.");
@@ -490,7 +524,7 @@ export class SoloFactory {
       job.reviewContractDigest = request.contractDigest;
       job.reviewRequest = request;
       await this.store.writeState(job);
-      const prompt = reviewPrompt({ featureReviewed: job.planVersion === 2 });
+      const prompt = reviewPrompt({ featureReviewed: job.planVersion === 2, unreviewed });
       const reviewed = await sourceBaseline(this.store, { head: false });
       try {
         await this.invoke(job, "review", prompt, signal);
@@ -792,6 +826,8 @@ export class SoloFactory {
         reviews: cursor.reviews,
         commit: cursor.commit,
         ...(cursor.widened && { widened: cursor.widened }),
+        ...(cursor.shared && { shared: cursor.shared }),
+        ...(cursor.brokenProofs?.length && { editedProofs: cursor.brokenProofs }),
       };
       job.sliceDone = [...(job.sliceDone ?? []), slice.id];
       job.sliceIndex = i + 1;
@@ -814,7 +850,9 @@ export class SoloFactory {
   async setAside(job, slice, error, signal) {
     const cursor = job.featureCursor;
     const slices = job.approvedPlan.plan.slices;
-    if (signal?.aborted || !["quality_gate_failed", "review_rejected", "review_unstable"].includes(error.code) || !cursor?.base || cursor.restored || !slices.every((item) => item.writes)) return false;
+    // A feature that changed an unbuilt feature's file is not set aside: the owner would build over that change, then
+    // parkSetAside would restore this feature's version over the owner's.
+    if (signal?.aborted || !["quality_gate_failed", "review_rejected", "review_unstable"].includes(error.code) || !cursor?.base || cursor.restored || cursor.shared?.length || !slices.every((item) => item.writes)) return false;
     const waiting = new Set([slice.id, ...(job.setAside ?? []).map((entry) => entry.id)]);
     let independent = false;
     for (const item of slices.slice(slices.indexOf(slice) + 1)) {
@@ -931,7 +969,7 @@ export class SoloFactory {
         const label = resumed ? labels.resume : labels.build;
         // The last feature writes the README; left to the final reviewer it is a source change that forces the post-review gate rerun.
         const [index, total] = position.split("/");
-        const prompt = featureBuildPrompt(slice, { owned, planDigest, planFile, followOn: job.followOn, resumed, precheck: cursor.precheck, last: index === total });
+        const prompt = featureBuildPrompt(slice, { owned, planDigest, planFile, followOn: job.followOn, resumed, precheck: cursor.precheck, last: index === total, ownerDecisions: job.ownerDecisions, sharedEdits: sharedEdits(job, slice.id) });
         const before = await candidate();
         try {
           await this.invoke(job, label, prompt, signal, { resumeSessionId: this.resumeSessionFor(job, label) });
@@ -939,7 +977,7 @@ export class SoloFactory {
           // A build that hit the safety cap while still changing files is too big for one turn, not stuck:
           // continue it once in its own session (the stage's one continuation allowance) instead of parking.
           if (error.code !== "agent_hard_timeout" || await candidate() === before || !await this.allowContinuation(job, labels.build)) throw error;
-          await this.invoke(job, labels.resume, featureBuildPrompt(slice, { owned, planDigest, planFile, followOn: job.followOn, resumed: true, precheck: cursor.precheck, last: index === total }), signal, { resumeSessionId: error.details?.sessionId ?? this.resumeSessionFor(job, labels.resume) });
+          await this.invoke(job, labels.resume, featureBuildPrompt(slice, { owned, planDigest, planFile, followOn: job.followOn, resumed: true, precheck: cursor.precheck, last: index === total, ownerDecisions: job.ownerDecisions, sharedEdits: sharedEdits(job, slice.id) }), signal, { resumeSessionId: error.details?.sessionId ?? this.resumeSessionFor(job, labels.resume) });
         }
         await save("checking");
         if (scope.buildOnly) return job;
@@ -950,7 +988,10 @@ export class SoloFactory {
         const reached = scope.cursor ? [] : await this.reachedProofs(job, slice);
         job = await this.verifyWithRepairs(job, await this.readManifest(appDir), signal, { includeInstall: await depsDigest(appDir) !== job.installedDeps, slice, proofs: [...runnable.filter((item) => item.proof), ...reached] });
         cursor.candidate = await candidate();
-        await save("reviewing");
+        // A skipped feature is audited in full by the final review (unreviewedFeatures). Recovery always reviews.
+        const risky = scope.cursor || job.featureReview !== "risky" || featureNeedsReview({ runnable, owned, brokenProofs: cursor.brokenProofs });
+        if (!risky) await this.emit(job.id, { type: "review.skipped", state: job.state, slice: slice.id, message: `Feature ${slice.id} is low risk; its review moves to the final review` });
+        await save(risky ? "reviewing" : "committing");
       }
       if (cursor.substage === "reviewing") {
         job = await this.stage(job, "reviewing", `Reviewing feature ${position} — ${slice.title}`);
@@ -960,12 +1001,12 @@ export class SoloFactory {
         if (cursor.reviews >= reviewLimit) throw new FactoryError("review_unstable", `Feature ${slice.id} did not reach a stable reviewed candidate after ${cursor.reviews} reviews.`);
         cursor.reviews += 1;
         const caseIds = runnable.flatMap((item) => (item.cases ?? []).map((entry) => entry.id));
-        const request = await prepareReview(appDir, job, { checks: reviewChecks, candidate: cursor.candidate, caseResults: caseIds.length ? Object.fromEntries(caseIds.map((id) => [id, job.caseResults?.[id] ?? { status: "missing" }])) : undefined });
+        const request = await prepareReview(appDir, job, { checks: reviewChecks, candidate: cursor.candidate, caseResults: caseIds.length ? Object.fromEntries(caseIds.map((id) => [id, job.caseResults?.[id] ?? { status: "missing" }])) : undefined, editedProofs: cursor.brokenProofs?.length ? { [slice.id]: cursor.brokenProofs } : undefined });
         // Kept off job.reviewRequest, which always names the final whole-app review.
         cursor.reviewRequest = request;
         await this.store.writeState(job);
         const label = labels.review(cursor.reviews);
-        await this.invoke(job, label, featureReviewPrompt(slice), signal);
+        await this.invoke(job, label, featureReviewPrompt(slice, undefined, sharedEdits(job, slice.id)), signal);
         await archiveReview(this, job, label);
         if (await candidate() !== cursor.candidate) {
           await this.emit(job.id, { type: "gate.failed", state: job.state, gate: "review", message: "The reviewer changed source; its verdict is void and the feature is rechecked." });
@@ -1064,15 +1105,18 @@ export class SoloFactory {
           : await this.deployLocal(job, manifest, signal);
         break;
       } catch (error) {
-        // A broken metrics contract or a crash on launch is usually a code defect the repair worker can fix
+        // A broken metrics contract, a failing home page or a crash on launch is usually a code defect the repair worker can fix
         // (e.g. a production-only env check); a port or timeout problem is not. Same bounded repair budget as the gates.
-        if (error.code !== "invalid_metrics" && error.code !== "deployment_exited") throw error;
-        this.deployments.get(job.id)?.kill("SIGTERM");
+        if (!["invalid_metrics", "deployment_exited", "page_check_failed"].includes(error.code)) throw error;
+        stopApp(this.deployments.get(job.id));
         await this.emit(job.id, { type: "gate.failed", state: job.state, gate: "deploy", message: error.message });
         let output;
         if (error.code === "invalid_metrics") {
           const received = error.details?.received ? `\nReceived top-level keys: ${error.details.received.join(", ")}` : "";
           output = `GET ${manifest.metricsPath} failed the controller's metrics contract.\n${error.message}${received}`;
+        } else if (error.code === "page_check_failed") {
+          const log = await readFile(path.join(appDir, ".factory", "logs", "deployment.log"), "utf8").catch(() => "");
+          output = `GET / failed the controller's page check: ${error.message}${error.details?.body ? `\nResponse body:\n${error.details.body}` : ""}\nThe home page must answer without a 5xx and with a non-empty page when the app runs with only PORT and NODE_ENV=production set.\n${log.slice(-8_000)}`;
         } else {
           const log = await readFile(path.join(appDir, ".factory", "logs", "deployment.log"), "utf8").catch(() => "");
           output = `The app exited on launch. It runs with only PORT and NODE_ENV=production set; it must start without any other env vars.\n${error.message}\n${log.slice(-8_000)}`;
@@ -1184,24 +1228,29 @@ export class SoloFactory {
   }
 
   // Backstop for a whole run: every worker spawns through invoke(), so the ceilings are checked here once.
-  // Workers are the run's agent.started events; cost is the CLI's own figure (knownCostUsd). Resume after
-  // either stop raises both allowances by one ceiling.
+  // Workers are the run's agent.started events; cost and tokens are the CLI's own figures (knownCostUsd,
+  // knownTokens). Resume after any stop raises all three allowances by one ceiling.
   async assertWorkerBudget(job) {
     const ceiling = maxRunWorkers();
     const costCeiling = maxRunCostUsd();
-    if (!ceiling && !costCeiling) return;
+    const tokenCeiling = maxRunTokens();
+    if (!ceiling && !costCeiling && !tokenCeiling) return;
     const events = await this.store.events(job.id, Infinity);
     const workers = events.filter((event) => event.type === "agent.started").length;
     const costUsd = knownCostUsd(events);
     const overWorkers = ceiling && workers >= (job.workerAllowance ?? ceiling);
     const overCost = costCeiling && costUsd >= (job.costAllowance ?? costCeiling);
-    if (!overWorkers && !overCost) return;
+    const tokens = knownTokens(events);
+    const overTokens = tokenCeiling && tokens >= (job.tokenAllowance ?? tokenCeiling);
+    if (!overWorkers && !overCost && !overTokens) return;
     const spend = runSpend(job, events, this.maxRepairs);
     const [what, grant, title] = overWorkers
       ? [`started ${workers} workers, its limit of ${job.workerAllowance ?? ceiling} (SOLOFACTORY_MAX_RUN_WORKERS=${ceiling}, raised by each resume)`, `another ${ceiling} workers`, `Run worker ceiling reached (${workers} workers)`]
-      : [`spent about $${costUsd.toFixed(2)}, its limit of $${(job.costAllowance ?? costCeiling).toFixed(2)} (SOLOFACTORY_MAX_RUN_COST_USD=${costCeiling}, raised by each resume)`, `another $${costCeiling}`, `Run cost ceiling reached ($${costUsd.toFixed(2)})`];
+      : overCost
+      ? [`spent about $${costUsd.toFixed(2)}, its limit of $${(job.costAllowance ?? costCeiling).toFixed(2)} (SOLOFACTORY_MAX_RUN_COST_USD=${costCeiling}, raised by each resume)`, `another $${costCeiling}`, `Run cost ceiling reached ($${costUsd.toFixed(2)})`]
+      : [`used about ${tokenCount(tokens)} tokens, its limit of ${tokenCount(job.tokenAllowance ?? tokenCeiling)} (SOLOFACTORY_MAX_RUN_TOKENS=${tokenCeiling}, raised by each resume)`, `another ${tokenCount(tokenCeiling)} tokens`, `Run token ceiling reached (${tokenCount(tokens)} tokens)`];
     throw new FactoryError("run_budget_reached", `This run has ${what}. So far: ${spendLine(spend)}. Resume allows ${grant}.`, {
-      workers, ceiling, costUsd, costCeiling, spend,
+      workers, ceiling, costUsd, costCeiling, tokens, tokenCeiling, spend,
       diagnostics: [{ code: "run_budget_reached", title, action: `Review the spend so far (${spendLine(spend)}). Resume grants ${grant}; the preserved files and session are kept.` }],
     });
   }
@@ -1345,7 +1394,8 @@ export class SoloFactory {
       // The first feature also runs the suite while it is tiny: a broken test script (e.g. `node --test test/`
       // on Node 26) otherwise surfaced only at integration and cost a repair in every 2026-11-08 smoke arm.
       const firstFeature = !current.sliceDone?.length;
-      const failure = (slice?.writes && await this.writesFailure(current, slice)) || await this.verify(current, manifest, signal, { includeInstall, proofs, first, skipTest: Boolean(slice && proofs.length && !firstFeature) });
+      const earlier = slice ? new Set(proofs.filter((proof) => !ownProof(slice, proof)).map((proof) => JSON.stringify(proof.proof.command))) : null;
+      const failure = (slice?.writes && await this.writesFailure(current, slice)) || await this.secretsFailure(current) || await this.verify(current, manifest, signal, { includeInstall, proofs, first, earlier, skipTest: Boolean(slice && proofs.length && !firstFeature), rerun: !slice });
       if (!failure) {
         if (!slice) {
           const candidate = await sourceBaseline(this.store, { head: false });
@@ -1364,6 +1414,13 @@ export class SoloFactory {
         this.active.pauseRequested = false;
         throw new FactoryError("paused", "Paused before repairing", { before: "verifying" });
       }
+      // An earlier feature's proof this feature broke (run 2026-11-09-bb64b19c: ADD-HABITS pinned the row MARK-DONE
+      // changes): its test files may be updated to the new contract, so the writes gate and repair prompt allow them.
+      const failed = new Set((failure.details?.commands ?? [failure.details?.command]).map((command) => JSON.stringify(command)));
+      const broken = slice && current.featureCursor?.id === slice.id && proofs
+        .filter((proof) => !ownProof(slice, proof) && failed.has(JSON.stringify(proof.proof.command)))
+        .flatMap((proof) => proof.proof.command.filter((arg) => TEST_PATH.test(arg)));
+      if (broken?.length) current.featureCursor.brokenProofs = [...new Set([...(current.featureCursor.brokenProofs ?? []), ...broken])];
       current = await this.repair(current, failure, signal, slice, proofs.filter((proof) => proof.description));
       manifest = await this.readManifest(this.store.appDir(current.id));
       // Reinstall only when the repair touched dependencies or install itself failed.
@@ -1386,8 +1443,11 @@ export class SoloFactory {
   // from the feature's start commit also catches files the agent committed itself. A cursor without a
   // base (saved by an older release) falls back to the uncommitted tree.
   // A plan's file lists can miss a file the feature's checks need (run 2026-10-07-4f2dd1cf: VIEWER-DATES wrote only its
-  // test while its fix lived in app.js, so three repairs changed nothing). An edit to an existing source file no unbuilt
-  // feature owns widens this feature's writes on its cursor instead of failing; tests, new files and deletions still fail.
+  // test while its fix lived in app.js, so three repairs changed nothing). An edit to an existing source file widens this
+  // feature's writes on its cursor instead of failing; tests (except a broken earlier proof's), new files and deletions still
+  // fail. A file an unbuilt feature owns widens too (run 2026-11-12-d07bfd16: QUEUE's one-line server.js wiring and a store
+  // method were refused, and three repairs trusted the prompt's promise): it is recorded in cursor.shared and shown to the
+  // owner's build and review. A set-aside owner's file still fails, since parkSetAside would restore it over the edit.
   async writesFailure(job, slice) {
     const recovery = job.recoveryPhase?.cursor?.id === slice.id;
     const cursor = recovery ? job.recoveryPhase.cursor : job.featureCursor?.id === slice.id ? job.featureCursor : null;
@@ -1402,18 +1462,47 @@ export class SoloFactory {
       const plan = recovery ? job.recoveryPhase.plan : job.approvedPlan?.plan;
       const done = (recovery ? job.recoveryPhase.done : job.sliceDone) ?? [];
       const others = (plan?.slices ?? []).filter((item) => item.id !== slice.id && !done.includes(item.id) && item.writes);
-      const widen = outside.filter((file) => modified.has(file) && !TEST_PATH.test(file) && !others.some((item) => writesCover(item.writes, file)));
+      const setAside = new Set((job.setAside ?? []).map((entry) => entry.id));
+      const ownerOf = (file) => others.find((item) => writesCover(item.writes, file));
+      const widen = outside.filter((file) => modified.has(file) && (!TEST_PATH.test(file) || cursor.brokenProofs?.includes(file)) && !others.some((item) => setAside.has(item.id) && writesCover(item.writes, file)));
       if (widen.length) {
+        const shared = widen.filter(ownerOf).map((file) => ({ file, owner: ownerOf(file).id }));
         cursor.widened = [...(cursor.widened ?? []), ...widen];
+        if (shared.length) cursor.shared = [...(cursor.shared ?? []), ...shared];
         await this.store.writeState(job);
-        await this.emit(job.id, { type: "slice.writes_widened", state: job.state, slice: slice.id, files: widen, message: `Feature ${slice.id} needed ${widen.join(", ")} beyond its declared writes; its writes now include them` });
+        const named = widen.map((file) => { const owner = ownerOf(file); return owner ? `${file} (owned by ${owner.id}, not built yet)` : file; });
+        await this.emit(job.id, { type: "slice.writes_widened", state: job.state, slice: slice.id, files: widen, ...(shared.length && { shared }), message: `Feature ${slice.id} needed ${named.join(", ")} beyond its declared writes; its writes now include them` });
         outside = outside.filter((file) => !widen.includes(file));
       }
     }
     if (!outside.length) return null;
     const message = `Feature ${slice.id} changed files outside its declared writes: ${outside.join(", ")}.`;
     await this.emit(job.id, { type: "gate.failed", state: job.state, gate: "writes", feature: slice.id, message });
-    return new FactoryError("quality_gate_failed", message, { gate: "writes", output: `${message}\nDeclared writes: ${writes.join(", ")}\nAn existing source file outside the writes is allowed when the fix needs it, but not another feature's tests, a new file outside the writes, a deletion, or a file an unbuilt feature owns. Move the change into an allowed file or revert it.` });
+    return new FactoryError("quality_gate_failed", message, { gate: "writes", output: `${message}\nDeclared writes: ${writes.join(", ")}\nAn existing source file outside the writes is allowed when the fix needs it, but not another feature's tests (unless this feature broke that test's proof), a new file outside the writes, a deletion, or a file a set-aside feature owns. Move the change into an allowed file or revert it.` });
+  }
+
+  // Committed credentials (docs/sdlc-hardening-spec.md item 6): the token shapes feedback.mjs scrubs, in any file this run
+  // added or changed. A follow-on's shipped tree is not rescanned: a match there is no repair's to fix. .factory/ (frozen
+  // inputs, owner uploads) and .aai/ (owner text) are skipped; the reviewers' security line covers them.
+  async secretsFailure(job) {
+    const appDir = this.store.appDir(job.id);
+    const list = async (...args) => (await this.store.git(...args)).split("\0").filter(Boolean);
+    const files = job.baseCommit
+      ? [...new Set([...await list("diff", "--name-only", "-z", "--diff-filter=d", job.baseCommit), ...await list("ls-files", "-z", "-o", "--exclude-standard")])]
+      : await list("ls-files", "-z", "-c", "-o", "--exclude-standard");
+    const patterns = CREDENTIAL_PATTERNS.map((pattern) => new RegExp(pattern.source)); // no g flag: .test() must not keep lastIndex
+    const hits = [];
+    for (const file of files) {
+      if (/^(\.factory|\.aai|node_modules|data)\//.test(file)) continue;
+      const body = await readFile(path.join(appDir, file)).catch(() => null);
+      if (!body || body.length > 1_000_000 || body.includes(0)) continue; // missing, large or binary
+      body.toString("utf8").split("\n").forEach((line, index) => { if (patterns.some((pattern) => pattern.test(line))) hits.push(`${file}:${index + 1}`); });
+    }
+    if (!hits.length) return null;
+    // Only file:line, never the value: the message reaches events, failure files and repair prompts.
+    const message = `Credentials in the tree: ${hits.slice(0, 10).join(", ")}${hits.length > 10 ? ` and ${hits.length - 10} more` : ""} match an API key or token pattern.`;
+    await this.emit(job.id, { type: "gate.failed", state: job.state, gate: "secrets", message });
+    return new FactoryError("quality_gate_failed", message, { gate: "secrets", output: `${message}\nRemove each value from the tree: read it from an environment variable or a gitignored file under data/. A fake value in a test must not look like a real key: build it at runtime (for example "sk-" + "x".repeat(20)) or use a placeholder such as "test-key".` });
   }
 
   // Merge check: proofs of built features whose files (or whose dependencies' files) this feature changed
@@ -1441,9 +1530,14 @@ export class SoloFactory {
     const owned = new Map();
     // Every finding's test stays a proof for the rest of the run, so final integration reruns fixed bugs.
     job.bugProofs ??= [];
+    // Every finding is recorded against the latest feature, main or recovery plan, declaring one of its files (null: none),
+    // whatever path repairs it; the smoke ledger counts these. Routing below stays on the main plan.
+    const writers = [...(job.approvedPlan?.plan?.slices ?? []), ...(job.recoveryPhase?.plan?.slices ?? [])].filter((slice) => slice.writes);
     for (const bug of failure.details?.bugs ?? []) {
       const proof = { id: `BUG-${job.bugProofs.length + 1}`, proof: { command: ["node", "--test", bug.test] }, description: bug.description };
       job.bugProofs.push(proof);
+      const writer = writers.findLast((slice) => (bug.files ?? []).some((file) => writesCover(slice.writes, file)));
+      await this.emit(job.id, { type: "review.finding", state: job.state, feature: writer?.id ?? null, bug: proof.id, message: `${proof.id} found${writer ? ` in ${writer.id}` : " outside every feature's writes"}: ${bug.description}` });
       const owner = slices.findLast((slice) => slice.writes && bug.files.some((file) => writesCover(slice.writes, file)));
       if (owner) (owned.get(owner) ?? owned.set(owner, []).get(owner)).push(proof);
     }
@@ -1482,10 +1576,12 @@ export class SoloFactory {
   // One repair turn against a recorded failure. Throws the failure itself once the budget is spent.
   async repair(job, failure, signal, slice = null, bugs = []) {
     await this.recordAttempt(job, failure, slice);
-    const loop = repeatedFailure(job.watch.attempts.filter((item) => item.scope === job.watch.attempts.at(-1).scope), this.watch.loopThreshold);
+    const scoped = job.watch.attempts.filter((item) => item.scope === job.watch.attempts.at(-1).scope);
+    const loop = repeatedFailure(scoped, this.watch.loopThreshold) ?? repeatedSymptom(scoped, this.watch.symptomThreshold ?? 4);
     if (loop) {
-      await this.emit(job.id, { type: "watchdog.decision", state: job.state, decision: "loop", message: `Stopped repeated work: ${failure.details?.gate ?? failure.code} failed the same way ${loop.count} times on unchanged code.` });
-      throw new FactoryError(failure.code ?? "quality_gate_failed", `${failure.message} The same failure repeated ${loop.count} times on unchanged code, so no further repair turn runs.`, { ...failure.details, loop });
+      const where = loop.kind === "symptom" ? "although repairs changed the code" : "on unchanged code";
+      await this.emit(job.id, { type: "watchdog.decision", state: job.state, decision: "loop", kind: loop.kind, message: `Stopped repeated work: ${failure.details?.gate ?? failure.code} failed the same way ${loop.count} times ${where}.` });
+      throw new FactoryError(failure.code ?? "quality_gate_failed", `${failure.message} The same failure repeated ${loop.count} times ${where}, so no further repair turn runs.`, { ...failure.details, loop });
     }
     if (job.attempt >= (job.repairBudgetLimit ?? this.maxRepairs)) throw failure;
     job.attempt += 1;
@@ -1498,7 +1594,7 @@ export class SoloFactory {
     const label = `repair-${job.attempt}`;
     const before = await sourceBaseline(this.store, { head: false });
     try {
-      const turn = await this.invoke(job, label, repairPrompt(failureRelative, slice, bugs), signal);
+      const turn = await this.invoke(job, label, repairPrompt(failureRelative, slice, bugs, undefined, job.featureCursor?.id === slice?.id ? job.featureCursor?.brokenProofs : [], job.ownerDecisions), signal);
       // Shown beside the waiver so the owner judges a "this test is wrong" claim from the repairer's own words.
       job.lastRepairNote = { attempt: job.attempt, text: String(turn?.message ?? "").slice(-1500) };
       await this.store.writeState(job);
@@ -1506,7 +1602,7 @@ export class SoloFactory {
       // Same rule as a capped build: a repair still changing files at the cap is too big for one turn, not stuck.
       // VISUAL-EVIDENCE, 2026-10-15: two 45-minute repairs each made ~50 edits, then a cold restart burned a repair.
       if (error.code !== "agent_hard_timeout" || await sourceBaseline(this.store, { head: false }) === before || !await this.allowContinuation(job, label)) throw error;
-      await this.invoke(job, `${label}-resume`, repairPrompt(failureRelative, slice, bugs), signal, { resumeSessionId: error.details?.sessionId ?? null });
+      await this.invoke(job, `${label}-resume`, repairPrompt(failureRelative, slice, bugs, undefined, job.featureCursor?.id === slice?.id ? job.featureCursor?.brokenProofs : [], job.ownerDecisions), signal, { resumeSessionId: error.details?.sessionId ?? null });
     }
     return job;
   }
@@ -1522,7 +1618,10 @@ export class SoloFactory {
     await this.store.writeState(job);
   }
 
-  async verify(job, manifest, signal, { includeInstall, proofs = [], first = null, skipTest = false }) {
+  async verify(job, manifest, signal, { includeInstall, proofs = [], first = null, skipTest = false, earlier = null, rerun = false }) {
+    // earlier: commands of earlier features' proofs. One that fails does not stop the pass: the rest of them run
+    // too, so a single repair sees every earlier test this feature broke (run 2026-11-09-bb64b19c needed one each).
+    const broken = [];
     // skipTest: a feature's own proofs are its acceptance; the whole suite runs at integration. A proof that
     // is the test command itself keeps the test gate, so its gate name and repair routing are unchanged.
     if (proofs.some((item) => JSON.stringify(item.proof.command) === JSON.stringify(manifest.commands.test))) skipTest = false;
@@ -1553,6 +1652,7 @@ export class SoloFactory {
     const integrated = proofs.some(item => item.key);
     let candidate = null;
     for (const [gate, command, proofKeys = [], cases = []] of gates) {
+      if (broken.length && !earlier.has(JSON.stringify(command))) continue;
       // Install may create a lockfile before tests run. Bind evidence to the source tested,
       // including install itself only when it is also an integration proof.
       if (candidate === null && (gate !== "install" || proofKeys.length)) {
@@ -1560,7 +1660,7 @@ export class SoloFactory {
         if (integrated) for (const entry of integrationProofs(job)) entry.proofCandidate = candidate;
       }
       const feature = featureOf(job);
-      const started = Date.now();
+      let started = Date.now();
       job.activeCommand = { gate, command, startedAt: new Date().toISOString() };
       await this.store.writeState(job);
       await this.emit(job.id, { type: "gate.started", state: job.state, gate, command, feature, candidate, message: `${gate}: ${command.join(" ")}` });
@@ -1568,52 +1668,65 @@ export class SoloFactory {
       const timeoutMs = gate === "install" ? Math.max(10 * 60_000, gateMs) : gateMs;
       // ponytail: node:test only; a proof that sets its own --test-reporter fails loudly on the mismatch.
       const events = cases.length ? path.join(this.store.jobDir(job.id), `cases-${gate}-${job.attempt ?? 0}.jsonl`) : null;
-      if (events) await rm(events, { force: true });
-      // The case reporter writes its events itself; its stream output goes to a throwaway file in the run's
-      // folder. Never /dev/null: Node 22 fsyncs the destination on close, and Linux (WSL too) refuses fsync on
-      // /dev/null, so the run exits 1 after every test passed. The run's folder also works on Windows.
-      const discard = events ? path.join(this.store.jobDir(job.id), `reporter-${gate}-${job.attempt ?? 0}.log`) : null;
-      // An inherited NODE_TEST_CONTEXT makes node --test skip its files and report nothing, so cased gates drop it.
-      const env = events ? { NODE_OPTIONS: [process.env.NODE_OPTIONS, `--test-reporter=${nodeOptionPath(CASE_REPORTER)} --test-reporter-destination=${nodeOptionPath(discard)} --test-reporter=spec --test-reporter-destination=stdout`].filter(Boolean).join(" "), SOLOFACTORY_CASE_EVENTS: events, NODE_TEST_CONTEXT: undefined } : {};
-      let spawned;
-      let result;
-      try {
-        result = await this.commandRunner({
-          executable: command[0],
-          args: command.slice(1),
-          cwd: this.store.appDir(job.id),
-          logPath: path.join(this.store.appDir(job.id), gateLog(job, gate)),
-          gate,
-          env,
-          timeoutMs,
-          signal,
-          // A command inside its own deadline is waiting, not stalled; the progress window never stops it.
-          onSpawn: (child) => { spawned = this.trackWorker(job, child, { kind: "command", label: gate, gate, command, hardLimitMs: timeoutMs }); },
-        });
-      } finally {
-        await this.releaseWorker(job, spawned);
-      }
-      const durationMs = Date.now() - started;
-      let caseFailure = null;
-      let caseOutput = null;
-      if (events) {
-        const results = caseResults(cases, await readFile(events, "utf8").catch(() => ""));
-        job.caseResults = { ...job.caseResults, ...Object.fromEntries(Object.entries(results).map(([id, value]) => [id, { ...value, gate, at: new Date().toISOString() }])) };
-        await this.store.writeState(job);
-        const failed = Object.entries(results).filter(([, value]) => value.status !== "passed");
-        if (failed.length === cases.length && failed.every(([, value]) => value.status === "missing")) caseFailure = `${gate} recorded no test events for its cases; cased proofs must run under node:test without their own --test-reporter.`;
-        else if (failed.length) caseFailure = `${gate} cases did not pass: ${failed.map(([id, value]) => `${id} ${value.status}`).join(", ")}.`;
-        if (failed.length) {
-          const names = (status) => failed.filter(([, value]) => value.status === status).map(([id]) => `[${id}]`).join(", ");
-          const missing = names("missing");
-          caseOutput = [
-            missing ? `Gate ${gate}: expected passing test(s) named ${missing} but none ran (no matching case events; check the test-name pattern and node:test reporter).` : `Gate ${gate}: expected cases did not pass.`,
-            `Failed cases: ${names("failed") || "none"}.`,
-            `Never ran: ${missing || "none"}.`,
-            ...(names("skipped") ? [`Skipped/todo cases: ${names("skipped")}.`] : []),
-          ].join("\n");
+      // At final integration a failing test or proof gate reruns once, at no repair cost (run 2026-11-12-b1da8f4b: one
+      // timing-dependent test failed the run after the last repair was spent). A pass on the rerun is recorded, never hidden.
+      let result, durationMs, caseFailure, caseOutput, rerunOf = null;
+      for (;;) {
+        started = Date.now();
+        if (events) await rm(events, { force: true });
+        // The case reporter writes its events itself; its stream output goes to a throwaway file in the run's
+        // folder. Never /dev/null: Node 22 fsyncs the destination on close, and Linux (WSL too) refuses fsync on
+        // /dev/null, so the run exits 1 after every test passed. The run's folder also works on Windows.
+        const discard = events ? path.join(this.store.jobDir(job.id), `reporter-${gate}-${job.attempt ?? 0}.log`) : null;
+        // An inherited NODE_TEST_CONTEXT makes node --test skip its files and report nothing, so cased gates drop it.
+        const env = events ? { NODE_OPTIONS: [process.env.NODE_OPTIONS, `--test-reporter=${nodeOptionPath(CASE_REPORTER)} --test-reporter-destination=${nodeOptionPath(discard)} --test-reporter=spec --test-reporter-destination=stdout`].filter(Boolean).join(" "), SOLOFACTORY_CASE_EVENTS: events, NODE_TEST_CONTEXT: undefined } : {};
+        let spawned;
+        try {
+          result = await this.commandRunner({
+            executable: command[0],
+            args: command.slice(1),
+            cwd: this.store.appDir(job.id),
+            logPath: path.join(this.store.appDir(job.id), gateLog(job, gate)),
+            gate,
+            env,
+            timeoutMs,
+            signal,
+            // A command inside its own deadline is waiting, not stalled; the progress window never stops it.
+            onSpawn: (child) => { spawned = this.trackWorker(job, child, { kind: "command", label: gate, gate, command, hardLimitMs: timeoutMs }); },
+          });
+        } finally {
+          await this.releaseWorker(job, spawned);
         }
-        result = { ...result, caseResults: results };
+        durationMs = Date.now() - started;
+        caseFailure = null;
+        caseOutput = null;
+        if (events) {
+          const results = caseResults(cases, await readFile(events, "utf8").catch(() => ""));
+          job.caseResults = { ...job.caseResults, ...Object.fromEntries(Object.entries(results).map(([id, value]) => [id, { ...value, gate, at: new Date().toISOString() }])) };
+          await this.store.writeState(job);
+          const failed = Object.entries(results).filter(([, value]) => value.status !== "passed");
+          if (failed.length === cases.length && failed.every(([, value]) => value.status === "missing")) caseFailure = `${gate} recorded no test events for its cases; cased proofs must run under node:test without their own --test-reporter.`;
+          else if (failed.length) caseFailure = `${gate} cases did not pass: ${failed.map(([id, value]) => `${id} ${value.status}`).join(", ")}.`;
+          if (failed.length) {
+            const names = (status) => failed.filter(([, value]) => value.status === status).map(([id]) => `[${id}]`).join(", ");
+            const missing = names("missing");
+            caseOutput = [
+              missing ? `Gate ${gate}: expected passing test(s) named ${missing} but none ran (no matching case events; check the test-name pattern and node:test reporter).` : `Gate ${gate}: expected cases did not pass.`,
+              `Failed cases: ${names("failed") || "none"}.`,
+              `Never ran: ${missing || "none"}.`,
+              ...(names("skipped") ? [`Skipped/todo cases: ${names("skipped")}.`] : []),
+            ].join("\n");
+          }
+          result = { ...result, caseResults: results };
+        }
+        if (rerunOf || !rerun || !(gate === "test" || gate.startsWith("proof-")) || result.timedOut || (result.code === 0 && !caseFailure)) break;
+        rerunOf = { gate, command, at: new Date().toISOString(), output: String(caseOutput ?? result.output ?? "").slice(-2000) };
+        await this.emit(job.id, { type: "gate.rerun", state: job.state, gate, feature, durationMs, message: `${gate} failed; rerunning it once before any repair` });
+      }
+      if (rerunOf && result.code === 0 && !caseFailure) {
+        (job.flakyGates ??= []).push(rerunOf);
+        await this.store.writeState(job);
+        await this.emit(job.id, { type: "gate.flaky", state: job.state, gate, feature, command, message: `${gate} failed, then passed when rerun: likely a race in the app or its test; the final review is told` });
       }
       if (result.timedOut) {
         // A killed command proved nothing about the app, so it is not handed to a repair turn.
@@ -1632,7 +1745,7 @@ export class SoloFactory {
       }
       if (result.code !== 0 || caseFailure) {
         await this.emit(job.id, { type: "gate.failed", state: job.state, gate, feature, durationMs, cases: caseCounts(result.caseResults), message: `${gate} failed` });
-        return new FactoryError("quality_gate_failed", result.code !== 0 ? `${gate} failed with exit ${result.code}.${caseFailure ? ` ${caseFailure}` : ""}` : caseFailure, {
+        const error = new FactoryError("quality_gate_failed", result.code !== 0 ? `${gate} failed with exit ${result.code}.${caseFailure ? ` ${caseFailure}` : ""}` : caseFailure, {
           gate,
           command,
           durationMs,
@@ -1640,6 +1753,9 @@ export class SoloFactory {
           ...(result.caseResults ? { cases: result.caseResults } : {}),
           output: caseOutput ? `${caseOutput}\n\n${result.output ?? ""}` : result.output,
         });
+        if (!earlier?.has(JSON.stringify(command))) return error;
+        broken.push(error);
+        continue;
       }
       await this.emit(job.id, { type: "gate.passed", state: job.state, gate, feature, durationMs, cases: caseCounts(result.caseResults), message: `${gate} passed` });
       // After install, since install may write the lockfile.
@@ -1647,7 +1763,12 @@ export class SoloFactory {
     }
     job.activeCommand = null;
     await this.store.writeState(job);
-    return null;
+    if (broken.length < 2) return broken[0] ?? null;
+    return new FactoryError("quality_gate_failed", broken.map((error) => error.message).join(" "), {
+      ...broken[0].details,
+      commands: broken.map((error) => error.details.command),
+      output: broken.map((error) => `=== ${error.details.gate} ===\n${error.details.output ?? error.message}`).join("\n\n"),
+    });
   }
 
   async deployLocal(job, manifest, signal) {
@@ -1655,37 +1776,24 @@ export class SoloFactory {
     const port = await availablePort();
     const url = `http://127.0.0.1:${port}`;
     const appDir = this.store.appDir(job.id);
-    const previous = liveByProject.get(appDir);
-    if (previous) {
-      liveByProject.delete(appDir);
-      if (previous.jobId !== job.id) {
-        try {
-          const old = await this.store.read(previous.jobId);
-          if (old.deployment?.status === "live") {
-            old.deployment.status = "replaced";
-            old.deployment.stoppedAt = new Date().toISOString();
-            old.deployment.replacedBy = job.id;
-            await this.store.writeState(old);
-            await this.emit(old.id, { type: "deployment.replaced", state: old.state, message: `Replaced by run ${job.id}.` });
-          }
-        } catch {
-          // A missing old run record must not block the new release from deploying.
-        }
-      }
-      previous.child.kill("SIGTERM");
-    }
+    // Checked here, after the awaits above: from spawn to this.deployments.set is synchronous, so a stop
+    // or shutdown that landed earlier would otherwise leave an app nobody kills (an aborted signal never fires).
+    if (signal.aborted) throw new FactoryError("cancelled", "Deployment cancelled.");
+    if (this.closed) throw new FactoryError("cancelled", "SoloFactory is shutting down.");
     const logPath = path.join(appDir, ".factory", "logs", "deployment.log");
     const log = createWriteStream(logPath, { flags: "a" });
     const child = spawn(command[0], command.slice(1), {
       cwd: this.store.appDir(job.id),
       env: subscriptionEnvironment({ PORT: String(port), NODE_ENV: "production" }),
       stdio: ["ignore", "pipe", "pipe"],
+      // Own process group: `npm start` runs `sh -c node ...`, and where sh does not exec (dash) a
+      // SIGTERM to npm alone orphans the app, which keeps its port and our pipes open.
+      detached: process.platform !== "win32",
     });
     child.stdout.pipe(log);
     child.stderr.pipe(log);
     this.deployments.set(job.id, child);
-    liveByProject.set(appDir, { jobId: job.id, child });
-    signal.addEventListener("abort", () => child.kill("SIGTERM"), { once: true });
+    signal.addEventListener("abort", () => stopApp(child), { once: true });
     child.once("exit", async (code) => {
       log.end();
       this.deployments.delete(job.id);
@@ -1705,14 +1813,54 @@ export class SoloFactory {
     });
 
     await this.emit(job.id, { type: "deployment.started", state: job.state, message: `Waiting for ${url}${manifest.healthPath}` });
-    await waitForHttp(`${url}${manifest.healthPath}`, child, signal);
-    // Health answered, so a failing metrics route is the app's bug: give it the same repair as a bad schema.
-    const metrics = await fetchJson(`${url}${manifest.metricsPath}`).catch((error) => {
-      throw new FactoryError("invalid_metrics", `The app metrics endpoint failed: ${error.message}.`, { missing: [], received: undefined });
-    });
-    validateMetrics(metrics);
-    if (child.exitCode !== null || child.signalCode !== null) throw new FactoryError("deployment_exited", `App exited with ${child.exitCode ?? child.signalCode} right after its health check.`);
+    try {
+      await waitForHttp(`${url}${manifest.healthPath}`, child, signal);
+      // Health answered, so a failing metrics route is the app's bug: give it the same repair as a bad schema.
+      const metrics = await fetchJson(`${url}${manifest.metricsPath}`).catch((error) => {
+        throw new FactoryError("invalid_metrics", `The app metrics endpoint failed: ${error.message}.`, { missing: [], received: undefined });
+      });
+      validateMetrics(metrics);
+      await checkPage(url); // after the metrics contract, so a broken metrics route still reports as invalid_metrics
+      if (child.exitCode !== null || child.signalCode !== null) throw new FactoryError("deployment_exited", `App exited with ${child.exitCode ?? child.signalCode} right after its health check.`);
+    } catch (error) {
+      stopApp(child); // a release that failed its checks never replaces the live one
+      throw error;
+    }
+    // The previous release served until now. Anything it reads from disk per request comes from the new
+    // release's files, as it already did for the whole follow-on build; this adds the seconds the checks take.
+    await this.retirePrevious(job, appDir);
+    if (child.exitCode === null && child.signalCode === null) liveByProject.set(appDir, { jobId: job.id, child });
     return { mode: "local", status: "live", url, port, pid: child.pid, startedAt: new Date().toISOString() };
+  }
+
+  // Retires the project's previous release once the new one passed its checks. The record is written
+  // before the stop, so the old child's exit handler sees "replaced" rather than recording "stopped".
+  async retirePrevious(job, appDir) {
+    const previous = liveByProject.get(appDir);
+    if (!previous) return;
+    liveByProject.delete(appDir);
+    if (previous.jobId !== job.id) {
+      try {
+        const old = await this.store.read(previous.jobId);
+        if (old.deployment?.status === "live") {
+          old.deployment.status = "replaced";
+          old.deployment.stoppedAt = new Date().toISOString();
+          old.deployment.replacedBy = job.id;
+          await this.store.writeState(old);
+          await this.emit(old.id, { type: "deployment.replaced", state: old.state, message: `Replaced by run ${job.id}.` });
+        }
+      } catch {
+        // A missing old run record must not block the new release from deploying.
+      }
+    }
+    // Wait (bounded) for the old app to exit, so a completed deploy has exactly one app running and the old port is free.
+    // Its own exit handler, registered at spawn, runs before this listener and drops it from that factory's deployments.
+    const { child } = previous;
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((resolve) => child.once("exit", resolve));
+      stopApp(child);
+      await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 5_000).unref())]);
+    }
   }
 
   // The exit handler only corrects a stored "live", so an app that exited before that write landed is
@@ -1731,9 +1879,7 @@ export class SoloFactory {
     if (job.state !== "completed" || job.deployment?.status === "live") throw new FactoryError("not_relaunchable", "Only a completed run whose app is not running can be relaunched.");
     // A newer run blocks only if its work may still be in the folder: set aside with a rollback
     // point means the server rewound it, so the folder holds this job's release again.
-    const runs = await this.store.list();
-    const newer = runs.slice(0, runs.findIndex((run) => run.id === job.id));
-    if (newer.some((run) => !(run.dismissed && run.baseCommit))) throw new FactoryError("not_relaunchable", "A newer run exists in this project; relaunch that one.");
+    if (newerRunBlocks(await this.store.list(), job.id)) throw new FactoryError("not_relaunchable", "A newer run exists in this project; relaunch that one.");
     const manifest = await this.readManifest(this.store.appDir(jobId));
     await mkdir(path.join(this.store.appDir(jobId), ".factory", "logs"), { recursive: true }); // gitignored, so may be absent
     job.deployment = await this.deployLocal(job, manifest, new AbortController().signal);
@@ -1741,6 +1887,28 @@ export class SoloFactory {
     await this.settleDeployment(job);
     await this.emit(job.id, { type: "deployment.relaunched", state: job.state, message: `App relaunched: ${job.deployment.url}` });
     return job;
+  }
+
+  // Owner stop for a live app. The app may have been started by another factory object (build, then relaunch),
+  // so it is found by job in the module-wide live map; its exit handler records the stop.
+  async stopDeployment(jobId) {
+    const job = await this.store.read(jobId);
+    if (job.deployment?.status !== "live") throw new FactoryError("not_live", "That run's app is not running.");
+    const entry = [...liveByProject.values()].find((item) => item.jobId === jobId);
+    const child = entry?.child ?? this.deployments.get(jobId);
+    if (child && child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((resolve) => child.once("exit", resolve));
+      stopApp(child);
+      await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 5_000).unref())]);
+    }
+    const latest = await this.store.read(jobId);
+    if (latest.deployment?.status === "live") {
+      // No process to wait on (or it ignored SIGTERM): record the owner's stop anyway.
+      Object.assign(latest.deployment, { status: "stopped", stoppedAt: new Date().toISOString() });
+      await this.store.writeState(latest);
+    }
+    await this.emit(jobId, { type: "deployment.stopped", state: latest.state, message: "App stopped by the owner." });
+    return latest;
   }
 
   async telemetry(jobId, { probeApp = true } = {}) {
@@ -1813,7 +1981,8 @@ export class SoloFactory {
       variant: process.env.SOLOFACTORY_VARIANT || "baseline",
       harness: HARNESS,
       provider: this.provider.id,
-      codex: this.provider.id === "codex" ? { model: process.env.SOLOFACTORY_CODEX_MODEL || "gpt-6.1-sol", effort: process.env.SOLOFACTORY_CODEX_REASONING_EFFORT || "medium" } : undefined,
+      codex: this.provider.id === "codex" ? (job.models ?? { model: process.env.SOLOFACTORY_CODEX_MODEL || "gpt-6.1-sol", effort: process.env.SOLOFACTORY_CODEX_REASONING_EFFORT || "medium" }) : undefined,
+      models: this.provider.id === "codex" ? undefined : job.models ?? undefined,
       sdlc: summary.strategy,
       followOn: Boolean(job.followOn),
       wallMs: Date.now() - new Date(job.startedAt ?? job.createdAt).getTime(),
@@ -1825,9 +1994,16 @@ export class SoloFactory {
   }
 
   async shutdown() {
-    for (const child of this.deployments.values()) child.kill("SIGTERM");
+    this.closed = true;
+    for (const child of this.deployments.values()) stopApp(child);
     this.deployments.clear();
   }
+}
+
+// Stops a deployed app with its whole process group (see deployLocal).
+function stopApp(child) {
+  if (!child) return;
+  try { process.kill(-child.pid, "SIGTERM"); } catch { child.kill("SIGTERM"); }
 }
 
 export function inferFailedState(job) {
@@ -1953,6 +2129,9 @@ export function continuationAction(job, { maxRepairs = 2, busy = false } = {}) {
   if (repairsExhausted(job, maxRepairs)) return { ...next("prepare-plan", "Prepare repair plan", "recovery-plan", "The repair budget is exhausted. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume does not renew the budget or rerun the same review."), ...waivers };
   // Resume would hit the same review cap; only a repair plan can move this feature.
   if (job.error?.code === "review_unstable") return next("prepare-plan", "Prepare repair plan", "recovery-plan", "The feature did not reach a stable reviewed candidate within its review limit. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume would stop at the same limit.");
+  if (job.error?.details?.loop?.kind === "symptom") return job.error.code === "review_rejected" || pendingProofFailure(job)
+    ? next("prepare-plan", "Prepare repair plan", "recovery-plan", "The same failure repeated although repairs changed the code, so more of the same repairs cannot help. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume does not renew the budget.")
+    : next("resume", job.state === "paused" ? "Resume" : "Resume current run", "resume", `The same failure repeated although repairs changed the code. Fix the cause or the inputs first: Resume reruns the checks, and no repair turn runs while the failure is unchanged. To allow more attempts, raise SOLOFACTORY_SYMPTOM_THRESHOLD (0 turns this stop off).`);
   if (job.error?.details?.loop) return job.error.code === "review_rejected" || pendingProofFailure(job)
     ? next("prepare-plan", "Prepare repair plan", "recovery-plan", "The same failure repeated on unchanged code, so repeating repairs cannot help. Prepare a repair plan; once it passes independent review, repairs start on their own. Resume does not renew the budget.")
     : next("resume", job.state === "paused" ? "Resume" : "Resume current run", "resume", "The same failure repeated on unchanged code. Change the code or inputs first: Resume reruns the checks, and no repair turn runs while the code is unchanged.");
@@ -1990,7 +2169,7 @@ export function buildRecovery(job, workspace, diagnostics = job.error?.details?.
   const loop = job.error?.details?.loop;
   const unconfirmed = job.error?.code === "worker_unconfirmed";
   const planBlocked = planBlockedOut(job);
-  const title = unconfirmed ? "A worker from before the restart may still be running" : planBlocked ? "The repair plan needs a correction" : loop ? "Repeated failure on unchanged code" : stale ? "Specs or prototype inputs changed" : exhausted ? "Repair budget exhausted" : reviewBlocked ? "Required functionality or evidence is unfinished" : primary?.title
+  const title = unconfirmed ? "A worker from before the restart may still be running" : planBlocked ? "The repair plan needs a correction" : loop ? (loop.kind === "symptom" ? "Repeated failure despite code changes" : "Repeated failure on unchanged code") : stale ? "Specs or prototype inputs changed" : exhausted ? "Repair budget exhausted" : reviewBlocked ? "Required functionality or evidence is unfinished" : primary?.title
     ?? (timeoutReason === "idle" ? "The coding agent became inactive" : timeoutReason === "hard" ? "The run reached its safety cap" : "The run paused before completion");
   const actions = diagnostics.map((item) => item.action);
   if (!actions.length) {
@@ -2113,7 +2292,7 @@ async function waitForHttp(url, child, signal, timeoutMs = 30_000) {
     }
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
-  child.kill("SIGTERM");
+  stopApp(child);
   throw new FactoryError("health_check_failed", `No successful health response from ${url}.`);
 }
 
@@ -2125,6 +2304,21 @@ async function depsDigest(appDir) {
 // The proof set an integration verify runs; a passing verify only stands for this exact set.
 function integrationSet(job) {
   return digest([featureProofs(job).map((item) => [item.id, item.proof.command]), integrationProofs(job).map((entry) => entry.key)]);
+}
+
+// The home page the owner opens must answer (docs/sdlc-hardening-spec.md 8a). Fails on a 5xx, no answer, or an empty
+// 2xx body; a 4xx with a body passes, so an API-only app still deploys. No browser: this does not prove it renders.
+async function checkPage(url) {
+  let response;
+  let body;
+  try {
+    response = await fetch(`${url}/`, { signal: AbortSignal.timeout(5_000) });
+    body = await response.text();
+  } catch (error) {
+    throw new FactoryError("page_check_failed", `GET / did not answer: ${error.message}.`, { status: null });
+  }
+  if (response.status >= 500) throw new FactoryError("page_check_failed", `GET / answered HTTP ${response.status}.`, { status: response.status, body: body.slice(0, 2_000) });
+  if (response.ok && !body.trim()) throw new FactoryError("page_check_failed", `GET / answered HTTP ${response.status} with an empty body.`, { status: response.status });
 }
 
 async function fetchJson(url) {
@@ -2165,6 +2359,8 @@ function obligationCheck(item) {
 
 // The feature a turn or gate serves, for per-feature measurement; null while planning or integrating.
 const featureOf = (job) => job.recoveryPhase?.cursor?.id ?? job.featureCursor?.id ?? null;
+// A feature's own proofs arrive as its acceptance items (bare ids) or prefixed by its id; earlier features' are prefixed.
+const ownProof = (slice, proof) => slice.acceptance.includes(proof) || proof.id.startsWith(`${slice.id}.`);
 // Per feature: attempts only advance on repairs, so two clean features shared `test-3.log` and the later overwrote the earlier's evidence.
 const gateLog = (job, gate) => `.factory/logs/${[gate, featureOf(job), job.attempt].filter((part) => part != null).join("-")}.log`;
 // Every proof the controller may gate on, so a builder or repair agent can run it before finishing.
@@ -2199,7 +2395,7 @@ export function usageTotals(events) {
 }
 
 // List-price dollars per run before it parks for the owner; 0 disables. Claude reports this figure even on a
-// subscription, so it tracks weekly-limit use; Codex reports none, so a Codex run is held by the worker ceiling.
+// subscription, so it tracks weekly-limit use; Codex reports none, so a Codex run is held by the token and worker ceilings.
 // Member run 2026-11-03 spent ~$64 across three usage windows before anyone was asked.
 export const maxRunCostUsd = () => /^\d+(\.\d+)?$/.test(process.env.SOLOFACTORY_MAX_RUN_COST_USD ?? "") ? Number(process.env.SOLOFACTORY_MAX_RUN_COST_USD) : 30;
 
@@ -2211,6 +2407,18 @@ export function knownCostUsd(events) {
 
 // Workers per run; 0 disables the ceiling. Read per call so tests and an owner restart can change it.
 export const maxRunWorkers = () => /^\d+$/.test(process.env.SOLOFACTORY_MAX_RUN_WORKERS ?? "") ? Number(process.env.SOLOFACTORY_MAX_RUN_WORKERS) : 150;
+
+// Tokens per run before it parks for the owner; 0 disables. Both CLIs report tokens, so unlike the cost ceiling this
+// binds on Codex. inputTokens includes cache reads. Real smokes ran 0.75M-1.14M tokens per reported dollar (0.10.12;
+// 2026-11-10 Habit Ledger and Voice Notes), so 40M stays above the $30 cost ceiling and that ceiling fires first on Claude.
+export const maxRunTokens = () => /^\d+$/.test(process.env.SOLOFACTORY_MAX_RUN_TOKENS ?? "") ? Number(process.env.SOLOFACTORY_MAX_RUN_TOKENS) : 40_000_000;
+
+// Input plus output tokens every turn reported: the same figure as runSpend's tokens. A turn with no usage is skipped,
+// so like knownCostUsd this is a lower bound.
+export function knownTokens(events) {
+  const { total } = usageTotals(events);
+  return total ? total.inputTokens + total.outputTokens : 0;
+}
 
 // What the run has spent so far, shown before the owner approves more. costUsd is null when any worker reported none (Codex).
 // grantTurns mirrors the refill in runFeatureRecovery: maxRepairs * (features + 1) repair turns once a plan exists.
@@ -2225,7 +2433,7 @@ export function runSpend(job, events, maxRepairs = 2, now = Date.now()) {
   }
   return {
     workers: events.filter((event) => event.type === "agent.started").length,
-    tokens: total ? total.inputTokens + total.outputTokens : 0,
+    tokens: knownTokens(events),
     costUsd: total?.costUsd ?? null,
     elapsedMs: Math.max(0, now - Date.parse(job.startedAt ?? job.createdAt)),
     grantTurns: features == null ? null : maxRepairs * (features + 1),
@@ -2262,10 +2470,11 @@ export function resumeAdvice(job, events) {
   return { tone: "warn", features, checks, text: `Check first. It stopped on an error, not a limit. ${progress} If that is more than at the last stop, Resume; if nothing moved, choose Report this run.` };
 }
 
+const tokenCount = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n);
+
 export function spendLine({ workers, tokens, costUsd, elapsedMs }) {
-  const count = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}K` : String(n);
   const minutes = Math.round(elapsedMs / 60000);
-  return `${workers} worker${workers === 1 ? "" : "s"}, ${count(tokens)} tokens, cost ${costUsd == null ? "unknown" : `$${costUsd.toFixed(2)}`}, ${minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`} elapsed`;
+  return `${workers} worker${workers === 1 ? "" : "s"}, ${tokenCount(tokens)} tokens, cost ${costUsd == null ? "unknown" : `$${costUsd.toFixed(2)}`}, ${minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`} elapsed`;
 }
 
 // Time and usage per pipeline state, plus the current step alone, so the run screen leads with what is
