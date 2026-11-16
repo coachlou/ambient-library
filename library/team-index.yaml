@@ -2459,33 +2459,33 @@ solofactory:
     → PRD → subscription-backed build → gates → local deploy) as a folder's agentic function
     with each project a git repo under projects/ or the root; use for "set up solofactory
     here", "make this folder a software factory", "start the factory", "update my solofactory".
-  summary: 'Installs SoloFactory into a target folder and runs it there. SoloFactory is a
-    local-first software factory. It interviews the owner, freezes a PRD, plan and acceptance
-    contract, and builds the app with the owner''s own signed-in Codex or Claude Code subscription.
-    It then runs deterministic gates and deploys the result on localhost (http://127.0.0.1:4173).
-    Inputs: a target path, Node 22 to 24, and a signed-in `codex` or `claude` CLI. It never
-    asks for or stores API keys. Install runs the ambient-folder installer, with a `--check`
-    plan first. It writes an owned `.aai/` (identity, instructions, context, memory/solofactory),
-    a vendored `.ailib/solofactory/` with the bundled offline app snapshot, a `start.sh` launcher,
-    `projects/<name>/` workspaces that are each a git repo with their own `.aai/`, and CLAUDE.md/AGENTS.md
-    anchors. Re-running the installer is the update path: it refreshes `.ailib/` and leaves
-    `.aai/` and `projects/` alone. Operate mode starts the factory, inspects runs (`.solofactory/runs/<id>/state.json`,
-    `events.jsonl`, `.factory/*.md`, `git log`), and drives the owner from chat through numbered
-    options in `drive.md`. Maintainers sync the library copy from a tagged soloFactory release.
-    Refusals: it never starts a quota-spending real build without explicit go-ahead (`SOLOFACTORY_DEMO=1`
-    is free), never hand-edits `.ailib/` or the library build output, never installs into
-    the library repo itself, and does one operation per request. Pipeline position: it covers
-    the whole idea-to-local-deploy stage, owner-facing and beginner-friendly (INSTALL.md covers
-    macOS and WSL2).'
+  summary: 'Installs SoloFactory into a target folder and operates it there. SoloFactory is
+    a local-first software factory for a solo owner: an in-browser guide interviews the owner,
+    freezes a PRD, plan and acceptance contract, builds the app with the owner''s own signed-in
+    Codex or Claude Code CLI subscription, runs deterministic gates, and deploys the result
+    on localhost (http://127.0.0.1:4173). Inputs: a confirmed target path, Node 22–24, and
+    a signed-in `codex` or `claude` CLI. It never asks for or stores API keys. Install runs
+    the ambient-folder installer (`--check` plan first) and writes an owned `.aai/` scaffold
+    (identity, instructions, context, memory), a vendored `.ailib/` (solofactory app snapshot,
+    ambient-folder, dev-rules), a root-level `start.sh`, a `projects/` directory where each
+    project is its own git workspace with its own `.aai/`, and appended CLAUDE.md/AGENTS.md
+    anchors. Update checks `/api/health` for a live build, re-runs the installer, confirms
+    the manifest `app:` version moved, and restarts. It leaves `.aai/` and `projects/` alone,
+    and an interrupted run can be resumed. Operate mode inspects runs (state.json, events.jsonl,
+    git log) and handles chat requests like "how''s my app" through numbered options in drive.md.
+    INSTALL.md is a beginner runbook for macOS and WSL2. It refuses to start a real build
+    without explicit go-ahead because builds spend quota (SOLOFACTORY_DEMO=1 is free), to
+    hand-edit `.ailib/` or the library copy, or to install into the library repo. It does
+    one operation per request. Stages: setup, then operate.'
   requests:
   - set up solofactory in this folder
-  - make ~/apps a software factory I can run with my Claude subscription
-  - start the factory and open the guide
-  - update my solofactory install to the latest version
+  - make this folder a software factory for my app ideas
+  - start the factory
+  - update my solofactory
   - hey solofactory, how's my app doing?
   - add a dark mode to my app in the factory
-  - help my non-technical friend install solofactory on Windows
-  - why did my last factory run fail? check the run events
+  - my build stopped halfway, can you resume it?
+  - help my non-technical client install solofactory on Windows
   not_for:
   - software-dev-factory: wins when the user has an approved spec and wants a governed plan,
       red, green, review controller with byte-bound approvals.
@@ -2499,8 +2499,8 @@ solofactory:
       factory involved.
   - tinkerbuild: wins for a personal app taken through mockups, a walking skeleton and a no-HITL
       ticket loop with Orca/Codex adapters, outside an installed SoloFactory
-  stage: setup
-  source_hash: 3ce9c2e210ca
+  stage: setup, operate
+  source_hash: c4c410e04e98
 software-dev-factory:
   description: Installs and operates the software development factory, a governed SDLC controller
     that drives your own Claude Code or Codex CLI through plan, red, green and review against
