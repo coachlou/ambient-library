@@ -1,4 +1,4 @@
-// Capture every still a release video needs, driven by a video spec (JSON).
+// Capture every still a video needs, driven by a video spec (JSON).
 // Each shot becomes <out>/<shot>-<k>.png: frame k carries callout k (an accent ring
 // around what the voice names, the rest of the screen softly dimmed) and the caption.
 // Shots with `html` are rendered as title/stat/closing cards instead of app pages.

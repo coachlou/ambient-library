@@ -2817,42 +2817,44 @@ release-lane:
       release-lane only moves finished work toward release.
   stage: operate
   source_hash: 67f2eba1b702
-release-video:
-  description: 'Makes a narrated release or product video end to end: finds what''s new, writes
-    the script and shot list, scouts and captures the app with callout rings on what the narration
-    names, records it in the user''s ElevenLabs voice, adds a music bed and mixes to mp4;
-    use for "make a release video for v1.2", "a launch video for this version", "redo the
-    video with callouts", "reuse that voice style".'
-  summary: 'Builds a narrated release or product video end to end without stopping for approval.
-    The user supplies a version or product at most. The skill reads the CHANGELOG entry, `git
-    log <prev-tag>..<tag>` and the docs those changes touch, then writes brief.md: 5-10 changes
-    a user would notice, biggest first, with internal work folded into a factual stats line.
-    It never invents a claim. It runs the app on a throwaway port against a seeded demo fixture
-    and never captures live data or client files. It scouts the app with explore.mjs (screenshots
-    plus a JSON map of exact text and boxes) and writes shots.json, the one spec that drives
-    every later step: title card, one shot per brief item, a stats card if the numbers support
-    one, and a closing card. Callout rings target exact on-screen text and are cued to the
-    words in the narration that name them. It captures stills with Playwright and checks a
-    contact sheet before any voicing. It then voices each line in the user''s ElevenLabs clone
-    (eleven_v3, one tag per line), transcribes for word-accurate cues, trims, autocues, adds
-    an original music bed ducked under the voice, and mixes with ffmpeg to about -21 dB. Output:
-    a local mp4 plus the script. It asks only for things it cannot find (a voice id, a way
-    to run the app). It refuses to upload or send the video without the user''s OK. Stage:
-    last step after a release ships. Revisions redo only the affected shot.'
+video-director:
+  description: 'Directs a narrated video end to end (release, tutorial, product demo, promo,
+    explainer, or any other): writes the requirements brief, follows a format protocol or
+    the general process, researches, scripts, captures the app or cards with callout rings
+    on what the narration names, records it in the user''s ElevenLabs voice, adds a music
+    bed and mixes to mp4; use for "make a release video for v1.2", "a tutorial video on setting
+    up X", "a two-minute demo of the app", "a 30-second teaser", "redo the video with callouts".'
+  summary: 'Autonomous director for narrated mp4 videos of any kind: release, tutorial, product
+    demo, promo/teaser, explainer, or a new format it drafts on the fly and offers to the
+    library as an in-progress candidate. The user supplies a topic, version, or product at
+    most. It asks only for what it cannot find: a voice id, a way to run the app, or a source
+    for a claim. It writes brief.md (audience, goal, length, tone, sources, deliverable, 5-12
+    beats), then researches every claim to a source and cuts any claim it cannot source. One
+    spec file, shots.json, drives the rest. It stands up the app on a throwaway demo fixture
+    and port, scouts it with explore.mjs, and scripts narration in eleven_v3 voice-style tags.
+    capture.mjs takes Playwright stills with overlay callout rings on whatever the narration
+    names, or renders HTML cards when there is no app. It QAs a contact sheet, records each
+    line in the user''s ElevenLabs clone, and trims and autocues the rings from Scribe word
+    timings. build.py adds a generated music bed (music.py) or a user-supplied track, ducks
+    it under the voice, and mixes to loudness-targeted mp4. It never captures real user data,
+    never edits app data to stage a state (it mocks instead), never commits format drafts,
+    and never uploads or sends the video. Delivery is a local mp4 plus the script. Pipeline
+    stage: produce through deliver, ending at local handoff.'
   requests:
   - make a release video for v1.2
-  - make a launch video for this version with my voice over it
-  - redo the video with callouts on the new settings screen
-  - reuse that voice style but 10% less enthusiastic
-  - turn the changelog for 0.11.0 into a 60-second walkthrough video
-  - the ring on shot 4 is around the wrong button, fix it and rebuild
-  - make a narrated product demo video of the app
+  - record a tutorial video on setting up the CLI
+  - a two-minute demo of the app for sales calls
+  - cut a 30-second teaser for the launch post
+  - redo the video with callouts on the buttons I mention
+  - make an explainer video on how the sync engine works, no app needed, just cards
+  - narrate a walkthrough of the new dashboard in my ElevenLabs voice
+  - the last video was too peppy, make it 10% less enthusiastic and rebuild
   not_for:
   - release-lane: wins for cutting the release itself (commit groups, rc, UAT, promotion to
-      production); release-video only makes the video once the release exists
+      production); video-director only makes the video once the release exists
   - transcript-to-content-pipeline: wins when the ask is written content (article, LinkedIn
       posts, audio script) from a transcript, not a rendered mp4
-  - vibe: wins for build-loop screenshots that check an app change; release-video captures
+  - vibe: wins for build-loop screenshots that check an app change; video-director captures
       only demo-fixture stills for narration
   - gears-broadcast: wins for emailing the finished announcement to licensees; release-video
       only hands over the local mp4
@@ -2865,11 +2867,13 @@ release-video:
   - grill-with-prototype: wins when the user wants clickable mockups of screens that don't
       exist yet, rather than a video of a running app
   - publish-article: wins when the user wants a finished written piece published to the hub;
-      release-video never publishes
+      video-director never publishes
   - ireport: wins when the user wants a styled interactive HTML report on the release rather
       than a narrated mp4
-  stage: publish
-  source_hash: f956d2c6fe22
+  - researcher: wins when the user only wants sourced background on a topic, with no video
+  - writing-team: the deliverable is a written article or post, not narrated footage
+  stage: produce
+  source_hash: 1fda7fa568d5
 tinkerbuild:
   description: Personal-app software factory (idea to UI to walking skeleton, then a no-HITL
     build/check loop, light testing, pre-release QA). Use ONLY when the user says "tinkerbuild"

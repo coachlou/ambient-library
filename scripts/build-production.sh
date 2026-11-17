@@ -45,7 +45,9 @@ fi
 
 # --- validate before shipping --------------------------------------------
 echo "validating..."
-python3 scripts/audit-distribution.py >/dev/null || {
+# The audit's team-index check imports yaml; uv supplies it when system python lacks it.
+PY="python3"; python3 -c "import yaml" 2>/dev/null || { command -v uv >/dev/null && PY="uv run --quiet --with pyyaml python3"; }
+$PY scripts/audit-distribution.py >/dev/null || {
   echo "audit-distribution.py reported drift — fix before releasing." >&2; exit 1; }
 
 # HEAD, not the working tree: an uncommitted edit must never ship.

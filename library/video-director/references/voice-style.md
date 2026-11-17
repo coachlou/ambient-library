@@ -1,4 +1,4 @@
-# Voice style: calm, confident launch read
+# Voice style: calm, confident narration
 
 The style comes from voice + model + tags + script wording, with default voice settings.
 No custom ElevenLabs voice is needed.
@@ -24,7 +24,7 @@ Open each line with ONE tag; at most one more mid-line for a beat.
 - Periods, not exclamation marks (at most one "!" in the whole script).
 - Name on-screen things with the exact words the UI shows, so a callout can ring them.
 
-## Worked example (SoloFactory 0.11.0, 14 shots, approved)
+## Worked example (release format: SoloFactory 0.11.0, 14 shots, approved)
 1. [warmly] Okay, wonderful. SoloFactory zero point eleven is here. The project hub. And this one's kind of a big deal.
 2. [upbeat] Every project in one place, right? What needs you, what's running, what's queued, what's done. Across all of them.
 3. [confident] The side rail keeps score. Build slots up top, anything paused flagged under Needs you. Fold a group away, or click any item to jump in.

@@ -1,4 +1,4 @@
-"""Build and mix the release video from a video spec, its frames and its voice lines.
+"""Build and mix the video from a video spec, its frames and its voice lines.
 
 Each shot is a chain of callout stills that crossfade (0.25 s) at the cue times; shots
 crossfade into each other (0.6 s). A voice line starts 0.4 s into its shot and a shot lasts
@@ -59,7 +59,7 @@ def main():
     frames, vo_dir, out = (
         spec.get("frames", "frames"),
         spec.get("vo", "vo"),
-        spec.get("out", "release-video"),
+        spec.get("out", "video"),
     )
     vw, vh = spec.get("viewport", [1440, 900])
     W = spec.get("width", 1920)

@@ -1,0 +1,11 @@
+{
+  "name": "video-director",
+  "description": "Directs a narrated video end to end (release, tutorial, product demo, promo, explainer, or any other): writes the requirements brief, follows a format protocol or the general process, researches, scripts, captures the app or cards with callout rings on what the narration names, records it in the user's ElevenLabs voice, adds a music bed and mixes to mp4; use for \"make a release video for v1.2\", \"a tutorial video on setting up X\", \"a two-minute demo of the app\", \"a 30-second teaser\", \"redo the video with callouts\".",
+  "version": "1.0.0",
+  "author": {
+    "name": "Coach Lou"
+  },
+  "homepage": "https://github.com/coachlou/ambient-library",
+  "repository": "https://github.com/coachlou/ambient-library",
+  "license": "MIT"
+}

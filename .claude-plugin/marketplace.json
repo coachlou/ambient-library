@@ -272,9 +272,9 @@
       "description": "Moves work through the release loop (commit groups, status, optional system test, release candidates to staging, a UAT issue log, promotion to production) with each project's commands in .aai/skills/release-lane/project.toml; use for \"commit this group\", \"cut an rc\", \"send it to testers\", \"log this bug from testing\", \"is it stable\", \"release it\"."
     },
     {
-      "name": "release-video",
-      "source": "./library/release-video",
-      "description": "Makes a narrated release or product video end to end: finds what's new, writes the script and shot list, scouts and captures the app with callout rings on what the narration names, records it in the user's ElevenLabs voice, adds a music bed and mixes to mp4; use for \"make a release video for v1.2\", \"a launch video for this version\", \"redo the video with callouts\", \"reuse that voice style\"."
+      "name": "video-director",
+      "source": "./library/video-director",
+      "description": "Directs a narrated video end to end (release, tutorial, product demo, promo, explainer, or any other): writes the requirements brief, follows a format protocol or the general process, researches, scripts, captures the app or cards with callout rings on what the narration names, records it in the user's ElevenLabs voice, adds a music bed and mixes to mp4; use for \"make a release video for v1.2\", \"a tutorial video on setting up X\", \"a two-minute demo of the app\", \"a 30-second teaser\", \"redo the video with callouts\"."
     },
     {
       "name": "researcher",

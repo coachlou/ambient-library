@@ -4,7 +4,7 @@
   "dpr": 1.5,
   "frames": "frames",
   "vo": "vo",
-  "out": "release-video",
+  "out": "video",
   "voice": { "id": "PUT_VOICE_ID_HERE", "model": "eleven_v3" },
   "mocks": [{ "url": "**/api/update/status", "json": { "available": true, "version": "1.2.0" } }],
   "shots": [

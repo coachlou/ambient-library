@@ -68,7 +68,6 @@ skills:
   - project-index
   - publish-article
   - release-lane
-  - release-video
   - researcher
   - session
   - session-observatory
@@ -83,6 +82,7 @@ skills:
   - transcript-to-content-pipeline
   - trello-pipeline
   - trigger-runner
+  - video-director
   - voice-crm-pipeline
   - voice-profile-trainer
   - wbs-toolkit
