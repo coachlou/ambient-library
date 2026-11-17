@@ -2824,31 +2824,33 @@ video-director:
     on what the narration names, records it in the user''s ElevenLabs voice, adds a music
     bed and mixes to mp4; use for "make a release video for v1.2", "a tutorial video on setting
     up X", "a two-minute demo of the app", "a 30-second teaser", "redo the video with callouts".'
-  summary: 'Autonomous director for narrated mp4 videos of any kind: release, tutorial, product
-    demo, promo/teaser, explainer, or a new format it drafts on the fly and offers to the
-    library as an in-progress candidate. The user supplies a topic, version, or product at
-    most. It asks only for what it cannot find: a voice id, a way to run the app, or a source
-    for a claim. It writes brief.md (audience, goal, length, tone, sources, deliverable, 5-12
-    beats), then researches every claim to a source and cuts any claim it cannot source. One
-    spec file, shots.json, drives the rest. It stands up the app on a throwaway demo fixture
-    and port, scouts it with explore.mjs, and scripts narration in eleven_v3 voice-style tags.
-    capture.mjs takes Playwright stills with overlay callout rings on whatever the narration
-    names, or renders HTML cards when there is no app. It QAs a contact sheet, records each
-    line in the user''s ElevenLabs clone, and trims and autocues the rings from Scribe word
-    timings. build.py adds a generated music bed (music.py) or a user-supplied track, ducks
-    it under the voice, and mixes to loudness-targeted mp4. It never captures real user data,
-    never edits app data to stage a state (it mocks instead), never commits format drafts,
-    and never uploads or sends the video. Delivery is a local mp4 plus the script. Pipeline
-    stage: produce through deliver, ending at local handoff.'
+  summary: 'Autonomous director for narrated screen-and-card videos: release, tutorial, product-demo,
+    promo, explainer, or a new format it drafts on the spot and offers back to the ambient-library
+    as an in-progress candidate. Inputs: a topic, version, or product. If the app appears,
+    it also needs a way to run it on its own port with throwaway seeded data. It also needs
+    a voice: the ElevenLabs connector (eleven_v3, the user''s clone), or the user''s own per-shot
+    mp3s. Preflight checks ffmpeg/ffprobe 4.3+, Python 3.8+, Node 18+ with playwright-core,
+    Chrome/Chromium, and curl. The skill plays the whole crew in order. Director writes brief.md
+    (audience, goal, length, tone, sources, deliverable, 5-12 beats). Producer researches;
+    every claim needs a source. Scriptwriter writes shots.json. Cinematographer scouts with
+    explore.mjs, then capture.mjs takes stills with overlay callout rings. QA checks a contact
+    sheet. Voice records each shot and gets word timings. Editor trims and autocues rings
+    to the spoken words. Composer adds a music.py bed or the user''s file. build.py does crossfades,
+    ducking and loudness and outputs an mp4. QA checks frames again; the publisher hands the
+    file over locally. It refuses to capture real data or the user''s live instance, invent
+    facts, reuse another person''s voice id, ship a robotic system voice unasked, use the
+    multilingual_v2 model, or upload/send the video without the user''s OK. Capture comes
+    before voicing, so a shot that can''t be shown is rewritten before it costs a take. Revisions
+    redo only the affected steps. Final stage of a launch: it runs after a release ships.'
   requests:
-  - make a release video for v1.2
-  - record a tutorial video on setting up the CLI
-  - a two-minute demo of the app for sales calls
-  - cut a 30-second teaser for the launch post
-  - redo the video with callouts on the buttons I mention
-  - make an explainer video on how the sync engine works, no app needed, just cards
-  - narrate a walkthrough of the new dashboard in my ElevenLabs voice
-  - the last video was too peppy, make it 10% less enthusiastic and rebuild
+  - Make a release video for v1.2 covering what's new
+  - Record a tutorial video showing how to set up the factory from scratch
+  - I need a two-minute product demo of the app for onboarding
+  - Cut a 30-second teaser for social about the launch
+  - Make an explainer video on how the shadowing rule works, cards are fine
+  - Redo the video with callouts on the buttons the narration mentions
+  - Make the voiceover 10% less enthusiastic and rebuild
+  - Turn this changelog into a narrated walkthrough mp4 in my voice
   not_for:
   - release-lane: wins for cutting the release itself (commit groups, rc, UAT, promotion to
       production); video-director only makes the video once the release exists
@@ -2872,8 +2874,8 @@ video-director:
       than a narrated mp4
   - researcher: wins when the user only wants sourced background on a topic, with no video
   - writing-team: the deliverable is a written article or post, not narrated footage
-  stage: produce
-  source_hash: 1fda7fa568d5
+  stage: publish
+  source_hash: 952b35eb9852
 tinkerbuild:
   description: Personal-app software factory (idea to UI to walking skeleton, then a no-HITL
     build/check loop, light testing, pre-release QA). Use ONLY when the user says "tinkerbuild"
