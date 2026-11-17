@@ -272,6 +272,11 @@
       "description": "Moves work through the release loop (commit groups, status, optional system test, release candidates to staging, a UAT issue log, promotion to production) with each project's commands in .aai/skills/release-lane/project.toml; use for \"commit this group\", \"cut an rc\", \"send it to testers\", \"log this bug from testing\", \"is it stable\", \"release it\"."
     },
     {
+      "name": "release-video",
+      "source": "./library/release-video",
+      "description": "Makes a narrated release or product video end to end: finds what's new, writes the script and shot list, scouts and captures the app with callout rings on what the narration names, records it in the user's ElevenLabs voice, adds a music bed and mixes to mp4; use for \"make a release video for v1.2\", \"a launch video for this version\", \"redo the video with callouts\", \"reuse that voice style\"."
+    },
+    {
       "name": "researcher",
       "source": "./library/researcher",
       "description": "Gathers sources into a structured research dossier; use for \"research this topic\", \"find sources on X\", \"compile background\". NOT for writing or editing the piece."

@@ -2817,6 +2817,59 @@ release-lane:
       release-lane only moves finished work toward release.
   stage: operate
   source_hash: 67f2eba1b702
+release-video:
+  description: 'Makes a narrated release or product video end to end: finds what''s new, writes
+    the script and shot list, scouts and captures the app with callout rings on what the narration
+    names, records it in the user''s ElevenLabs voice, adds a music bed and mixes to mp4;
+    use for "make a release video for v1.2", "a launch video for this version", "redo the
+    video with callouts", "reuse that voice style".'
+  summary: 'Builds a narrated release or product video end to end without stopping for approval.
+    The user supplies a version or product at most. The skill reads the CHANGELOG entry, `git
+    log <prev-tag>..<tag>` and the docs those changes touch, then writes brief.md: 5-10 changes
+    a user would notice, biggest first, with internal work folded into a factual stats line.
+    It never invents a claim. It runs the app on a throwaway port against a seeded demo fixture
+    and never captures live data or client files. It scouts the app with explore.mjs (screenshots
+    plus a JSON map of exact text and boxes) and writes shots.json, the one spec that drives
+    every later step: title card, one shot per brief item, a stats card if the numbers support
+    one, and a closing card. Callout rings target exact on-screen text and are cued to the
+    words in the narration that name them. It captures stills with Playwright and checks a
+    contact sheet before any voicing. It then voices each line in the user''s ElevenLabs clone
+    (eleven_v3, one tag per line), transcribes for word-accurate cues, trims, autocues, adds
+    an original music bed ducked under the voice, and mixes with ffmpeg to about -21 dB. Output:
+    a local mp4 plus the script. It asks only for things it cannot find (a voice id, a way
+    to run the app). It refuses to upload or send the video without the user''s OK. Stage:
+    last step after a release ships. Revisions redo only the affected shot.'
+  requests:
+  - make a release video for v1.2
+  - make a launch video for this version with my voice over it
+  - redo the video with callouts on the new settings screen
+  - reuse that voice style but 10% less enthusiastic
+  - turn the changelog for 0.11.0 into a 60-second walkthrough video
+  - the ring on shot 4 is around the wrong button, fix it and rebuild
+  - make a narrated product demo video of the app
+  not_for:
+  - release-lane: wins for cutting the release itself (commit groups, rc, UAT, promotion to
+      production); release-video only makes the video once the release exists
+  - transcript-to-content-pipeline: wins when the ask is written content (article, LinkedIn
+      posts, audio script) from a transcript, not a rendered mp4
+  - vibe: wins for build-loop screenshots that check an app change; release-video captures
+      only demo-fixture stills for narration
+  - gears-broadcast: wins for emailing the finished announcement to licensees; release-video
+      only hands over the local mp4
+  - teaching-block-synthesized: wins for a written, publishable article about a working session,
+      not a product video
+  - writer: wins when the user only wants release notes or an announcement post drafted, with
+      no recording or capture
+  - voice-profile-trainer: wins when "my voice" means a written style profile for text, not
+      an ElevenLabs narration clone
+  - grill-with-prototype: wins when the user wants clickable mockups of screens that don't
+      exist yet, rather than a video of a running app
+  - publish-article: wins when the user wants a finished written piece published to the hub;
+      release-video never publishes
+  - ireport: wins when the user wants a styled interactive HTML report on the release rather
+      than a narrated mp4
+  stage: publish
+  source_hash: f956d2c6fe22
 tinkerbuild:
   description: Personal-app software factory (idea to UI to walking skeleton, then a no-HITL
     build/check loop, light testing, pre-release QA). Use ONLY when the user says "tinkerbuild"

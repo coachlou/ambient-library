@@ -1,0 +1,38 @@
+{
+  "baseUrl": "http://127.0.0.1:5917",
+  "viewport": [1440, 900],
+  "dpr": 1.5,
+  "frames": "frames",
+  "vo": "vo",
+  "out": "release-video",
+  "voice": { "id": "PUT_VOICE_ID_HERE", "model": "eleven_v3" },
+  "mocks": [{ "url": "**/api/update/status", "json": { "available": true, "version": "1.2.0" } }],
+  "shots": [
+    {
+      "name": "01-title",
+      "seconds": 4.5,
+      "line": "[warmly] Okay, wonderful. Acme one point two is here.",
+      "html": "<div style='font:800 84px -apple-system'>Acme 1.2</div><div style='font:500 34px -apple-system;color:#666;margin-top:18px'>The project hub</div>"
+    },
+    {
+      "name": "02-work",
+      "path": "/",
+      "seconds": 7,
+      "line": "[upbeat] Every project in one place, right? What needs you, and what's done. Across all of them.",
+      "caption": "Every project in one place",
+      "setup": [{ "wait": 300 }],
+      "callouts": [
+        { "cue": 0 },
+        { "at": "What needs you", "ring": { "union": [{ "text": "Needs you", "within": "nav" }, { "text": "Client Portal", "within": "nav" }], "widen": "nav" } },
+        { "at": "what's done", "setup": [{ "click": { "text": "Done", "within": "nav" } }], "ring": { "climb": "Done", "minW": 200, "minH": 120 } },
+        { "same": 0, "at": "Across all of them" }
+      ]
+    },
+    {
+      "name": "03-close",
+      "seconds": 5,
+      "line": "[proudly] That's all there is to it.",
+      "html": "<div style='font:800 64px -apple-system'>Update today</div>"
+    }
+  ]
+}

@@ -51,6 +51,7 @@ TUNED_DESCRIPTIONS = {
     "checkpoint": "be3288c3b66a",  # spells out all three modes and their triggers
     "publish-article": "baaa9cf9f2b4",  # adds aimmhub + writing-skill handoff triggers
     "release-lane": "6738268f9437",  # lists every mode's trigger phrases
+    "release-video": "8e5856a4eada",  # longer trigger list for the skill itself
     "tinkerbuild": "173b71da5c0a",  # same text; SKILL.md is JSON-quoted (escaped quotes)
 }
 
