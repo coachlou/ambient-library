@@ -36,6 +36,28 @@ with what worked, and offer it for the library:
   `library/video-director/formats/` and adding a row to the table above.
 - No clone to be found: keep the draft in the work folder and say where it is.
 
+## Requirements
+Run `python3 ${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/preflight.py <work folder>` first;
+it checks the first five below and prints the install command for anything missing. Install what
+it lists (ask before installing system packages), rerun until it says `ready`.
+- ffmpeg and ffprobe 4.3+ with libx264 and aac (a brew or apt build has them).
+- Python 3.8+. The scripts use only the standard library.
+- Node 18+, with `npm i playwright-core` run in the work folder (the scripts load it from there).
+- Google Chrome or Chromium (`npx playwright install chromium` if neither is installed; off a
+  Mac, set `chrome` in the spec or pass `--chrome` to explore.mjs).
+- curl.
+- A voice, one of (check in this order, and say which one you are using):
+  1. The ElevenLabs connector (`creative_generate_speech` and the other `creative_*` tools). Best:
+     it does the [tags] and gives word timings. Voice id from the spec, the user's memory or
+     profile, or `creative_list_voices` (pick a clone named after the user, else ask them to
+     choose one from the list; never reuse a voice id from another person's example).
+  2. The user's own recordings: one mp3 per shot in `vo_raw/`, named after the shot, reading its
+     line with the [tags] removed. Skip step 7.
+  3. No voice at all: say what is missing and stop before step 7. Do not ship a robotic
+     system voice unless the user asks for one.
+- For a video that shows an app: a way to run that app on its own port with throwaway data.
+  Nothing else (no account, no repo of the author's) is assumed.
+
 ## The crew (roles you play, in order)
 - **Director:** writes `brief.md` and holds every later step to it.
 - **Producer/researcher:** gathers facts from the format's sources; every claim traces to one.
@@ -73,11 +95,12 @@ with what worked, and offer it for the library:
   of a page, as one still with no callouts; a video made only of cards needs no demo, scout
   or `baseUrl`.
 - **Publishing is the user's call.** Deliver the mp4 locally; uploading or sending it needs their OK.
-- playwright-core must be installed in the work folder (`npm i playwright-core`); capture.mjs
-  uses system Chrome on macOS, or set `chrome` in the spec.
+- Run explore.mjs and capture.mjs from the work folder: they load playwright-core from the
+  current folder, not from the skill's.
 
 ## Files
 - `${CLAUDE_PLUGIN_ROOT}/library/video-director/formats/*.md` format protocols (table above)
+- `${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/preflight.py` `[WORK_DIR]`: checks the tools in Requirements, prints fixes, exit 1 if any is missing
 - `${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/explore.mjs` scout: a screenshot plus a JSON map (text, tag, role, box, links) per page or clicked-open state (`--states`, `--help`)
 - `${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/capture.mjs` stills per shot and callout (`--help`, `--dry-run`, `--only`)
 - `${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/vo.py` `trim RAW OUT`, `cues FILE...`, `autocue SPEC` (sets each callout's `cue` from its `at` words, exact with a words file)
@@ -88,7 +111,7 @@ with what worked, and offer it for the library:
 
 ## Workflow
 Work in a folder outside any repo the video is about (e.g. `notes/video-<topic>/`), with
-`npm i playwright-core` run in it. Do every step yourself; do not stop for approval unless the
+`npm i playwright-core` run in it and preflight.py showing `ready`. Do every step yourself; do not stop for approval unless the
 user asked to review the brief or script first.
 
 1. **Brief (director).** Write `brief.md` with: audience (who watches, what they already know),
@@ -117,11 +140,13 @@ user asked to review the brief or script first.
 6. **Capture, then look (cinematographer, QA).** `node ${CLAUDE_PLUGIN_ROOT}/library/video-director/scripts/capture.mjs shots.json`;
    fix FAIL targets and rerun with `--only <shot>`. Contact sheet:
    `ffmpeg -y -v error -pattern_type glob -i 'frames/*.png' -vf scale=480:-1,tile=4x6 sheet.png`
-   and view it. Every ring on the right thing, nothing clipped, captions readable, no real data.
+   and view it (on Windows, where ffmpeg has no glob, view the frames directly). Every ring on the right thing, nothing clipped, captions readable, no real data.
    Fix and recapture until it is clean. Capturing before voicing is deliberate: a shot that
    cannot be shown gets rewritten before it costs a voice take.
-7. **Voice.** Voice id: `voice.id` in the spec, else the user's clone from memory or
-   `creative_list_voices` (their own name or clone first). `creative_create_flow` once, then per
+7. **Voice.** Without the ElevenLabs connector, use the user's recordings (see Requirements)
+   and go to step 8. Voice id: `voice.id` in the spec, else the user's clone from memory or
+   `creative_list_voices` (their own name or clone first, else let them pick); save the choice
+   to `voice.id`. `creative_create_flow` once, then per
    shot `creative_generate_speech` with flow_id, voice_id, model_id `eleven_v3`,
    generations_count 1 and the line as prompt. `creative_get_flow_run_status` lists each
    generation's content URL; `curl -L -o vo_raw/<shot>.mp3` them, named exactly after the shot.
