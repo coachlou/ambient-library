@@ -8,9 +8,16 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 
-import yaml
+try:
+    import yaml
+except ImportError:  # ponytail: this python3 has no pyyaml (a Homebrew bump drops it); rerun under uv
+    if not shutil.which("uv") or os.environ.get("AAI_YAML_REEXEC"):
+        sys.exit("needs pyyaml: install uv, or python3 -m pip install --user pyyaml")
+    os.environ["AAI_YAML_REEXEC"] = "1"
+    os.execvp("uv", ["uv", "run", "--quiet", "--with", "pyyaml", "python3", *sys.argv])
 
 REPO = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 

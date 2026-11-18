@@ -26,7 +26,14 @@ import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
-import yaml
+try:
+    import yaml
+except ImportError:  # ponytail: this python3 has no pyyaml (a Homebrew bump drops it); rerun under uv
+    import os, shutil
+    if not shutil.which("uv") or os.environ.get("AAI_YAML_REEXEC"):
+        sys.exit("needs pyyaml: install uv, or python3 -m pip install --user pyyaml")
+    os.environ["AAI_YAML_REEXEC"] = "1"
+    os.execvp("uv", ["uv", "run", "--quiet", "--with", "pyyaml", "python3", *sys.argv])
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 LIB = ROOT / "library"
