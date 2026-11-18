@@ -14,7 +14,7 @@ when a gate fails, and the top-level state machine.
 
 ## Requirements
 
-- Node.js 22 to 24; Node 24 LTS is the recommended version. The installer warns on Node 25 and up (it still installs), because some packages the factory builds with ship no prebuilt files for it yet.
+- Node.js 26 LTS (recommended) or 24 LTS: `package.json` engines and CI cover both, and `.nvmrc` / `.node-version` name 26. Other majors from 22 up still run, but the installer, the server at startup and the page all warn, because they are untested. Below 22 it will not start.
 - macOS or Linux. On Windows it runs inside WSL2 (Ubuntu); there is no native-Windows path. See `docs/INSTALL.md` Track B, which has not yet been walked end to end on a real Windows machine.
 - Codex CLI signed in with ChatGPT (`codex login status` should say `Logged in using ChatGPT`),
   or Claude Code signed in with a subscription account.
@@ -42,7 +42,7 @@ queue and you land back on a fresh brief, so the next release can be shaped whil
 one builds. Runs in one project go one after another, each building on the last; runs in
 different projects can overlap when `SOLOFACTORY_MAX_ACTIVE_RUNS` is above 1 (default 1).
 A brief for a project that already shipped is specified as a follow-on release. The previous
-release keeps running until the new one passes its deploy checks, so a failed deploy leaves it up. An update that changes how the app stores its data asks you to back up `data/` before it deploys, and the newest shipped update can be rolled back to the previous release from the Live app panel; apps that were running start again when SoloFactory starts. The **Work** list in the left rail is the board: every run
+release keeps running until the new one passes its deploy checks, so a failed deploy leaves it up. An update that changes how the app stores its data asks you to back up `data/` before it deploys, and the newest shipped update can be rolled back to the previous release from the Live app panel; apps that were running start again when SoloFactory starts. Each release that passes its deploy checks is tagged `solofactory/release/<n>` in the app's own git repo, so every good version stays easy to find. You can also turn on **Backup to GitHub** per project in Settings: after each good release it pushes the app's code and release tags to a private repo under your own GitHub account, using your `gh` sign-in. It is off until you turn it on, and it does not back up `data/`. The **Work** list in the left rail is the board: every run
 of every project grouped as Needs you, Running, Queued and Done, with slice progress; click a row to open that run
 (switching project if needed), or use a queued row's `···` menu to remove it from the queue.
 

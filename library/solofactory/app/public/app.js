@@ -175,6 +175,14 @@ function railMarks(progressState) {
   return { active, done: stageOrder.slice(0, Math.max(0, at)) };
 }
 const MAX_AMENDED_PLAN_BYTES = 4_000_000;
+// A shipped run's release number: the one tagged at deploy, or for a run shipped before release tags,
+// its place among the project's shipped runs (the count the next tag carries on from).
+function releaseNumber(job, jobs) {
+  if (job.release?.number) return job.release.number;
+  const at = (run) => new Date(run.createdAt).getTime();
+  return jobs.filter((run) => run.state === "completed" && run.deployment && at(run) <= at(job)).length || 1;
+}
+
 function previousReleaseNote(job) {
   const prior = job.previousRelease;
   if (!prior) return null;
@@ -1266,6 +1274,53 @@ class Live extends Component {
     return { title: "AI and models", hasNote: false, note: "", fields, hasBar: true, bar, hasPrompt: !!prompt, prompt };
   }
 
+  // Backup to GitHub, for the open project (docs/github-backup-spec.md). Gray and plain; amber only when a backup failed.
+  backupSection() {
+    const b = state.backup || { connected: false };
+    const field = (o) => ({ envLine: "", envColor: "var(--muted)", locked: false, isText: false, text: "", isSelect: false, isInput: false, isToggle: false, inputType: "text", min: "", max: "", hasUnit: false, unit: "", options: [], on: false, toggleText: "", help: "", ...o });
+    const btn = (label, act, off = false) => ({ label, act, off });
+    const done = (next) => { state.backup = next; this.setState({ backupBusy: false }); };
+    const act = (url, options) => { this.setState({ backupBusy: true }); return api(url, options).then(done).catch((error) => { this.setState({ backupBusy: false }); showError(error); }); };
+    const dataLine = "Your app's data (the data folder) is not in git, so this does not back it up.";
+    const busy = !!this.state.backupBusy;
+    if (!b.connected) {
+      const connect = async (existing) => {
+        try {
+          const { accounts } = await api("/api/projects/backup/accounts");
+          if (!accounts.length) return this.showInfo("Sign in to GitHub first", "Run gh auth login in Terminal, then press Connect again.");
+          const account = accounts.length === 1 ? accounts[0] : (prompt("Which GitHub account? " + accounts.join(", "), accounts[0]) || "").trim();
+          if (!account) return;
+          const repo = existing ? (prompt("Name of the existing private repo (owner/name or name). It must be empty, or this project's earlier backup.") || "").trim() : null;
+          if (existing && !repo) return;
+          act("/api/projects/backup/connect", { method: "POST", body: { account, repo } });
+        } catch (error) { showError(error); }
+      };
+      return {
+        title: "Backup to GitHub", hasNote: false, note: "", hasPrompt: false,
+        fields: [field({ id: "cfg-backup-status", label: "Status", isText: true, text: "Off. Not connected.", help: "After each good release, pushes this project's code and release tags to a private GitHub repo. Uses your gh sign-in. " + dataLine })],
+        hasBar: true, bar: [btn(busy ? "Connecting…" : "Connect: new private repo", () => connect(false), busy), btn("Use an existing repo", () => connect(true), busy)]
+      };
+    }
+    const last = b.lastPush, good = b.lastGood;
+    const when = (at) => formatSpan(Date.now() - new Date(at).getTime()) + " ago";
+    const lastText = !last ? "No backup yet" : last.ok ? "Release " + (last.release ?? "—") + ", " + when(last.at) : (good ? "Last good: release " + (good.release ?? "—") + ", " + when(good.at) : "None yet");
+    return {
+      title: "Backup to GitHub", hasPrompt: false,
+      hasNote: !!(b.enabled && last && !last.ok), note: last && !last.ok ? (last.paused ? "Backup paused: " : "Backup failed: ") + last.reason : "",
+      fields: [
+        field({ id: "cfg-backup-repo", label: "Repo", isText: true, text: b.owner + "/" + b.repo, help: "Private. " + (b.actionsOff ? "GitHub Actions is off there, so nothing runs on GitHub. " : "SoloFactory could not turn GitHub Actions off there; turn it off in the repo's settings. ") + dataLine }),
+        field({ id: "cfg-backup-account", label: "GitHub account", isText: true, text: b.account }),
+        field({ id: "cfg-backup-on", label: "Back up after each release", isToggle: true, on: !!b.enabled, toggleText: b.enabled ? "On" : "Off", locked: busy, onToggle: (e) => act("/api/projects/backup", { method: "PUT", body: { enabled: !!e.target.checked } }) }),
+        field({ id: "cfg-backup-last", label: "Last backup", isText: true, text: lastText })
+      ],
+      hasBar: true, bar: [
+        btn(busy ? "Backing up…" : "Back up now", () => act("/api/projects/backup/push", { method: "POST" }), busy || !b.enabled),
+        btn("Open on GitHub", () => window.open(b.url, "_blank", "noopener")),
+        btn("Disconnect", () => { if (confirm("Stop backing up to " + b.owner + "/" + b.repo + "? The repo and everything in it stay on GitHub.")) act("/api/projects/backup", { method: "DELETE" }); }, busy)
+      ]
+    };
+  }
+
   async componentDidMount() {
     try {
       state.config = await api("/api/config");
@@ -1273,6 +1328,7 @@ class Live extends Component {
       await this.refresh();
       this.checkUpdate();
       this.updateDone();
+      this.checkNode();
     } catch (error) { showError(error); }
     this.timer = setInterval(() => { if (!this.polling) this.refresh().catch(() => {}); }, 2000);
   }
@@ -1317,7 +1373,7 @@ class Live extends Component {
       state.projects = projects.projects;
       state.project = projects.active;
       state.board = projects;
-      [state.jobs, state.work] = await Promise.all([api("/api/jobs").then((r) => r.jobs), api("/api/board").catch(() => null)]);
+      [state.jobs, state.work, state.backup] = await Promise.all([api("/api/jobs").then((r) => r.jobs), api("/api/board").catch(() => null), api("/api/projects/backup").catch(() => null)]);
       this.sync();
       // The shown run's events and spend feed the Q&A, the activity list and the recovery box.
       const r = this.shownRun();
@@ -1516,7 +1572,7 @@ class Live extends Component {
     const list = (state.projects || []).map((p) => {
       const shipped = p.id === state.project ? state.jobs.find((job) => job.state === "completed" && !job.rolledBack && job.deployment?.url) : null;
       const url = shipped?.deployment?.url || "";
-      return { id: p.id, name: p.name, hasDocs: p.runCount > 0, url, release: url ? "release " + p.runCount : "", live: url ? "Live at " + url : p.runCount ? "Built here" : "Not built yet" };
+      return { id: p.id, name: p.name, hasDocs: p.runCount > 0, url, release: url ? "release " + releaseNumber(shipped, state.jobs) : "", live: url ? "Live at " + url : p.runCount ? "Built here" : "Not built yet" };
     });
     return list.length ? list : [{ id: "", name: "No project yet", hasDocs: false, live: "Not built yet" }];
   }
@@ -1562,7 +1618,16 @@ class Live extends Component {
       up, down: !up, statusText: up ? "Live" : "Stopped", dot: up ? "var(--inv)" : "var(--muted)",
       stop: () => this.post(r, "stop-app"), relaunch: () => this.post(r, "relaunch"),
       canRollback: Boolean(offer) && !ask, askRollback: () => this.setState({ rollbackAsk: offer.id }),
-      rollbackAsk: Boolean(ask), rollbackText: offer ? `This puts the app's code back to ${offer.rollbackTo.name} (${new Date(offer.rollbackTo.date).toLocaleDateString()}).` : "",
+      rollbackAsk: Boolean(ask), rollbackText: offer ? `This puts the app's code back to ${offer.rollbackTo.name} (${offer.rollbackTo.release ? `release ${offer.rollbackTo.release}, ` : ""}${new Date(offer.rollbackTo.date).toLocaleDateString()}).` : "",
+      // Informational: the git tag the release's code is kept under in the app's repo, when it has one.
+      releaseTag: job.release?.tag ? `Git tag ${job.release.tag}` : "",
+      // GitHub backup: one gray line when on; amber with Retry when the last backup failed. Nothing when off.
+      ...(() => {
+        const b = state.backup, last = b?.lastPush;
+        if (!b?.connected || !b.enabled || !last) return { backupLine: "", backupUrl: "", backupFail: "" };
+        if (!last.ok) return { backupLine: "", backupUrl: "", backupFail: (last.paused ? "Backup paused: " : "Backup failed: ") + last.reason, retryBackup: () => api("/api/projects/backup/push", { method: "POST" }).then((next) => { state.backup = next; this.setState({}); }).catch(showError) };
+        return { backupLine: "Backed up to GitHub · release " + (last.release ?? "—") + " · " + formatSpan(Date.now() - new Date(last.at).getTime()) + " ago", backupUrl: b.url, backupRepo: b.owner + "/" + b.repo, backupFail: "" };
+      })(),
       rollback: () => { this.setState({ rollbackAsk: null }); return this.post({ jobId: offer.id }, "rollback"); },
       cancelRollback: () => this.setState({ rollbackAsk: null }),
       // A crash soon after going live (G4) is an attention line; rolling back stays the owner's confirmed choice.
@@ -1812,6 +1877,16 @@ class Live extends Component {
       }
     }, 3000);
   }
+  // Node 24 and 26 LTS (src/node-version.mjs): say once per Node version when the server runs another.
+  // It is a notice, never a block: projects and runs keep working while the owner switches.
+  checkNode() {
+    const node = state.config?.node;
+    if (!node?.problem) return;
+    if (this.state.info) return; // another notice is open: ask again on the next page load
+    const key = "solofactory.node-warned." + node.version;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch {}
+    this.setState({ info: { title: "Switch to a supported Node", text: node.problem } });
+  }
   // After Update now restarts the server, say once what changed.
   async updateDone() {
     const r = await api("/api/update/run").catch(() => null);
@@ -1851,6 +1926,7 @@ class Live extends Component {
     // show their values as text, not as controls that look editable.
     for (const sec of v.cfg.sections) for (const f of sec.fields) Object.assign(f, readOnlyField(f));
     v.cfg.sections[0] = this.profileSection();
+    v.cfg.sections.splice(1, 0, this.backupSection());
     v.cfg.status = this.state.profEdit ? "Unsaved profile changes" : "Profiles and models";
     // The pick card names the draft spec the Guide wrote and opens it in Documents, so it can be read and revised before sending.
     const hasDraft = this.docsFor(this.state.pid).some((d) => d.name === DRAFT_SPEC);

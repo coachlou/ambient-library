@@ -13,7 +13,7 @@ SoloFactory is running right now and has already checked that nothing is buildin
 
 1. Read the update steps: gh api -H 'Accept: application/vnd.github.raw' repos/coachlou/aimm/contents/aai-release/solofactory/INSTALL.md
 2. Run only its U2 command, with "${folder}" as the folder. Ignore U1 and U3.
-3. If a line starts with warn, follow that runbook's fix only when it needs no one's help; otherwise report it.
+3. If a line starts with warn, follow that runbook's fix only when it needs no one's help; otherwise report it. Never install, upgrade or switch Node yourself: report a node warn line word for word, with the runbook's fix for it.
 4. Print the line from: grep -m1 'app:' "${folder}/.ailib/manifest.yaml"
 End with one short plain sentence saying whether the update worked, then list, in plain words, the runbook's "If they were below ..." notes that apply to someone coming from the version you started on.`;
 }
@@ -33,6 +33,9 @@ export function createUpdateRunner({ root, home, appRoot, current, busy, newer, 
   const logPath = path.join(home, "update.log");
   const available = existsSync(path.join(root, ".ailib", "manifest.yaml"));
   let running = false;
+  // The background agent run's promise, so a caller (the tests, a shutdown) can wait for its
+  // outcome instead of guessing how long it takes.
+  let finishing = Promise.resolve();
   // Written to a temp file and renamed into place, so status() never reads a half-written update.json
   // (a plain writeFile truncates first: a read in that window got "Unexpected end of JSON input").
   let saves = 0;
@@ -66,7 +69,7 @@ export function createUpdateRunner({ root, home, appRoot, current, busy, newer, 
       throw error;
     }
     const installed = () => readFile(path.join(appRoot, "package.json"), "utf8").then((t) => JSON.parse(t).version, () => current);
-    (async () => {
+    finishing = (async () => {
       let code = null, message = "";
       try { ({ code, message } = await agent({ provider, prompt: headlessUpdatePrompt(root), cwd: root, logPath })); }
       catch (error) { message = error.message; }
@@ -82,5 +85,6 @@ export function createUpdateRunner({ root, home, appRoot, current, busy, newer, 
     return { status: 202, update: record };
   }
 
-  return { status, start, get running() { return running; } };
+  // settled(): resolves once the latest started update has saved its outcome and called onUpdated.
+  return { status, start, settled: () => finishing, get running() { return running; } };
 }

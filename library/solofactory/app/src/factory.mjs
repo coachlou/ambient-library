@@ -15,6 +15,7 @@ import { addUsage } from "./providers.mjs";
 import { CREDENTIAL_PATTERNS } from "./credentials.mjs";
 import { measureRun } from "./measure.mjs";
 import { dataFeatures, dataShape, readConfirmation, unconfirmed } from "./data-backup.mjs";
+import { ghGitHub, pushBackup, readBackup } from "./github-backup.mjs";
 import { RunMonitor, failureSignature, incidentRecord, repeatedFailure, repeatedSymptom, watchConfig, workerAlive } from "./watchdog.mjs";
 import { amendRepairPlan, archiveReview, assertBatch, consolidationBase, keepCorrecting, assertPlanningCurrent, digest, exhaustedPreparations, planFeatureRecovery, planKey, resumeAmendedReview, reviewedPlanKeys, runFeatureRecovery, sourceBaseline, validateRecoveryApproval, validateRecoveryPlan } from "./feature-recovery.mjs";
 
@@ -81,6 +82,8 @@ export const BUILD_ID = `${HARNESS.version}+${HARNESS.commit}`;
 const TERMINAL = new Set(["completed", "failed", "cancelled", "interrupted", "paused"]);
 const PARKED_STATES = new Set(["failed", "cancelled", "interrupted", "paused"]);
 // A pause lands only where the tree is green and committed: before a stage that follows a passed gate.
+// Each good release of a generated app is tagged RELEASE_TAG_PREFIX + n in the app's own git repo.
+export const RELEASE_TAG_PREFIX = "solofactory/release/";
 const PAUSE_POINTS = new Set(["specifying", "building", "reviewing", "deploying"]);
 
 export class FactoryError extends Error {
@@ -139,8 +142,10 @@ async function dataSnapshot(appDir) {
 }
 
 export class SoloFactory {
-  constructor({ store, provider, maxRepairs = 2, batchRepairsFrom = 10, autoStartRepairs = true, commandRunner = runProcess, deployer, watch = watchConfig() } = {}) {
+  constructor({ store, provider, maxRepairs = 2, batchRepairsFrom = 10, autoStartRepairs = true, commandRunner = runProcess, deployer, watch = watchConfig(), github = null } = {}) {
     this.store = store;
+    this.github = github; // GitHub backup access; null means the owner's gh sign-in
+
     this.watch = watch;
     this.provider = provider;
     this.maxRepairs = maxRepairs;
@@ -1176,11 +1181,14 @@ export class SoloFactory {
     job.deployment = deployment;
     job.recovery = null;
     job.failedState = null;
+    const release = await this.tagRelease(job);
+    if (release) job.release = release;
     job = await this.stage(job, "completed", "Application is live and verified");
     job.completedAt = new Date().toISOString();
     await this.store.writeState(job);
     await this.settleDeployment(job);
     await this.emit(job.id, { type: "job.completed", state: "completed", message: `Working app: ${deployment.url}${job.waivedProofs?.length ? ` (owner waived ${job.waivedProofs.map((bug) => bug.id).join(", ")})` : ""}` });
+    if (release) this.backup = this.backupRelease(job, release);
     return job;
   }
 
@@ -1266,6 +1274,47 @@ export class SoloFactory {
   async emit(jobId, event) {
     if (this.active?.jobId === jobId) this.active.monitor.observe(event);
     return this.store.appendEvent(jobId, event);
+  }
+
+  // A good release: the deploy passed its health, metrics and page checks. Commits the tree and tags it
+  // solofactory/release/<n> in the project's repo. Numbers never repeat and never go back: n is one past both the
+  // highest release tag and the count of earlier shipped runs (rolled-back ones included), so a project from before
+  // release tags carries on its count. Best effort: a git problem is evidence, never a failed deploy.
+  async tagRelease(job) {
+    if (job.release?.tag) return job.release;
+    try {
+      const tags = (await this.store.git("tag", "--list", `${RELEASE_TAG_PREFIX}*`)).split("\n").filter(Boolean);
+      const highest = Math.max(0, ...tags.map((tag) => Number(tag.slice(RELEASE_TAG_PREFIX.length))).filter((n) => Number.isInteger(n) && n > 0));
+      const shipped = (await this.store.list()).filter((run) => run.id !== job.id && run.state === "completed" && run.deployment).length;
+      const number = Math.max(highest, shipped) + 1;
+      const tag = `${RELEASE_TAG_PREFIX}${number}`;
+      await this.store.commit(`factory: release ${number}`);
+      await this.store.git("tag", "-a", tag, "-m", `Release ${number}: ${job.brief?.workingName || job.id} (run ${job.id})`);
+      const release = { number, tag, commit: await this.store.git("rev-parse", "HEAD"), at: new Date().toISOString() };
+      await this.emit(job.id, { type: "release.tagged", state: job.state, tag, message: `Tagged release ${number} as ${tag}.` });
+      return release;
+    } catch (error) {
+      await this.emit(job.id, { type: "release.tag_failed", state: job.state, message: `Release tag failed: ${error.message}` }).catch(() => {});
+      return null;
+    }
+  }
+
+  // GitHub backup of a good release (docs/github-backup-spec.md), in the background: the deploy never waits for it,
+  // and a failed backup is an event and an amber line, never a failed run. Off (no backup.json) does nothing.
+  async backupRelease(job, release) {
+    try {
+      const config = await readBackup(this.store.project);
+      if (!config?.enabled) return null;
+      const result = await pushBackup(this.store.project, { github: this.github ?? ghGitHub(), release });
+      const where = `${config.owner}/${config.repo}`;
+      await this.emit(job.id, result.ok
+        ? { type: "backup.pushed", state: job.state, repo: where, release: release.number, commit: result.commit, message: `Backed up release ${release.number} to GitHub (${where}).` }
+        : { type: "backup.failed", state: job.state, repo: where, code: result.code, message: `GitHub backup failed: ${result.reason}` });
+      return result;
+    } catch (error) {
+      await this.emit(job.id, { type: "backup.failed", state: job.state, message: `GitHub backup failed: ${error.message}` }).catch(() => {});
+      return null;
+    }
   }
 
   // Stage-boundary commit into the project repo. Best effort: a git hiccup is evidence, not a build failure.
